@@ -7,12 +7,12 @@ website:
   repo-url: "https://github.com/jac0bmath3w/jac0bmath3w.github.io"
   navbar:
     left:
-	- text: Home
-	  href: home/index.qmd
-	- text: Blogs
+        - text: Home
+          href: index.qmd
+        - text: Blogs
           menu:
-          - text: Dice Game
-            href: posts/dice-game/index.qmd
+            - text: Dice Game
+              href: posts/dice-game/index.qmd
         - text: About
           href: about/index.qmd
       # - about.qmd

@@ -1,10 +1,10 @@
 [
   {
-    "objectID": "about.html",
-    "href": "about.html",
-    "title": "About",
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "jacob-blog",
     "section": "",
-    "text": "About this blog"
+    "text": "Post With Code\n\n\n\nnews\n\ncode\n\nanalysis\n\n\n\n\n\n\n\n\n\nMay 24, 2025\n\n\nHarlow Malloc\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome To My Blog\n\n\n\nnews\n\n\n\n\n\n\n\n\n\nMay 21, 2025\n\n\nTristan O’Malley\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "posts/welcome/index.html",
@@ -21,10 +21,10 @@
     "text": "This is a post with executable code."
   },
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "jacob-blog",
+    "objectID": "about/index.html",
+    "href": "about/index.html",
+    "title": "About",
     "section": "",
-    "text": "Post With Code\n\n\n\nnews\n\ncode\n\nanalysis\n\n\n\n\n\n\n\n\n\nMay 24, 2025\n\n\nHarlow Malloc\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome To My Blog\n\n\n\nnews\n\n\n\n\n\n\n\n\n\nMay 21, 2025\n\n\nTristan O’Malley\n\n\n\n\n\nNo matching items"
+    "text": "About this blog"
   }
 ]
