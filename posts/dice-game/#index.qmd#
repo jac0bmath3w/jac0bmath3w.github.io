@@ -1,0 +1,133 @@
+---
+title: "Optimal Strategy in a Dice Game"
+author: "Jacob Mathew"
+date: Sat May 24 23:14:42 CDT 2025
+categories: [simulation, probability, decision-theory]
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-tools: true
+---
+
+In this post, I talk about my attempt to find the optimal strategy to maximize the score in a dice game. 
+
+##  The Game
+
+You roll a fair 10-sided die.
+
+- If you roll a **10**, the game ends, and you win **nothing**.
+- If you roll any other number, that number is added to your score. 
+- You are **not allowed to stop** until your total reaches at least **$10**.
+- Once your score reaches 10, you are given a choice and you can  **choose to stop or continue**.
+
+
+
+How do you play this game optimally?
+
+---
+
+##  Strategy 1: Random Play
+
+I first tried a randomized strategy — once I reached 10, I continued with 50% probability:
+
+```python
+
+ndef strategy(res):
+   return random.uniform(0,1) < 0.5
+
+def roll_die(choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]):
+    return np.random.choice(choices)
+
+def game():
+    res = 0
+    while res < 10:
+        roll = roll_die()
+        if roll == 10:
+            return 0
+        else:
+            res += roll
+
+    play_again = strategy(res)
+    while play_again:
+        roll = roll_die()
+        if roll == 10:
+            return 0
+        else:
+	    play_again = strategy(res)
+            res += roll
+    return res
+
+
+```
+After simulating thousands of games, the average score hovered around 11.6 to 12.0.
+
+
+##  Strategy 2: Optimized Play
+
+At this point, I asked myself can I calculate at each turn (after reaching a score of 10) can I calculate what my score could be after the next roll.
+
+Say, my score is 10, what possible values can my score take if I roll the die again?
+
+| Dice Throw Outcome | New Score | Probability |
+|--------------------|-----------|-------------|
+| 1                  | 11        | $1/10$      |
+| 2                  | 12        | $1/10$      |
+| 3                  | 13        | $1/10$      |
+| 4                  | 14        | $1/10$      |
+| 5                  | 15        | $1/10$      |
+| 6                  | 16        | $1/10$      |
+| 7                  | 17        | $1/10$      |
+| 8                  | 18        | $1/10$      |
+| 9                  | 19        | $1/10$      |
+| 10                 | 0         | $1/10$      |
+
+This means, my expected value at the end of the throw is
+$$
+\sum_{i=11}^{19} \frac{i}{10} = 13.5
+$$
+
+
+This is a value greater than my current score. So, it makes sense for me to play the game once more.
+
+So I updated my strategy as such.
+
+```python
+def strategy(res):
+    e = 0
+    for i in range(1, 10):
+        e += (res + i) / 10
+
+    return e > res
+```
+
+What this does is ask the following question. Given my current score, do I expect a higher score if I play again?
+
+At first, this confused me — res + i increases as res increases, so why does the gain shrink?
+
+Turns out, the math reveals:
+
+
+$$E(res)=0.9res+4.5⇒E(res)−res=−0.1res+4.5$$
+
+So as score increases, the value of rolling decreases linearly. Once score reaches 45, the expected gain is 0. Beyond that, rolling again is actually worse than stopping.
+
+I simulated this strategy using the code below and got a higher range for the confidence of the score (17.25, 17.95)
+
+
+```python
+def simulate_game(n=10000):
+    res_list = []
+    for i in range(n):
+        res_list.append(game())
+    return res_list
+
+
+def find_conf(n=10000, n_conf=10000, conf_per=95):
+    mean_list = []
+    for i in tqdm(range(n_conf), desc="num_simulations"):
+        mean_list.append(np.mean(simulate_game(n)))
+    lower = np.quantile(mean_list, (100 - conf_per) / 200)
+    upper = np.quantile(mean_list, (conf_per + (100 - conf_per) / 2) / 100)
+    return (lower, upper)
+```

@@ -1,0 +1,50 @@
+---
+title: "Expected Value of Number of Attempts to Get Pattern"
+author: "Jacob Mathew"
+Sat May 24 23:24:55 CDT 2025
+categories: [simulation, probability]
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-tools: true
+---
+
+
+In this post, I talk about how to find the expected value of the number of coin tosses needed to find a specific pattern for the first time. 
+
+##  The Setup
+
+You toss a fair coin until you reach a specific pattern. Example HH. How many tosses would you need on an average to get to this pattern for the first time. 
+
+
+---
+
+## Solution
+
+To tackle this problem, I thought about the solution in terms of conditional probability.
+
+Given that I have not seen the pattern yet, if the last toss was an H, how many more tosses can I expect before I see the pattern? Call this H.
+Given that I have not seen the pattern yet, if the last toss was a T, how many more tosses can I expect before I see the pattern? Call this T. 
+
+$$
+H = 0.5*1 + 0.5*(1+T)
+$$
+
+The explanation of the equation above is, as follows:
+Given that we have not seen the pattern yet, and we tossed an H, with 0.5 probability we can get the pattern. With another 0.5 probability we need (1+T). 1 because of the T we just rolled, and T is the expected number given the last toss was T.
+
+$$
+T = 0.5(1+H) + 0.5(1+T)
+$$
+
+We now have a system of linear equations. On solving this, we get $$H = 4$$, $$T = 6$$ and $$E = 6$$
+
+## Expanding Further.
+
+What if we have
+1. A pattern HHH?
+2. Unfair dice?
+3. Is the expected value to get HHH the same as HTH? What about TTH? 
+
+
