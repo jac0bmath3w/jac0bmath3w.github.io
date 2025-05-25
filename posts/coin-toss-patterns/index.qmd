@@ -56,3 +56,40 @@ What if we have
 - Is the expected value to get HHH the same as HTH? What about TTH? 
 
 
+## Simulate the Results
+
+```python
+import numpy as np
+import random
+
+
+def simulate_game(p=0.5):
+    last_res = None
+    last_but_one_res = None
+    n_trials = 0
+    while not ((last_res == "H") & (last_but_one_res == "H")):
+        last_but_one_res = last_res
+        if random.uniform(0, 1) > p:
+            last_res = "H"
+        else:
+            last_res = "T"
+        n_trials += 1
+    return n_trials
+
+
+def simulate_expected_value(n, p):
+    trials_list = []
+    for i in range(n):
+        trials_list.append(simulate_game(p))
+
+    return np.mean(trials_list)
+
+
+def find_conf(conf_n, n, p, conf_per=95):
+    res_list = []
+    for i in range(conf_n):
+        res_list.append(simulate_expected_value(n, p))
+    lower = np.quantile(res_list, (100 - conf_per) / 200)
+    upper = np.quantile(res_list, (conf_per + (100 - conf_per) / 2) / 100)
+    return (lower, upper)
+```
