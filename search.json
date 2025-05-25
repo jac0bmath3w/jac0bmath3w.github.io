@@ -4,14 +4,28 @@
     "href": "index.html",
     "title": "Jacob Mathew’s Blog",
     "section": "",
-    "text": "Hi, I’m Jacob Mathew — a data scientist and engineer who loves probability puzzles, self-driving systems, and clean code.\nThis blog is where I share technical breakdowns of interesting problems, insights from simulations, and lessons from applying statistics in the real world.\nConnect with me on GitHub or reach out on LinkedIn."
+    "text": "I come across interesting problems every once in a while. On May 24 2025, I figured why not put them in a blog to show how I approached it.\nConnect with me on GitHub or reach out on LinkedIn."
   },
   {
-    "objectID": "posts/welcome/index.html",
-    "href": "posts/welcome/index.html",
-    "title": "Welcome To My Blog",
+    "objectID": "posts/dice-game/index.html",
+    "href": "posts/dice-game/index.html",
+    "title": "Optimal Strategy in a Risky Dice Game",
     "section": "",
-    "text": "This is the first post in a Quarto blog. Welcome!\n\nSince this post doesn’t specify an explicit image, the first image in the post will be used in the listing page of posts."
+    "text": "In this post, I talk about my attempt to find the optimal strategy to maximize the score in a dice game."
+  },
+  {
+    "objectID": "posts/dice-game/index.html#the-game",
+    "href": "posts/dice-game/index.html#the-game",
+    "title": "Optimal Strategy in a Risky Dice Game",
+    "section": "The Game",
+    "text": "The Game\nYou roll a fair 10-sided die.\n\nIf you roll a 10, the game ends, and you win nothing.\nIf you roll any other number, that number is added to your score.\nYou are not allowed to stop until your total reaches at least $10.\nOnce your score reaches 10, you are given a choice and you can choose to stop or continue.\n\nHow do you play this game optimally?"
+  },
+  {
+    "objectID": "posts/dice-game/index.html#strategy-1-random-play",
+    "href": "posts/dice-game/index.html#strategy-1-random-play",
+    "title": "Optimal Strategy in a Risky Dice Game",
+    "section": "Strategy 1: Random Play",
+    "text": "Strategy 1: Random Play\nI first tried a randomized strategy — once I reached 10, I continued with 50% probability:\n\ndef strategy(res):\n   return random.uniform(0,1) &lt; 0.5\n\ndef roll_die(choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]):\n    return np.random.choice(choices)\n\ndef game():\n    res = 0\n    while res &lt; 10:\n        roll = roll_die()\n        if roll == 10:\n            return 0\n        else:\n            res += roll\n\n    play_again = strategy(res)\n    while play_again:\n        roll = roll_die()\n        if roll == 10:\n            return 0\n        else:\n        play_again = strategy(res)\n            res += roll\n    return res\n\nAfter simulating thousands of games, the average score hovered around 11.6 to 12.0."
   },
   {
     "objectID": "posts/post-with-code/index.html",
@@ -19,6 +33,13 @@
     "title": "Post With Code",
     "section": "",
     "text": "This is a post with executable code."
+  },
+  {
+    "objectID": "posts/welcome/index.html",
+    "href": "posts/welcome/index.html",
+    "title": "Welcome To My Blog",
+    "section": "",
+    "text": "This is the first post in a Quarto blog. Welcome!\n\nSince this post doesn’t specify an explicit image, the first image in the post will be used in the listing page of posts."
   },
   {
     "objectID": "about/index.html",
