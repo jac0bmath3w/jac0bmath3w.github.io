@@ -25,14 +25,14 @@
     "href": "posts/coin-toss-patterns/index.html#solution",
     "title": "Expected Value of Number of Attempts to Get Pattern",
     "section": "Solution",
-    "text": "Solution\nTo tackle this problem, I thought about the solution in terms of conditional probability.\nGiven that I have not seen the pattern yet, if the last toss was an H, how many more tosses can I expect before I see the pattern? Call this H. Given that I have not seen the pattern yet, if the last toss was a T, how many more tosses can I expect before I see the pattern? Call this T.\n\\[\nH = 0.5*1 + 0.5*(1+T)\n\\]\nThe explanation of the equation above is, as follows: Given that we have not seen the pattern yet, and we tossed an H, with 0.5 probability we can get the pattern. With another 0.5 probability we need (1+T). 1 because of the T we just rolled, and T is the expected number given the last toss was T.\n\\[\nT = 0.5(1+H) + 0.5(1+T)\n\\]\nWe now have a system of linear equations. On solving this, we get \\[H = 4\\], \\[T = 6\\] and \\[E = 6\\]"
+    "text": "Solution\nTo tackle this problem, I thought about the solution in terms of conditional probability.\nGiven that I have not seen the pattern yet, if the last toss was an H, how many more tosses can I expect before I see the pattern? Call this H. Given that I have not seen the pattern yet, if the last toss was a T, how many more tosses can I expect before I see the pattern? Call this T.\n\\[\nH = 0.5*1 + 0.5*(1+T)\n\\]\nThe explanation of the equation above is, as follows: Given that we have not seen the pattern yet, and we tossed an H, with 0.5 probability we can get the pattern. With another 0.5 probability we need (1+T). 1 because of the T we just rolled, and T is the expected number given the last toss was T.\n\\[\nT = 0.5(1+H) + 0.5(1+T)\n\\]\nWe now have a system of linear equations. On solving this, we get \\[H = 4\nT = 6\nE = 6\\]"
   },
   {
     "objectID": "posts/coin-toss-patterns/index.html#expanding-further",
     "href": "posts/coin-toss-patterns/index.html#expanding-further",
     "title": "Expected Value of Number of Attempts to Get Pattern",
     "section": "Expanding Further",
-    "text": "Expanding Further\nWhat if we have 1. A pattern HHH? 2. Unfair dice? 3. Is the expected value to get HHH the same as HTH? What about TTH?"
+    "text": "Expanding Further\nWhat if we have - A pattern HHH? - Unfair dice? - Is the expected value to get HHH the same as HTH? What about TTH?"
   },
   {
     "objectID": "posts/welcome/index.html",
