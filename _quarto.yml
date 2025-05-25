@@ -2,14 +2,24 @@ project:
   type: website
 
 website:
-  title: "jacob-blog"
+  title: "Jacob Mathew's Blog"
+  site-url: "https://jac0bmath3w.github.io"
+  repo-url: "https://github.com/jac0bmath3w/jac0bmath3w.github.io"
   navbar:
-    right:
-      - about.qmd
-      - icon: github
-        href: https://github.com/
-      - icon: twitter
-        href: https://twitter.com
+    left:
+	- text: Home
+	  href: home/index.qmd
+	- text: Blogs
+          menu:
+          - text: Dice Game
+            href: posts/dice-game/index.qmd
+        - text: About
+          href: about/index.qmd
+      # - about.qmd
+      # - icon: github
+      #   href: https://github.com/
+      # - icon: twitter
+      #   href: https://twitter.com
 format:
   html:
     theme:
