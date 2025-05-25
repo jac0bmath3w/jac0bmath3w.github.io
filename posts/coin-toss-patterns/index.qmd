@@ -39,13 +39,18 @@ T = 0.5(1+H) + 0.5(1+T)
 $$
 
 We now have a system of linear equations. On solving this, we get
-$$H = 4
-T = 6
-E = 6$$
+$$
+\begin{aligned}
+H = 4\\
+T = 6\\
+E = 6
+\end{aligned}
+$$
 
 ## Expanding Further
 
 What if we have
+
 - A pattern HHH?
 - Unfair dice?
 - Is the expected value to get HHH the same as HTH? What about TTH? 
