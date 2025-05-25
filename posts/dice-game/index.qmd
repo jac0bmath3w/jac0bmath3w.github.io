@@ -1,4 +1,4 @@
----
+\---
 title: "Optimal Strategy in a Risky Dice Game"
 author: "Jacob Mathew"
 date: today
@@ -60,4 +60,25 @@ def game():
 
 
 ```
-After simulating thousands of games, the average score hovered around 11.6 to 12.0. 
+After simulating thousands of games, the average score hovered around 11.6 to 12.0.
+
+
+##  Strategy 2: Optimized Play
+
+At this point, I asked myself can I calculate at each turn (after reaching a score of 10) can I calculate what my score could be after the next roll.
+
+Say, my score is 10, what possible values can my score take if I roll the die again?
+
+| Dice Throw Outcome | New Score | Probability |
+|--------------------|-----------|-------------|
+| 1                  | 11        | $1/10$      |
+| 2                  | 12        | $1/10$      |
+| 3                  | 13        | $1/10$      |
+| 4                  | 14        | $1/10$      |
+| 5                  | 15        | $1/10$      |
+| 6                  | 16        | $1/10$      |
+| 7                  | 17        | $1/10$      |
+| 8                  | 18        | $1/10$      |
+| 9                  | 19        | $1/10$      |
+| 10                 | 0         | $1/10$      |
+
