@@ -1,7 +1,7 @@
-\---
-title: "Optimal Strategy in a Risky Dice Game"
+---
+title: "Optimal Strategy in a Dice Game"
 author: "Jacob Mathew"
-date: today
+date: Sat May 24 23:14:42 CDT 2025
 categories: [simulation, probability, decision-theory]
 format:
   html:
@@ -110,4 +110,24 @@ Turns out, the math reveals:
 
 $$E(res)=0.9res+4.5⇒E(res)−res=−0.1res+4.5$$
 
-So as x increases, the value of rolling decreases linearly. Once x reaches 45, the expected gain is 0. Beyond that, rolling again is actually worse than stopping.
+So as score increases, the value of rolling decreases linearly. Once score reaches 45, the expected gain is 0. Beyond that, rolling again is actually worse than stopping.
+
+I simulated this strategy using the code below and got a higher range for the confidence of the score (17.25, 17.95)
+
+
+```python
+def simulate_game(n=10000):
+    res_list = []
+    for i in range(n):
+        res_list.append(game())
+    return res_list
+
+
+def find_conf(n=10000, n_conf=10000, conf_per=95):
+    mean_list = []
+    for i in tqdm(range(n_conf), desc="num_simulations"):
+        mean_list.append(np.mean(simulate_game(n)))
+    lower = np.quantile(mean_list, (100 - conf_per) / 200)
+    upper = np.quantile(mean_list, (conf_per + (100 - conf_per) / 2) / 100)
+    return (lower, upper)
+```
