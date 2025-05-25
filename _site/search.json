@@ -2,9 +2,16 @@
   {
     "objectID": "index.html",
     "href": "index.html",
-    "title": "jacob-blog",
+    "title": "Jacob Mathew’s Blog",
     "section": "",
-    "text": "Post With Code\n\n\n\nnews\n\ncode\n\nanalysis\n\n\n\n\n\n\n\n\n\nMay 24, 2025\n\n\nHarlow Malloc\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome To My Blog\n\n\n\nnews\n\n\n\n\n\n\n\n\n\nMay 21, 2025\n\n\nTristan O’Malley\n\n\n\n\n\nNo matching items"
+    "text": "Hi, I’m Jacob Mathew — a data scientist and engineer who loves probability puzzles, self-driving systems, and clean code.\nThis blog is where I share technical breakdowns of interesting problems, insights from simulations, and lessons from applying statistics in the real world.\nConnect with me on GitHub or reach out on LinkedIn."
+  },
+  {
+    "objectID": "index.html#title-block-banner-true",
+    "href": "index.html#title-block-banner-true",
+    "title": "Jacob Mathew’s Blog",
+    "section": "# title-block-banner: true",
+    "text": "# title-block-banner: true"
   },
   {
     "objectID": "posts/welcome/index.html",
@@ -25,6 +32,6 @@
     "href": "about/index.html",
     "title": "About",
     "section": "",
-    "text": "About this blog"
+    "text": "Hi, I’m Jacob Mathew — a data scientist and engineer who loves probability puzzles, self-driving systems, and clean code.\nThis blog is where I share technical breakdowns of interesting problems, insights from simulations, and lessons from applying statistics in the real world.\nConnect with me on GitHub or reach out on LinkedIn."
   }
 ]
