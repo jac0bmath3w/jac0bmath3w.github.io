@@ -1,0 +1,63 @@
+---
+title: "Optimal Strategy in a Risky Dice Game"
+author: "Jacob Mathew"
+date: today
+categories: [simulation, probability, decision-theory]
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-tools: true
+---
+
+In this post, I talk about my attempt to find the optimal strategy to maximize the score in a dice game. 
+
+##  The Game
+
+You roll a fair 10-sided die.
+
+- If you roll a **10**, the game ends, and you win **nothing**.
+- If you roll any other number, that number is added to your score. 
+- You are **not allowed to stop** until your total reaches at least **$10**.
+- Once your score reaches 10, you are given a choice and you can  **choose to stop or continue**.
+
+
+
+How do you play this game optimally?
+
+---
+
+##  Strategy 1: Random Play
+
+I first tried a randomized strategy — once I reached 10, I continued with 50% probability:
+
+```python
+
+def strategy(res):
+   return random.uniform(0,1) < 0.5
+
+def roll_die(choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]):
+    return np.random.choice(choices)
+
+def game():
+    res = 0
+    while res < 10:
+        roll = roll_die()
+        if roll == 10:
+            return 0
+        else:
+            res += roll
+
+    play_again = strategy(res)
+    while play_again:
+        roll = roll_die()
+        if roll == 10:
+            return 0
+        else:
+	    play_again = strategy(res)
+            res += roll
+    return res
+
+
+```
+After simulating thousands of games, the average score hovered around 11.6 to 12.0. 

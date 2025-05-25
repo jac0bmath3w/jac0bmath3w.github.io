@@ -1,0 +1,32 @@
+---
+title: "Optimal Strategy in a Risky Dice Game"
+author: "Jacob Mathew"
+date: today
+categories: [simulation, probability, decision-theory]
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-tools: true
+---
+
+In this post, I talk about my attempt to find the optimal strategy to maximize the score in a dice game. 
+
+##  The Game
+
+You roll a fair 10-sided die.
+
+- If you roll a **10**, the game ends, and you win **nothing**.
+- If you roll **1–9**, you gain that many dollars and can **choose to stop or continue**.
+- However, you are **not allowed to stop** until your total reaches at least **$10**.
+
+How do you play this game optimally?
+
+---
+
+## 🧪 Strategy 1: Random Play
+
+I first tried a randomized strategy — once I reached $10, I continued with 50% probability:
+
+```python
+play_again = random.uniform(0, 1) < 0.5
