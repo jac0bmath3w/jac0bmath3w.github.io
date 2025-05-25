@@ -21,15 +21,7 @@ This blog is where I share technical breakdowns of interesting problems, insight
 Connect with me on [GitHub](https://github.com/jac0bmath3w) or reach out on [LinkedIn](https://linkedin.com/in/jac0bmath3w).	
 ---
 
-# listing:
-#   contents: posts
-#   sort: "date desc"
-#   type: default
-#   categories: true
-#   sort-ui: false
-#   filter-ui: false
-# page-layout: full
-# title-block-banner: true
+
 
 
 
