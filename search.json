@@ -35,6 +35,13 @@
     "text": "Expanding Further\nWhat if we have\n\nA pattern HHH?\nUnfair dice?\nIs the expected value to get HHH the same as HTH? What about TTH?"
   },
   {
+    "objectID": "posts/coin-toss-patterns/index.html#simulate-the-results",
+    "href": "posts/coin-toss-patterns/index.html#simulate-the-results",
+    "title": "Expected Value of Number of Attempts to Get Pattern",
+    "section": "Simulate the Results",
+    "text": "Simulate the Results\nimport numpy as np\nimport random\n\n\ndef simulate_game(p=0.5):\n    last_res = None\n    last_but_one_res = None\n    n_trials = 0\n    while not ((last_res == \"H\") & (last_but_one_res == \"H\")):\n        last_but_one_res = last_res\n        if random.uniform(0, 1) &gt; p:\n            last_res = \"H\"\n        else:\n            last_res = \"T\"\n        n_trials += 1\n    return n_trials\n\n\ndef simulate_expected_value(n, p):\n    trials_list = []\n    for i in range(n):\n        trials_list.append(simulate_game(p))\n\n    return np.mean(trials_list)\n\n\ndef find_conf(conf_n, n, p, conf_per=95):\n    res_list = []\n    for i in range(conf_n):\n        res_list.append(simulate_expected_value(n, p))\n    lower = np.quantile(res_list, (100 - conf_per) / 200)\n    upper = np.quantile(res_list, (conf_per + (100 - conf_per) / 2) / 100)\n    return (lower, upper)"
+  },
+  {
     "objectID": "posts/welcome/index.html",
     "href": "posts/welcome/index.html",
     "title": "Welcome To My Blog",
