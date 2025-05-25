@@ -82,3 +82,32 @@ Say, my score is 10, what possible values can my score take if I roll the die ag
 | 9                  | 19        | $1/10$      |
 | 10                 | 0         | $1/10$      |
 
+This means, my expected value at the end of the throw is
+$$
+\sum_{i=11}^{19} \frac{i}{10} = 13.5
+$$
+
+
+This is a value greater than my current score. So, it makes sense for me to play the game once more.
+
+So I updated my strategy as such.
+
+```python
+def strategy(res):
+    e = 0
+    for i in range(1, 10):
+        e += (res + i) / 10
+
+    return e > res
+```
+
+What this does is ask the following question. Given my current score, do I expect a higher score if I play again?
+
+At first, this confused me — res + i increases as res increases, so why does the gain shrink?
+
+Turns out, the math reveals:
+
+
+$$E(res)=0.9res+4.5⇒E(res)−res=−0.1res+4.5$$
+
+So as x increases, the value of rolling decreases linearly. Once x reaches 45, the expected gain is 0. Beyond that, rolling again is actually worse than stopping.
