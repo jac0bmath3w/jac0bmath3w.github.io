@@ -7,6 +7,55 @@
     "text": "I come across interesting problems every once in a while. On May 24 2025, I figured why not put them in a blog to show how I approached it.\nConnect with me on GitHub or reach out on LinkedIn."
   },
   {
+    "objectID": "projects/WheelFailurePred/index.html",
+    "href": "projects/WheelFailurePred/index.html",
+    "title": "Predicting Wheel Failure on Rail Cars",
+    "section": "",
+    "text": "COMING SOON"
+  },
+  {
+    "objectID": "posts/dice-game/index.html",
+    "href": "posts/dice-game/index.html",
+    "title": "Optimal Strategy in a Dice Game",
+    "section": "",
+    "text": "In this post, I talk about my attempt to find the optimal strategy to maximize the score in a dice game."
+  },
+  {
+    "objectID": "posts/dice-game/index.html#the-game",
+    "href": "posts/dice-game/index.html#the-game",
+    "title": "Optimal Strategy in a Dice Game",
+    "section": "The Game",
+    "text": "The Game\nYou roll a fair 10-sided die.\n\nIf you roll a 10, the game ends, and you win nothing.\nIf you roll any other number, that number is added to your score.\nYou are not allowed to stop until your total reaches at least 10.\nOnce your score reaches 10, you are given a choice and you can choose to stop or continue.\n\nHow do you play this game optimally?"
+  },
+  {
+    "objectID": "posts/dice-game/index.html#strategy-1-random-play",
+    "href": "posts/dice-game/index.html#strategy-1-random-play",
+    "title": "Optimal Strategy in a Dice Game",
+    "section": "Strategy 1: Random Play",
+    "text": "Strategy 1: Random Play\nI first tried a randomized strategy — once I reached 10, I continued with 50% probability:\n\ndef strategy(res):\n   return random.uniform(0,1) &lt; 0.5\n\ndef roll_die(choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]):\n    return np.random.choice(choices)\n\ndef game():\n    res = 0\n    while res &lt; 10:\n        roll = roll_die()\n        if roll == 10:\n            return 0\n        else:\n            res += roll\n\n    play_again = strategy(res)\n    while play_again:\n        roll = roll_die()\n        if roll == 10:\n            return 0\n        else:\n        play_again = strategy(res)\n            res += roll\n    return res\n\nAfter simulating thousands of games, the average score hovered around 11.6 to 12.0."
+  },
+  {
+    "objectID": "posts/dice-game/index.html#strategy-2-optimized-play",
+    "href": "posts/dice-game/index.html#strategy-2-optimized-play",
+    "title": "Optimal Strategy in a Dice Game",
+    "section": "Strategy 2: Optimized Play",
+    "text": "Strategy 2: Optimized Play\nAt this point, I asked myself can I calculate at each turn (after reaching a score of 10) what my score could be after the next roll.\nSay, my score is 10, what possible values can my score take if I roll the die again?\n\n\n\nDice Throw Outcome\nNew Score\nProbability\n\n\n\n\n1\n11\n\\(1/10\\)\n\n\n2\n12\n\\(1/10\\)\n\n\n3\n13\n\\(1/10\\)\n\n\n4\n14\n\\(1/10\\)\n\n\n5\n15\n\\(1/10\\)\n\n\n6\n16\n\\(1/10\\)\n\n\n7\n17\n\\(1/10\\)\n\n\n8\n18\n\\(1/10\\)\n\n\n9\n19\n\\(1/10\\)\n\n\n10\n0\n\\(1/10\\)\n\n\n\nThis means, my expected value at the end of the throw is \\[\n\\sum_{i=11}^{19} \\frac{i}{10} = 13.5\n\\]\nThis is a value greater than my current score. So, it makes sense for me to play the game once more.\nSo I updated my strategy as such.\ndef strategy(res):\n    e = 0\n    for i in range(1, 10):\n        e += (res + i) / 10\n\n    return e &gt; res\nWhat this does is ask the following question. Given my current score, do I expect a higher score if I play again?\nAt first, this confused me — res + i increases as res increases, so why does the gain shrink?\nTurns out, the math reveals:\n\\[E(res)=0.9res+4.5⇒E(res)−res=−0.1res+4.5\\]\nSo as score increases, the value of rolling decreases linearly. Once score reaches 45, the expected gain is 0. Beyond that, rolling again is actually worse than stopping.\nI simulated this strategy using the code below and got a higher range for the confidence of the score (17.25, 17.95)\ndef simulate_game(n=10000):\n    res_list = []\n    for i in range(n):\n        res_list.append(game())\n    return res_list\n\n\ndef find_conf(n=10000, n_conf=10000, conf_per=95):\n    mean_list = []\n    for i in tqdm(range(n_conf), desc=\"num_simulations\"):\n        mean_list.append(np.mean(simulate_game(n)))\n    lower = np.quantile(mean_list, (100 - conf_per) / 200)\n    upper = np.quantile(mean_list, (conf_per + (100 - conf_per) / 2) / 100)\n    return (lower, upper)"
+  },
+  {
+    "objectID": "posts/post-with-code/index.html",
+    "href": "posts/post-with-code/index.html",
+    "title": "Post With Code",
+    "section": "",
+    "text": "This is a post with executable code."
+  },
+  {
+    "objectID": "posts/welcome/index.html",
+    "href": "posts/welcome/index.html",
+    "title": "Welcome To My Blog",
+    "section": "",
+    "text": "This is the first post in a Quarto blog. Welcome!\n\nSince this post doesn’t specify an explicit image, the first image in the post will be used in the listing page of posts."
+  },
+  {
     "objectID": "posts/coin-toss-patterns/index.html",
     "href": "posts/coin-toss-patterns/index.html",
     "title": "Expected Value of Number of Attempts to Get Pattern",
@@ -28,13 +77,6 @@
     "text": "Solution\nTo tackle this problem, I thought about the solution in terms of conditional probability.\nGiven that I have not seen the pattern yet, if the last toss was an H, how many more tosses can I expect before I see the pattern? Call this H. Given that I have not seen the pattern yet, if the last toss was a T, how many more tosses can I expect before I see the pattern? Call this T.\n\\[\nH = 0.5*1 + 0.5*(1+T)\n\\]\nThe explanation of the equation above is, as follows: Given that we have not seen the pattern yet, and we tossed an H, with 0.5 probability we can get the pattern. With another 0.5 probability we need (1+T). 1 because of the T we just rolled, and T is the expected number given the last toss was T.\n\\[\nT = 0.5(1+H) + 0.5(1+T)\n\\]\nWe now have a system of linear equations. On solving this, we get \\[\n\\begin{aligned}\nH = 4\\\\\nT = 6\\\\\nE = 6\n\\end{aligned}\n\\]"
   },
   {
-    "objectID": "posts/coin-toss-patterns/index.html#expanding-further",
-    "href": "posts/coin-toss-patterns/index.html#expanding-further",
-    "title": "Expected Value of Number of Attempts to Get Pattern",
-    "section": "Expanding Further",
-    "text": "Expanding Further\nWhat if we have\n\nA pattern HHH?\nUnfair dice?\nIs the expected value to get HHH the same as HTH? What about TTH?"
-  },
-  {
     "objectID": "posts/coin-toss-patterns/index.html#simulate-the-results",
     "href": "posts/coin-toss-patterns/index.html#simulate-the-results",
     "title": "Expected Value of Number of Attempts to Get Pattern",
@@ -42,46 +84,11 @@
     "text": "Simulate the Results\nimport numpy as np\nimport random\n\n\ndef simulate_game(p=0.5):\n    last_res = None\n    last_but_one_res = None\n    n_trials = 0\n    while not ((last_res == \"H\") & (last_but_one_res == \"H\")):\n        last_but_one_res = last_res\n        if random.uniform(0, 1) &gt; p:\n            last_res = \"H\"\n        else:\n            last_res = \"T\"\n        n_trials += 1\n    return n_trials\n\n\ndef simulate_expected_value(n, p):\n    trials_list = []\n    for i in range(n):\n        trials_list.append(simulate_game(p))\n\n    return np.mean(trials_list)\n\n\ndef find_conf(conf_n, n, p, conf_per=95):\n    res_list = []\n    for i in range(conf_n):\n        res_list.append(simulate_expected_value(n, p))\n    lower = np.quantile(res_list, (100 - conf_per) / 200)\n    upper = np.quantile(res_list, (conf_per + (100 - conf_per) / 2) / 100)\n    return (lower, upper)"
   },
   {
-    "objectID": "posts/welcome/index.html",
-    "href": "posts/welcome/index.html",
-    "title": "Welcome To My Blog",
-    "section": "",
-    "text": "This is the first post in a Quarto blog. Welcome!\n\nSince this post doesn’t specify an explicit image, the first image in the post will be used in the listing page of posts."
-  },
-  {
-    "objectID": "posts/post-with-code/index.html",
-    "href": "posts/post-with-code/index.html",
-    "title": "Post With Code",
-    "section": "",
-    "text": "This is a post with executable code."
-  },
-  {
-    "objectID": "posts/dice-game/index.html",
-    "href": "posts/dice-game/index.html",
-    "title": "Optimal Strategy in a Dice Game",
-    "section": "",
-    "text": "In this post, I talk about my attempt to find the optimal strategy to maximize the score in a dice game."
-  },
-  {
-    "objectID": "posts/dice-game/index.html#the-game",
-    "href": "posts/dice-game/index.html#the-game",
-    "title": "Optimal Strategy in a Dice Game",
-    "section": "The Game",
-    "text": "The Game\nYou roll a fair 10-sided die.\n\nIf you roll a 10, the game ends, and you win nothing.\nIf you roll any other number, that number is added to your score.\nYou are not allowed to stop until your total reaches at least $10.\nOnce your score reaches 10, you are given a choice and you can choose to stop or continue.\n\nHow do you play this game optimally?"
-  },
-  {
-    "objectID": "posts/dice-game/index.html#strategy-1-random-play",
-    "href": "posts/dice-game/index.html#strategy-1-random-play",
-    "title": "Optimal Strategy in a Dice Game",
-    "section": "Strategy 1: Random Play",
-    "text": "Strategy 1: Random Play\nI first tried a randomized strategy — once I reached 10, I continued with 50% probability:\n\ndef strategy(res):\n   return random.uniform(0,1) &lt; 0.5\n\ndef roll_die(choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]):\n    return np.random.choice(choices)\n\ndef game():\n    res = 0\n    while res &lt; 10:\n        roll = roll_die()\n        if roll == 10:\n            return 0\n        else:\n            res += roll\n\n    play_again = strategy(res)\n    while play_again:\n        roll = roll_die()\n        if roll == 10:\n            return 0\n        else:\n        play_again = strategy(res)\n            res += roll\n    return res\n\nAfter simulating thousands of games, the average score hovered around 11.6 to 12.0."
-  },
-  {
-    "objectID": "posts/dice-game/index.html#strategy-2-optimized-play",
-    "href": "posts/dice-game/index.html#strategy-2-optimized-play",
-    "title": "Optimal Strategy in a Dice Game",
-    "section": "Strategy 2: Optimized Play",
-    "text": "Strategy 2: Optimized Play\nAt this point, I asked myself can I calculate at each turn (after reaching a score of 10) can I calculate what my score could be after the next roll.\nSay, my score is 10, what possible values can my score take if I roll the die again?\n\n\n\nDice Throw Outcome\nNew Score\nProbability\n\n\n\n\n1\n11\n\\(1/10\\)\n\n\n2\n12\n\\(1/10\\)\n\n\n3\n13\n\\(1/10\\)\n\n\n4\n14\n\\(1/10\\)\n\n\n5\n15\n\\(1/10\\)\n\n\n6\n16\n\\(1/10\\)\n\n\n7\n17\n\\(1/10\\)\n\n\n8\n18\n\\(1/10\\)\n\n\n9\n19\n\\(1/10\\)\n\n\n10\n0\n\\(1/10\\)\n\n\n\nThis means, my expected value at the end of the throw is \\[\n\\sum_{i=11}^{19} \\frac{i}{10} = 13.5\n\\]\nThis is a value greater than my current score. So, it makes sense for me to play the game once more.\nSo I updated my strategy as such.\ndef strategy(res):\n    e = 0\n    for i in range(1, 10):\n        e += (res + i) / 10\n\n    return e &gt; res\nWhat this does is ask the following question. Given my current score, do I expect a higher score if I play again?\nAt first, this confused me — res + i increases as res increases, so why does the gain shrink?\nTurns out, the math reveals:\n\\[E(res)=0.9res+4.5⇒E(res)−res=−0.1res+4.5\\]\nSo as score increases, the value of rolling decreases linearly. Once score reaches 45, the expected gain is 0. Beyond that, rolling again is actually worse than stopping.\nI simulated this strategy using the code below and got a higher range for the confidence of the score (17.25, 17.95)\ndef simulate_game(n=10000):\n    res_list = []\n    for i in range(n):\n        res_list.append(game())\n    return res_list\n\n\ndef find_conf(n=10000, n_conf=10000, conf_per=95):\n    mean_list = []\n    for i in tqdm(range(n_conf), desc=\"num_simulations\"):\n        mean_list.append(np.mean(simulate_game(n)))\n    lower = np.quantile(mean_list, (100 - conf_per) / 200)\n    upper = np.quantile(mean_list, (conf_per + (100 - conf_per) / 2) / 100)\n    return (lower, upper)"
+    "objectID": "posts/coin-toss-patterns/index.html#expanding-further",
+    "href": "posts/coin-toss-patterns/index.html#expanding-further",
+    "title": "Expected Value of Number of Attempts to Get Pattern",
+    "section": "Expanding Further",
+    "text": "Expanding Further\nWhat if we have\n\nA pattern HHH?\nUnfair dice?\nIs the expected value to get HHH the same as HTH? What about TTH?\nIf the pattern is HH OR HT?\n\nWhat is the probability we get HH before HT?"
   },
   {
     "objectID": "about/index.html",
