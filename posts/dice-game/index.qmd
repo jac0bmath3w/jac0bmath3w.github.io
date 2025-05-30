@@ -18,7 +18,7 @@ You roll a fair 10-sided die.
 
 - If you roll a **10**, the game ends, and you win **nothing**.
 - If you roll any other number, that number is added to your score. 
-- You are **not allowed to stop** until your total reaches at least **$10**.
+- You are **not allowed to stop** until your total reaches at least **10**.
 - Once your score reaches 10, you are given a choice and you can  **choose to stop or continue**.
 
 
@@ -65,7 +65,7 @@ After simulating thousands of games, the average score hovered around 11.6 to 12
 
 ##  Strategy 2: Optimized Play
 
-At this point, I asked myself can I calculate at each turn (after reaching a score of 10) can I calculate what my score could be after the next roll.
+At this point, I asked myself can I calculate at each turn (after reaching a score of 10)  what my score could be after the next roll.
 
 Say, my score is 10, what possible values can my score take if I roll the die again?
 

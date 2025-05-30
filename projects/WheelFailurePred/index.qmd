@@ -1,0 +1,13 @@
+---
+title: "Predicting Wheel Failure on Rail Cars"
+author: "Jacob Mathew"
+date: Thu May 29 19:44:55 CDT 2025
+categories: [rail-wheel-failure, probability, machine-learning, classification]
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-tools: true
+---
+
+COMING SOON 

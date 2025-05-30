@@ -14,8 +14,9 @@ about:
       href: https://github.com/jac0bmath3w/
 ---
 
-Hi, I’m **Jacob Mathew** — a data scientist and engineer who loves probability puzzles, self-driving systems, and clean code.
+I come across interesting problems every once in a while. On  May 24 2025, I figured why not put them in a blog to show how I approached it.
 
-This blog is where I share technical breakdowns of interesting problems, insights from simulations, and lessons from applying statistics in the real world.
+
+
 
 Connect with me on [GitHub](https://github.com/jac0bmath3w) or reach out on [LinkedIn](https://linkedin.com/in/jac0bmath3w).	

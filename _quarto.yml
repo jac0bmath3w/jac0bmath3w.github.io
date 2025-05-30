@@ -9,10 +9,16 @@ website:
     left:
         - text: Home
           href: index.qmd
-        - text: Blogs
+        - text: Probability
           menu:
             - text: Dice Game
               href: posts/dice-game/index.qmd
+            - text: Coin Toss Pattern
+              href: posts/coin-toss-patterns/index.qmd
+        - text: Projects
+          menu:
+            - text: Wheel Failure Prediction
+              href: posts/WheelFailurePred/index.qmd
         - text: About
           href: about/index.qmd
       # - about.qmd

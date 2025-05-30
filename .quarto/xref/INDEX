@@ -16,5 +16,11 @@
   },
   "about/index.qmd": {
     "index.html": "b330b6d5"
+  },
+  "posts/dice-game/index.qmd": {
+    "index.html": "2825fc13"
+  },
+  "posts/coin-toss-patterns/index.qmd": {
+    "index.html": "34c86148"
   }
 }

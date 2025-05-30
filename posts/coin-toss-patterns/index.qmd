@@ -47,14 +47,6 @@ E = 6
 \end{aligned}
 $$
 
-## Expanding Further
-
-What if we have
-
-- A pattern HHH?
-- Unfair dice?
-- Is the expected value to get HHH the same as HTH? What about TTH? 
-
 
 ## Simulate the Results
 
@@ -93,3 +85,13 @@ def find_conf(conf_n, n, p, conf_per=95):
     upper = np.quantile(res_list, (conf_per + (100 - conf_per) / 2) / 100)
     return (lower, upper)
 ```
+
+## Expanding Further
+
+What if we have
+
+- A pattern HHH?
+- Unfair dice?
+- Is the expected value to get HHH the same as HTH? What about TTH? 
+- If the pattern is HH OR HT?
+  - What is the probability we get HH before HT? 
