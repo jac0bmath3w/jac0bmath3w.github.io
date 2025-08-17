@@ -10,4 +10,287 @@ format:
     code-tools: true
 ---
 
-COMING SOON 
+In this post, I go into details of how I attempted to solve the problem to predict the likelihood of a train wheel failure in the upcoming months.
+
+##  Introduction
+
+Rail wheels are an important asset of the rail inventory, and any type of failure can be a safety hazard, even leading to derailment. Thus, regular maintainance and forward thinking predictive analytics plays a cruicial role in the safe operations of rail cars.
+
+In this problem, there are 3 specific types of wheel failures that are being considered. Any other type of failure is grouped into one category 'Other'. The 3 types are
+
+- High Impact
+- High Flange
+- Thin Flange
+
+
+## Data
+
+To uniquely identify a wheel for this problem, I looked at the following features:
+- Equipment (uniquely identified by the equipment number)
+- Truck (Uniquely identified by the column 'truck')
+- Axle number (Number to represent the axle within a truck)
+- Side (Left or Right wheel on the axle).
+- Applied Date (The date when the wheel was installed). 
+
+
+For this analysis 4 data sources are combined:
+### WILD data (Wheel Impact Load Detector)
+Wild data consist of wheel impacts measured at different WILD stations spread across the network. It gives information about when the measurement was made, the impact (or load). Different columns give information about the max vertical impact, average vertical impact, dynamic ratio etc.
+
+
+### THD data (Truck Hunting Detector)
+This dataset contains information indicating when the rail wheels are oscillating excessively. This is measured by hunting index.
+
+### WPD data (Wheel Profile Detector)
+This dataset consists information about the measurements of the wheel. It includes flange height, flange width, slope etc.
+
+### Mileage Data
+This dataset provides information about how many miles each equipment travelled each month. It was also pointed out that mileage information is only available with a 3 month lag, indicating that a sub-model is required to predict where how far each wheel would have travelled during the months that we need to predict. 
+
+We also have wheel failure data giving information about the month a particular wheel failed and the reason for failure.
+
+The failure data contains information for each month. So, once a wheel is installed, we have information about the wheel till it failed or is replaced (all the rows for a wheel would have the column 'failedin30days' == 0 until the last row (unless it is replaced without failure). 
+
+The data for any particular wheel under the WILD, THD, and WPD would only be available if a wheel passes thru the sensor. So it may be possible that we don't have any data for some months.
+
+
+## Methodology 
+
+Given the data is a time series (for each wheel, historic data is available over a period of time), we could look at this problem as a signal processing problem.
+
+### Data Processing
+
+
+#### Aggregation of data
+I developed a function that aggregates data at a monthly level. I look at different aggregation methods including, mean, trimmed mean, median, 90 percentile, 10 percentile, etc. My reasoning are as following:
+- the objective of this problem is to make a prediction for the upcoming month. The prediction is made at a montly level. So it makes sense to have the datra at the montlhy level.
+- This procedure greatly reduces the memory requirements as we are now only storing the aggregated data (which is useful as I am using a processor with only 8 Gigs of RAM).
+
+##### Methodology for Data Aggregation
+
+I take raw WPD/THD/WILD time-series and rolling them up to one row per wheel per month, producing a bundle of summary stats (mean/median/std/percentiles/etc.)—plus optional trend (slope)—so those features can be joined to your wheel-level failure table for EDA or modeling.
+
+The relevant functions to achieve this output include:
+1.  _aggregate_single_group(...) — summarize one (wheel_id, month) group
+
+  Inputs (via the args tuple):
+
+  - (entity_id, month): the group key (e.g., a wheel_id and its recordmonth).
+  - group: the pandas DataFrame slice for that key.
+  - id_col, date_col, agg_date_col: column names for ID, raw timestamp, and month.
+  - agg_config: dict like {column_name: [list of stats]} that drives what to compute.
+
+What it does:
+
+Starts a result row = {id_col: entity_id, agg_date_col: month}.
+
+For each col listed in agg_config (and present in group), it computes
+  - The requested statistics, (e.g., mean, std, count, sum, median)
+  - Percentiles: 10pct and 90pct via np.percentile(...)
+  - Trimmed_mean 
+  - Slope via compute_slope(series, group[date_col]) (trend within the month)
+
+Each stat is stored as f"{col}_{stat}" (e.g., averagevertical_mean).
+
+
+Returns the single row dict (one per wheel×month group).
+
+2. aggregate_parallel(...) — run it across all groups with multiprocessing
+
+   Inputs:
+   - the full DataFrame df,
+   - column names (id_col, date_col, agg_date_col),
+   - the agg_config dict
+
+What it does:
+
+Parses date_col to datetime (errors="coerce") and drops rows with missing dates. It then groups the data by [id_col, agg_date_col] (e.g., wheel_id × recordmonth). After that it, builds a task_list of argument tuples for each group. To speed up the process, I used process pool with cpu_count() - 1 workers. Fianlly, it collects all returned row dicts into a list and converts it to a DataFrame—one row per wheel×month with the requested features.
+
+Outputs: A wide DataFrame where columns follow the pattern <original_column>_<stat> (e.g., dynamicratio_90pct, maxvertical_std, etc.), plus the key columns (id_col, agg_date_col).
+
+
+This aggregator yields monthly feature vectors per wheel.
+
+Joining them (e.g., by wheel_id + month alignment logic) gives you explanatory features (WILD/WPD/THD) around the time of failure or censoring, supporting plots of distributions, drift over time, and eventually survival or hazard modeling.
+
+This process is repeated for WILD, THD, and WPD data to get montly aggregates. 
+
+
+#### Processing of failure data
+Since failure data is exploded at the monthly level and most of the rows indicate a row with no failure (i.e., failure happens later down the line or the wheel did not fail at all), it made sense to me to reduce the data such that each wheel (uniaquely identified by equiment number, truck, axle, side, applieddate)would be represented by just one row (which is the last row chronologically).
+
+Processing pipeline (what the code does)
+
+Goal: Start from monthly wheel records and end with one row per physical wheel instance (equipment × truck × axle × side × applieddate) that carries a clear failure status, and  failure reason. 
+
+##### Read & normalize
+
+- Loads the CSV into failure_data_org.
+- Parses applieddate and recordmonth as datetimes.
+- Builds a composite wheel_id via make_wheel_id(...) (encodes equipment, truck, axle, and side).
+- Fills missing failurereason values with the sentinel string "not failed" so non-failures are explicit.
+
+##### Within-month de-duplication (per wheel_id × recordmonth)
+
+- Sorts by wheel_id, recordmonth, failedin30days (descending), then applieddate (ascending) to prioritize failure evidence and earlier installs.
+- For each (wheel_id, recordmonth) group:
+- Single row: keep it.
+- No failures present (failedin30days sum = 0): keep the earliest applieddate in that month.
+- Failures present:
+- Keep only rows where failedin30days == 1.
+- If exactly one failure row exists: keep it.
+- If multiple failure rows exist:
+- Remove trivial duplicates after dropping vendornumbersuppliercode and material.
+- If multiple distinct failure reasons remain, keep them all (they’re meaningfully different).
+- Otherwise (same reason), keep the earliest occurrence for that month.
+
+This logic is implemented in a function called process_failure_data(...) and applied only to groups with more than one row; already-unique groups are set aside to be re-combined later.
+
+##### Reassemble partly-cleaned table
+
+ - rows_to_process selects only the multi-row groups (based on an upstream group_sizes index).
+ - processed_rows applies the grouping logic above.
+ - partly_cleaned is the union of processed_rows and unique_rows, then sorted by wheel_id and recordmonth.
+
+
+##### Across-month consolidation (per wheel_id)
+
+For each wheel’s timeline (sorted by recordmonth), keeps rows where applieddate changes compared to the next row and drops the last row in each wheel sequence.
+
+Practical effect: removes repeated monthly observations tied to the same installation event, retaining the boundaries between installation episodes.
+
+##### Split by outcome and collapse to one row per install
+
+  - Failed subset: failed = partly_cleaned[failurereason != "not failed"]
+  - Drops vendornumbersuppliercode and material.
+  - Removes exact duplicates.
+  - Computes time_diff: for each (wheel_id, applieddate_used), the span between the max and min recordmonth. This is a diagnostic of how long that install appears across the monthly logs.
+  - Keeps the first observation by recordmonth for each (wheel_id, applieddate_used) so one row represents that failed install.
+  - Not-failed subset: not_failed = partly_cleaned[failurereason == "not failed"]
+  - Keeps the last observation by recordmonth for each (wheel_id, applieddate_used) so the row represents the most recent non-failure state for that install.
+
+##### Final dataset and derived time in service
+
+   - Concatenates the collapsed failed and not_failed subsets into clean_failure_data.
+   - Re-parses dates (safety) and computes time_used = (recordmonth − applieddate) in days, representing time-in-service at the observation.
+
+After this we get. 
+
+clean_failure_data — one row per wheel instance (equipment × truck × axle × side × applieddate) carrying:
+  - failurereason (or "not failed"), and
+  - time_used (days in service at the observation month).
+  - failed / not_failed — intermediate tables used to collapse histories to a single row per install.
+  - time_diff — per-install span of months observed (useful for QA on the consolidation).
+
+##### Assumptions captured in the code (not changing behavior—just noting)
+
+
+
+When multiple failure rows exist in the same month, vendor/material IDs are ignored for de-duplication to avoid counting trivial differences.
+
+The workflow references upstream objects (failure_data, group_sizes, unique_rows, make_wheel_id, applieddate_used) that are expected to be defined earlier in your notebook/script.
+
+The across-month filter keeps rows where applieddate changes and drops the last row of each wheel’s sequence; this intentionally emphasizes installation-change boundaries.
+
+
+### Joining Datasets
+All the datasets do not have all the relevant primary keys to join them together. So to make sure the joins are appropriate, I started with the failure data. As mentioned earlier, failure data is processed such that each row represent the end condition of the wheel as it is replaced (either because it failed or for any other reason). This data contains all the information that can be used to uniquely identify a wheel, as well as the date when the replacement happened. With this information, I can join in the WILD data aggregated (which contains equipment number, truck, axle and side). I can ensure that only the data in the months between the date when the wheel was installed, and the date when the wheel was replaced is to be used).
+
+
+## Observations
+
+### EDA (WILD vs FAILURE)
+
+From monthly WILD aggregates and the cleaned failure table, build reader-friendly views of how wheel health evolves from installation to outcome. Specifically, visualize:
+
+Per-wheel timeseries of WILD features between install and failure (or censoring).
+
+Distribution comparisons (box/violin) of WILD features at aligned months, by failure class.
+
+#### Data inputs
+
+wild_agg (monthly WILD aggregates)
+One row per wheel_id × recordmonth with statistics such as mean, median, 10pct, 90pct for:
+maxvertical, averagevertical, dynamicvertical, dynamicratio.
+
+clean_failure_data (wheel installs & outcomes)
+One row per wheel install (uniquely: equipment × truck × axle × side × applieddate), including:
+wheel_id, applieddate_used (normalized install date), current observation recordmonth, and failurereason (with "not failed" for non-failures).
+
+#### Merge window & sampling
+
+A merge on wheel_id joins WILD with installs, then rows are filtered to the window
+recordmonth_wild ∈ [applieddate_used, recordmonth]
+so we only keep WILD months observed between install and the analysis month for that wheel.
+
+For plots, a small sample of wheels per failure reason is selected (e.g., 15 per class). These samples are for visualization only.
+
+#### Timeseries plots (monthly WILD)
+
+For each sampled wheel, for each metric/stat combination:
+Metrics: maxvertical, averagevertical, dynamicvertical, dynamicratio.
+Stats: 10pct, 90pct, mean, median.
+Plot a monthly line from install to outcome with:
+A vertical line at install and (if applicable) another at failure.
+If failurereason == "not failed", the series is censored at “today” for the plot (to show how far we’ve observed it without failure).
+
+Y-axis uses a per-wheel y_max so each plot comfortably fits that wheel’s range
+
+
+Results — Statistical tests on WILD vs. failure
+
+Sample & coverage. We analyzed 45,006 eligible wheel installs (rows in the ratios table after filtering). Class makeup: not failed 30,987 (68.9%), high impact 5,438 (12.1%), thin flange 3,783 (8.4%), high flange 3,500 (7.8%), other 1,298 (2.9%). We merged monthly WILD aggregates with the wheel-level table and restricted each sequence to months between install and the analysis month. For end-behavior, we required ≥4 pre-last months per install, then computed:
+
+End mean: mean_maxvertical_90pct_end = mean of the last 3 months.
+
+End escalation: maxvertical_90pct_end_ratio = (mean of last 3 months) ÷ (value 4th from the end).
+
+Variance check. Levene’s test for the end-window escalation metric (maxvertical_90pct_end_ratio) was highly significant (p = 9.77×10⁻⁷⁵), indicating unequal variances across failure reasons. We therefore used Welch’s ANOVA and Games–Howell post-hoc tests throughout.
+
+Overall group difference (end-window level). For the end mean (mean_maxvertical_90pct_end), Welch’s ANOVA showed a very large and highly significant effect of failure reason (F(4, 5982.56) = 10410.34, p ≈ 0, partial η² = 0.507).
+(Note: Welch’s ANOVA for the end ratio was also used; pairwise Games–Howell contrasts below summarize the separation.)
+
+Pairwise differences (Games–Howell).
+
+Raw monthly level (maxvertical_90pct)
+Mean by class (from the post-hoc table): high impact 45.463, not failed 30.774, thin flange 32.014, high flange 29.779, other 34.407.
+Versus high impact:
+
+vs high flange: Δ = +15.683 (p ≈ 0), Hedges g = 1.268
+
+vs not failed: Δ = +14.689 (p ≈ 0), g = 1.389
+
+vs thin flange: Δ = +13.449 (p ≈ 0), g = 1.088
+
+vs other: Δ = +11.056 (p ≈ 0), g = 0.799
+
+End-window escalation (maxvertical_90pct_end_ratio)
+Mean by class: high impact 1.214, not failed 1.036, thin flange 1.035, high flange 1.033, other 1.061.
+Versus high impact:
+
+vs high flange: Δ = +0.181 (p ≈ 0), g = 0.610
+
+vs not failed: Δ = +0.178 (p = 1.40×10⁻¹²), g = 0.580
+
+vs thin flange: Δ = +0.179 (p ≈ 0), g = 0.596
+
+vs other: Δ = +0.153 (p = 1.64×10⁻¹⁴), g = 0.478
+
+Interpretation. The high impact class exhibits substantially higher WILD levels overall (large effects, g≈0.8–1.4) and a clear late-stage escalation in the final months (medium effects, g≈0.48–0.61). These results align with the EDA narrative: maxvertical_90pct tends to be both higher and rising before high-impact failures.
+
+Figure references.
+Box/violin plots and a joint scatter were saved at:
+
+plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndRatio_Box.png
+
+plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndRatio_Violin.png
+
+plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndValuesAnalysis.png
+
+plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndValues_Violin.png
+
+plots/WILD-EDA/HighImpact vs Others_MaxVerticalScatterPlot.png
+
+### Distribution of failure data.
+Most frequently occuring 
+### High Impact. 
