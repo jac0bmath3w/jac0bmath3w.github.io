@@ -315,7 +315,7 @@ If failurereason == "not failed", the series is censored at “today” for the 
 Y-axis uses a per-wheel y_max so each plot comfortably fits that wheel’s range. I noticed the max_vertical showed a significant uptick for failure reason = 'High Impact' as shown in the figures below.
 
 ![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 1)](images/821_C_3.0_R_2017-10-01_high_impact_maxvertical_90pct.png)
-![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 2)](3_D_6.0_L_2016-07-01_high_impact_maxvertical_90pct.png)
+![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 2)](images/3_D_6.0_L_2016-07-01_high_impact_maxvertical_90pct.png)
 
 
 #### Results — Statistical tests on WILD vs. failure
@@ -339,7 +339,7 @@ Variance check. Levene’s test for the end-window escalation metric (maxvertica
 
 We could also visualize it via the violin plot showing the max_vertical (90pct) comparison between high impact failure vs all other failures
 
-![Violin Plot for Max Vertical (High Impact Failure vs Others)](violin_plot_is_high_impact_maxvertical-90pct.png)
+![Violin Plot for Max Vertical (High Impact Failure vs Others)](images/violin_plot_is_high_impact_maxvertical-90pct.png)
 
 ### EDA (THD vs FAILURE)
 
@@ -349,6 +349,6 @@ Similar analysis was done on THD data as well. It was difficult to see any patte
 
 Since WPD data contains information about flange height and flange thickness, I built a hypothesis that these features would be helpful to determine the failure types of 'high flange' and 'thin flange'. However this was not readily visible via plots as shown below. 
 
-![Violin Plot for Flange Height (High Flange Failure vs Others)](violin_plot_is_high_flange_flangeheight-90pct.png)
+![Violin Plot for Flange Height (High Flange Failure vs Others)](images/violin_plot_is_high_flange_flangeheight-90pct.png)
 
-![Violin Plot for Flange Thickness (Thin Flange Failure vs Others)](violin_plot_is_thin_flange_flangethickness-10pct.png)
+![Violin Plot for Flange Thickness (Thin Flange Failure vs Others)](images/violin_plot_is_thin_flange_flangethickness-10pct.png)
