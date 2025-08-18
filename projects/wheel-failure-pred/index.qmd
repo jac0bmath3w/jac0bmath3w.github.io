@@ -239,7 +239,8 @@ If failurereason == "not failed", the series is censored at “today” for the 
 
 Y-axis uses a per-wheel y_max so each plot comfortably fits that wheel’s range. I noticed the max_vertical showed a significant uptick for failure reason = 'High Impact' as shown in the figure below.
 
-![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure](projects/wheel-failure-pred/images/821_C_3.0_R_2017-10-01_high_impact_maxvertical_90pct.png)
+![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure](images/821_C_3.0_R_2017-10-01_high_impact_maxvertical_90pct.png)
+
 
 
 
