@@ -487,7 +487,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h4 class="anchored" data-anchor-id="timeseries-plots-monthly-wild">Timeseries plots (monthly WILD)</h4>
 <p>For each sampled wheel, for each metric/stat combination: Metrics: maxvertical, averagevertical, dynamicvertical, dynamicratio. Stats: 10pct, 90pct, mean, median. Plot a monthly line from install to outcome with: A vertical line at install and (if applicable) another at failure. If failurereason == “not failed”, the series is censored at “today” for the plot (to show how far we’ve observed it without failure).</p>
 <p>Y-axis uses a per-wheel y_max so each plot comfortably fits that wheel’s range. I noticed the max_vertical showed a significant uptick for failure reason = ‘High Impact’ as shown in the figures below.</p>
-<p><img src="images/821_C_3.0_R_2017-10-01_high_impact_maxvertical_90pct.png" class="img-fluid" alt="Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 1)"> <img src="3_D_6.0_L_2016-07-01_high_impact_maxvertical_90pct.png" class="img-fluid" alt="Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 2)"></p>
+<p><img src="images/821_C_3.0_R_2017-10-01_high_impact_maxvertical_90pct.png" class="img-fluid" alt="Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 1)"> <img src="images/3_D_6.0_L_2016-07-01_high_impact_maxvertical_90pct.png" class="img-fluid" alt="Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 2)"></p>
 </section>
 <section id="results-statistical-tests-on-wild-vs.-failure" class="level4">
 <h4 class="anchored" data-anchor-id="results-statistical-tests-on-wild-vs.-failure">Results — Statistical tests on WILD vs.&nbsp;failure</h4>
@@ -506,7 +506,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>We could also visualize it via the violin plot showing the max_vertical (90pct) comparison between high impact failure vs all other failures</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="violin_plot_is_high_impact_maxvertical-90pct.png" class="img-fluid figure-img"></p>
+<p><img src="images/violin_plot_is_high_impact_maxvertical-90pct.png" class="img-fluid figure-img"></p>
 <figcaption>Violin Plot for Max Vertical (High Impact Failure vs Others)</figcaption>
 </figure>
 </div>
@@ -521,13 +521,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Since WPD data contains information about flange height and flange thickness, I built a hypothesis that these features would be helpful to determine the failure types of ‘high flange’ and ‘thin flange’. However this was not readily visible via plots as shown below.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="violin_plot_is_high_flange_flangeheight-90pct.png" class="img-fluid figure-img"></p>
+<p><img src="images/violin_plot_is_high_flange_flangeheight-90pct.png" class="img-fluid figure-img"></p>
 <figcaption>Violin Plot for Flange Height (High Flange Failure vs Others)</figcaption>
 </figure>
 </div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="violin_plot_is_thin_flange_flangethickness-10pct.png" class="img-fluid figure-img"></p>
+<p><img src="images/violin_plot_is_thin_flange_flangethickness-10pct.png" class="img-fluid figure-img"></p>
 <figcaption>Violin Plot for Flange Thickness (Thin Flange Failure vs Others)</figcaption>
 </figure>
 </div>
@@ -1306,7 +1306,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-315"><a href="#cb1-315" aria-hidden="true" tabindex="-1"></a>Y-axis uses a per-wheel y_max so each plot comfortably fits that wheel’s range. I noticed the max_vertical showed a significant uptick for failure reason = 'High Impact' as shown in the figures below.</span>
 <span id="cb1-316"><a href="#cb1-316" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-317"><a href="#cb1-317" aria-hidden="true" tabindex="-1"></a><span class="al">![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 1)](images/821_C_3.0_R_2017-10-01_high_impact_maxvertical_90pct.png)</span></span>
-<span id="cb1-318"><a href="#cb1-318" aria-hidden="true" tabindex="-1"></a><span class="al">![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 2)](3_D_6.0_L_2016-07-01_high_impact_maxvertical_90pct.png)</span></span>
+<span id="cb1-318"><a href="#cb1-318" aria-hidden="true" tabindex="-1"></a><span class="al">![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 2)](images/3_D_6.0_L_2016-07-01_high_impact_maxvertical_90pct.png)</span></span>
 <span id="cb1-319"><a href="#cb1-319" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-320"><a href="#cb1-320" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-321"><a href="#cb1-321" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Results — Statistical tests on WILD vs. failure</span></span>
@@ -1330,7 +1330,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-339"><a href="#cb1-339" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-340"><a href="#cb1-340" aria-hidden="true" tabindex="-1"></a>We could also visualize it via the violin plot showing the max_vertical (90pct) comparison between high impact failure vs all other failures</span>
 <span id="cb1-341"><a href="#cb1-341" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-342"><a href="#cb1-342" aria-hidden="true" tabindex="-1"></a><span class="al">![Violin Plot for Max Vertical (High Impact Failure vs Others)](violin_plot_is_high_impact_maxvertical-90pct.png)</span></span>
+<span id="cb1-342"><a href="#cb1-342" aria-hidden="true" tabindex="-1"></a><span class="al">![Violin Plot for Max Vertical (High Impact Failure vs Others)](images/violin_plot_is_high_impact_maxvertical-90pct.png)</span></span>
 <span id="cb1-343"><a href="#cb1-343" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-344"><a href="#cb1-344" aria-hidden="true" tabindex="-1"></a><span class="fu">### EDA (THD vs FAILURE)</span></span>
 <span id="cb1-345"><a href="#cb1-345" aria-hidden="true" tabindex="-1"></a></span>
@@ -1340,9 +1340,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-349"><a href="#cb1-349" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-350"><a href="#cb1-350" aria-hidden="true" tabindex="-1"></a>Since WPD data contains information about flange height and flange thickness, I built a hypothesis that these features would be helpful to determine the failure types of 'high flange' and 'thin flange'. However this was not readily visible via plots as shown below. </span>
 <span id="cb1-351"><a href="#cb1-351" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-352"><a href="#cb1-352" aria-hidden="true" tabindex="-1"></a><span class="al">![Violin Plot for Flange Height (High Flange Failure vs Others)](violin_plot_is_high_flange_flangeheight-90pct.png)</span></span>
+<span id="cb1-352"><a href="#cb1-352" aria-hidden="true" tabindex="-1"></a><span class="al">![Violin Plot for Flange Height (High Flange Failure vs Others)](images/violin_plot_is_high_flange_flangeheight-90pct.png)</span></span>
 <span id="cb1-353"><a href="#cb1-353" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-354"><a href="#cb1-354" aria-hidden="true" tabindex="-1"></a><span class="al">![Violin Plot for Flange Thickness (Thin Flange Failure vs Others)](violin_plot_is_thin_flange_flangethickness-10pct.png)</span></span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
+<span id="cb1-354"><a href="#cb1-354" aria-hidden="true" tabindex="-1"></a><span class="al">![Violin Plot for Flange Thickness (Thin Flange Failure vs Others)](images/violin_plot_is_thin_flange_flangethickness-10pct.png)</span></span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 
