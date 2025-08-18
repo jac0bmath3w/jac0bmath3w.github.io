@@ -195,6 +195,67 @@ The workflow references upstream objects (failure_data, group_sizes, unique_rows
 
 The across-month filter keeps rows where applieddate changes and drops the last row of each wheel’s sequence; this intentionally emphasizes installation-change boundaries.
 
+#### Processing of mileage data
+
+
+##### Cleaning & consistency checks
+
+Purpose.
+
+Make monthly mileage records coherent before any downstream use: fill  NAs, reconcile component miles with totals, and enforce consecutive-month consistency.
+
+
+
+Key steps (what the script does).
+
+  - Load & deduplicate. Reads mileage, parses recordmonth, drops exact duplicate rows.
+  - Fill legacy NAs (pre-2025).
+  - For rows with recordmonth < 2025-01-01, fills NAs with 0 in:
+    addedmileage, loadedtravelledmiles, emptytravelledmiles.
+  - Pre-clean diagnostics.
+  - Computes loaded_and_empty = emptytravelledmiles + loadedtravelledmiles and plots it against addedmileage to visualize alignment (or gaps).
+  - Row-level reconciliation (clean_mileage).
+  - For rows where components and totals disagree or are zeroed, applies a set of fixes and tags the action taken in fix_used:
+  - If addedmileage == 0 and next month’s totalmileage is available, computes an expected added (next_total − current_total) and tags _added_initFix (no overwrite in this version—diagnostic tag only).
+  - If components are both positive and sum exceeds addedmileage, sets addedmileage = loaded + empty and tags _addedFix.
+  - Consecutive-month consistency (fix_mileage_consistency_consecutive).
+  - For each equipmentnumber, enforces (when months are consecutive):
+  - totalmileage[i] ≥ totalmileage[i−1] + addedmileage[i].
+  - If violated, increases totalmileage[i] to match the expected sum and flags is_mileage_fixed = True.
+
+Once the cleaning is done, loaded mileage + empty mileage ~ added mileage
+
+![Loaded + Empty Mileage vs Added Mileage before Mileage Data Cleaning](images/Loaded+EmptyVsAddedMiles.png)
+![Loaded + Empty Mileage vs Added Mileage after Mileage Data Cleaning](images/Cleaned_Loaded+EmptyVsAddedMiles.png)
+
+##### Slopes and changepoints
+
+Purpose.
+
+Quantify mileage trends and structural breaks: per-install partmileage slopes and per-equipment totalmileage changepoints/segment slopes.
+
+Key steps.
+
+- Visual audit of missing metadata.
+- For selected equipmentnumber values, plots partmileage timeseries; colors points by applieddate and draws vertical lines at each install date—useful to spot gaps/inconsistencies per (axle, truck, side).
+- Per-install partmileage slope.
+- For each (wheel_id, applieddate) sequence:
+  - Regresses partmileage on days since first observation (OLS).
+  - Outputs coefficient (slope), intercept, r2, and count_good.
+  - Aggregates to a mileage_slope_summary by wheel_id (mean/median/std).
+  - Changepoints on total mileage (per equipment).
+  - Runs abrupt changepoint detection on totalmileage (rows before 2025-01-01).
+  - Stores number of breaks, boolean flags (e.g., is_last_seg_flat), and the list of change_months.
+  - Marks change months in the cleaned table and assigns segment IDs by cumulative sum over change flags.
+  - Segment-wise totalmileage slopes.
+  - Fits OLS slopes within each (equipmentnumber, segment_id) block.
+
+Keep the slopes and a summary filtered to stronger trends (e.g., coefficient > 0.3).
+
+![How Mileage Progresses over time for one wheel with different applied dates. (Equipment number 721 is shown)](images/C-4.0-R.png)
+
+
+Since we know that mileage information has a 3-month lag, I decided to add the projected partmileage, and loaded to empty ratio of the mileage as the features into the model. 
 
 ### Joining Datasets
 All the datasets do not have all the relevant primary keys to join them together. So to make sure the joins are appropriate, I started with the failure data. As mentioned earlier, failure data is processed such that each row represent the end condition of the wheel as it is replaced (either because it failed or for any other reason). This data contains all the information that can be used to uniquely identify a wheel, as well as the date when the replacement happened. With this information, I can join in the WILD data aggregated (which contains equipment number, truck, axle and side). I can ensure that only the data in the months between the date when the wheel was installed, and the date when the wheel was replaced is to be used).
@@ -237,17 +298,15 @@ Plot a monthly line from install to outcome with:
 A vertical line at install and (if applicable) another at failure.
 If failurereason == "not failed", the series is censored at “today” for the plot (to show how far we’ve observed it without failure).
 
-Y-axis uses a per-wheel y_max so each plot comfortably fits that wheel’s range. I noticed the max_vertical showed a significant uptick for failure reason = 'High Impact' as shown in the figure below.
+Y-axis uses a per-wheel y_max so each plot comfortably fits that wheel’s range. I noticed the max_vertical showed a significant uptick for failure reason = 'High Impact' as shown in the figures below.
 
-![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure](images/821_C_3.0_R_2017-10-01_high_impact_maxvertical_90pct.png)
-
-
-
+![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 1)](images/821_C_3.0_R_2017-10-01_high_impact_maxvertical_90pct.png)
+![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 2)](3_D_6.0_L_2016-07-01_high_impact_maxvertical_90pct.png)
 
 
-Results — Statistical tests on WILD vs. failure
+#### Results — Statistical tests on WILD vs. failure
 
-Sample & coverage. We analyzed 45,006 eligible wheel installs (rows in the ratios table after filtering).
+Sample & coverage: We analyzed 45,006 eligible wheel installs (rows in the ratios table after filtering).
 The class makeup of the data is as follows:
 
   - not failed 30,987 (68.9%),
@@ -263,6 +322,10 @@ End mean: mean_maxvertical_90pct_end = mean of the last 3 months.
 End escalation: maxvertical_90pct_end_ratio = (mean of last 3 months) ÷ (value 4th from the end).
 
 Variance check. Levene’s test for the end-window escalation metric (maxvertical_90pct_end_ratio) was highly significant (p = 9.77×10⁻⁷⁵), indicating unequal variances across failure reasons. We therefore used Welch’s ANOVA. The Welch’s ANOVA showed a very large and highly significant difference between the End Means between failure reason (F(4, 5982.56) = 10410.34, p ≈ 0, partial η² = 0.507).
+
+We could also visualize it via the violin plot showing the max_vertical (90pct) comparison between high impact failure vs all other failures
+
+![Violin Plot for Max Vertical (High Impact Failure vs Others)](violin_plot_is_high_impact_maxvertical-90pct.png)
 
 Figure references.
 Box/violin plots and a joint scatter were saved at:
