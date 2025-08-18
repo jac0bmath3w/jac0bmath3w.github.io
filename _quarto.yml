@@ -19,6 +19,7 @@ website:
           menu:
             - text: Wheel Failure Prediction
               href: projects/wheel-failure-pred/index.qmd
+
         - text: About
           href: about/index.qmd
       # - about.qmd
