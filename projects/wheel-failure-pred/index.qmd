@@ -255,7 +255,21 @@ Keep the slopes and a summary filtered to stronger trends (e.g., coefficient > 0
 ![How Mileage Progresses over time for one wheel with different applied dates. (Equipment number 721 is shown)](images/C-4.0-R.png)
 
 
-Since we know that mileage information has a 3-month lag, I decided to add the projected partmileage, and loaded to empty ratio of the mileage as the features into the model. 
+##### Loaded Mileage vs Added Mileage Analysis
+
+Purpose.
+Characterize how loaded miles relate to added miles over time and by equipment; highlight stability, spread, and behavior around structural changes.
+
+Key steps.
+
+  - Compute ratio with zero handling.
+    loaded_to_added = loadedtravelledmiles / addedmileage, with a sentinel −1 when addedmileage == 0 (to avoid division by zero).
+  - Per-equipment summary.
+    For each equipmentnumber, reports mean/median/std/min/max/count and trimmed mean/median (drop two smallest and two largest values) for robustness.
+  - Spot checks against changepoints.
+    For a random sample of equipment IDs, plots the ratio through time with vertical lines and date labels at the detected change_months.
+
+Since we know that mileage information has a 3-month lag, I decided to add the projected partmileage (using mileage slope calculated), and loaded to empty ratio of the mileage as the features into the model.
 
 ### Joining Datasets
 All the datasets do not have all the relevant primary keys to join them together. So to make sure the joins are appropriate, I started with the failure data. As mentioned earlier, failure data is processed such that each row represent the end condition of the wheel as it is replaced (either because it failed or for any other reason). This data contains all the information that can be used to uniquely identify a wheel, as well as the date when the replacement happened. With this information, I can join in the WILD data aggregated (which contains equipment number, truck, axle and side). I can ensure that only the data in the months between the date when the wheel was installed, and the date when the wheel was replaced is to be used).
@@ -327,19 +341,14 @@ We could also visualize it via the violin plot showing the max_vertical (90pct) 
 
 ![Violin Plot for Max Vertical (High Impact Failure vs Others)](violin_plot_is_high_impact_maxvertical-90pct.png)
 
-Figure references.
-Box/violin plots and a joint scatter were saved at:
+### EDA (THD vs FAILURE)
 
-plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndRatio_Box.png
+Similar analysis was done on THD data as well. It was difficult to see any patterns like I saw in max_vertical vs high impact in THD data.
 
-plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndRatio_Violin.png
+### EDA (WPD vs FAILURE)
 
-plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndValuesAnalysis.png
+Since WPD data contains information about flange height and flange thickness, I built a hypothesis that these features would be helpful to determine the failure types of 'high flange' and 'thin flange'. However this was not readily visible via plots as shown below. 
 
-plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndValues_Violin.png
+![Violin Plot for Flange Height (High Flange Failure vs Others)](violin_plot_is_high_flange_flangeheight-90pct.png)
 
-plots/WILD-EDA/HighImpact vs Others_MaxVerticalScatterPlot.png
-
-### Distribution of failure data.
-Most frequently occuring 
-### High Impact. 
+![Violin Plot for Flange Thickness (Thin Flange Failure vs Others)](violin_plot_is_thin_flange_flangethickness-10pct.png)

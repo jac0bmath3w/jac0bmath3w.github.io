@@ -392,6 +392,63 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The across-month filter keeps rows where applieddate changes and drops the last row of each wheel’s sequence; this intentionally emphasizes installation-change boundaries.</p>
 </section>
 </section>
+<section id="processing-of-mileage-data" class="level4">
+<h4 class="anchored" data-anchor-id="processing-of-mileage-data">Processing of mileage data</h4>
+<section id="cleaning-consistency-checks" class="level5">
+<h5 class="anchored" data-anchor-id="cleaning-consistency-checks">Cleaning &amp; consistency checks</h5>
+<p>Purpose.</p>
+<p>Make monthly mileage records coherent before any downstream use: fill NAs, reconcile component miles with totals, and enforce consecutive-month consistency.</p>
+<p>Key steps (what the script does).</p>
+<ul>
+<li>Load &amp; deduplicate. Reads mileage, parses recordmonth, drops exact duplicate rows.</li>
+<li>Fill legacy NAs (pre-2025).</li>
+<li>For rows with recordmonth &lt; 2025-01-01, fills NAs with 0 in: addedmileage, loadedtravelledmiles, emptytravelledmiles.</li>
+<li>Pre-clean diagnostics.</li>
+<li>Computes loaded_and_empty = emptytravelledmiles + loadedtravelledmiles and plots it against addedmileage to visualize alignment (or gaps).</li>
+<li>Row-level reconciliation (clean_mileage).</li>
+<li>For rows where components and totals disagree or are zeroed, applies a set of fixes and tags the action taken in fix_used:</li>
+<li>If addedmileage == 0 and next month’s totalmileage is available, computes an expected added (next_total − current_total) and tags _added_initFix (no overwrite in this version—diagnostic tag only).</li>
+<li>If components are both positive and sum exceeds addedmileage, sets addedmileage = loaded + empty and tags _addedFix.</li>
+<li>Consecutive-month consistency (fix_mileage_consistency_consecutive).</li>
+<li>For each equipmentnumber, enforces (when months are consecutive):</li>
+<li>totalmileage[i] ≥ totalmileage[i−1] + addedmileage[i].</li>
+<li>If violated, increases totalmileage[i] to match the expected sum and flags is_mileage_fixed = True.</li>
+</ul>
+<p>Once the cleaning is done, loaded mileage + empty mileage ~ added mileage</p>
+<p><img src="images/Loaded+EmptyVsAddedMiles.png" class="img-fluid" alt="Loaded + Empty Mileage vs Added Mileage before Mileage Data Cleaning"> <img src="images/Cleaned_Loaded+EmptyVsAddedMiles.png" class="img-fluid" alt="Loaded + Empty Mileage vs Added Mileage after Mileage Data Cleaning"></p>
+</section>
+<section id="slopes-and-changepoints" class="level5">
+<h5 class="anchored" data-anchor-id="slopes-and-changepoints">Slopes and changepoints</h5>
+<p>Purpose.</p>
+<p>Quantify mileage trends and structural breaks: per-install partmileage slopes and per-equipment totalmileage changepoints/segment slopes.</p>
+<p>Key steps.</p>
+<ul>
+<li>Visual audit of missing metadata.</li>
+<li>For selected equipmentnumber values, plots partmileage timeseries; colors points by applieddate and draws vertical lines at each install date—useful to spot gaps/inconsistencies per (axle, truck, side).</li>
+<li>Per-install partmileage slope.</li>
+<li>For each (wheel_id, applieddate) sequence:
+<ul>
+<li>Regresses partmileage on days since first observation (OLS).</li>
+<li>Outputs coefficient (slope), intercept, r2, and count_good.</li>
+<li>Aggregates to a mileage_slope_summary by wheel_id (mean/median/std).</li>
+<li>Changepoints on total mileage (per equipment).</li>
+<li>Runs abrupt changepoint detection on totalmileage (rows before 2025-01-01).</li>
+<li>Stores number of breaks, boolean flags (e.g., is_last_seg_flat), and the list of change_months.</li>
+<li>Marks change months in the cleaned table and assigns segment IDs by cumulative sum over change flags.</li>
+<li>Segment-wise totalmileage slopes.</li>
+<li>Fits OLS slopes within each (equipmentnumber, segment_id) block.</li>
+</ul></li>
+</ul>
+<p>Keep the slopes and a summary filtered to stronger trends (e.g., coefficient &gt; 0.3).</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/C-4.0-R.png" class="img-fluid figure-img"></p>
+<figcaption>How Mileage Progresses over time for one wheel with different applied dates. (Equipment number 721 is shown)</figcaption>
+</figure>
+</div>
+<p>Since we know that mileage information has a 3-month lag, I decided to add the projected partmileage, and loaded to empty ratio of the mileage as the features into the model.</p>
+</section>
+</section>
 </section>
 <section id="joining-datasets" class="level3">
 <h3 class="anchored" data-anchor-id="joining-datasets">Joining Datasets</h3>
@@ -418,15 +475,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="timeseries-plots-monthly-wild" class="level4">
 <h4 class="anchored" data-anchor-id="timeseries-plots-monthly-wild">Timeseries plots (monthly WILD)</h4>
 <p>For each sampled wheel, for each metric/stat combination: Metrics: maxvertical, averagevertical, dynamicvertical, dynamicratio. Stats: 10pct, 90pct, mean, median. Plot a monthly line from install to outcome with: A vertical line at install and (if applicable) another at failure. If failurereason == “not failed”, the series is censored at “today” for the plot (to show how far we’ve observed it without failure).</p>
-<p>Y-axis uses a per-wheel y_max so each plot comfortably fits that wheel’s range. I noticed the max_vertical showed a significant uptick for failure reason = ‘High Impact’ as shown in the figure below.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="images/821_C_3.0_R_2017-10-01_high_impact_maxvertical_90pct.png" class="img-fluid figure-img"></p>
-<figcaption>Max Vertical Jump Towards The End of Wheel Life for High Impact Failure</figcaption>
-</figure>
-</div>
-<p>Results — Statistical tests on WILD vs.&nbsp;failure</p>
-<p>Sample &amp; coverage. We analyzed 45,006 eligible wheel installs (rows in the ratios table after filtering). The class makeup of the data is as follows:</p>
+<p>Y-axis uses a per-wheel y_max so each plot comfortably fits that wheel’s range. I noticed the max_vertical showed a significant uptick for failure reason = ‘High Impact’ as shown in the figures below.</p>
+<p><img src="images/821_C_3.0_R_2017-10-01_high_impact_maxvertical_90pct.png" class="img-fluid" alt="Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 1)"> <img src="3_D_6.0_L_2016-07-01_high_impact_maxvertical_90pct.png" class="img-fluid" alt="Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 2)"></p>
+</section>
+<section id="results-statistical-tests-on-wild-vs.-failure" class="level4">
+<h4 class="anchored" data-anchor-id="results-statistical-tests-on-wild-vs.-failure">Results — Statistical tests on WILD vs.&nbsp;failure</h4>
+<p>Sample &amp; coverage: We analyzed 45,006 eligible wheel installs (rows in the ratios table after filtering). The class makeup of the data is as follows:</p>
 <ul>
 <li>not failed 30,987 (68.9%),</li>
 <li>high impact 5,438 (12.1%),</li>
@@ -438,6 +492,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>End mean: mean_maxvertical_90pct_end = mean of the last 3 months.</p>
 <p>End escalation: maxvertical_90pct_end_ratio = (mean of last 3 months) ÷ (value 4th from the end).</p>
 <p>Variance check. Levene’s test for the end-window escalation metric (maxvertical_90pct_end_ratio) was highly significant (p = 9.77×10⁻⁷⁵), indicating unequal variances across failure reasons. We therefore used Welch’s ANOVA. The Welch’s ANOVA showed a very large and highly significant difference between the End Means between failure reason (F(4, 5982.56) = 10410.34, p ≈ 0, partial η² = 0.507).</p>
+<p>We could also visualize it via the violin plot showing the max_vertical (90pct) comparison between high impact failure vs all other failures</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="violin_plot_is_high_impact_maxvertical-90pct.png" class="img-fluid figure-img"></p>
+<figcaption>Violin Plot for Max Vertical (High Impact Failure vs Others)</figcaption>
+</figure>
+</div>
 <p>Figure references. Box/violin plots and a joint scatter were saved at:</p>
 <p>plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndRatio_Box.png</p>
 <p>plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndRatio_Violin.png</p>
@@ -1104,91 +1165,154 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-195"><a href="#cb1-195" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-196"><a href="#cb1-196" aria-hidden="true" tabindex="-1"></a>The across-month filter keeps rows where applieddate changes and drops the last row of each wheel’s sequence; this intentionally emphasizes installation-change boundaries.</span>
 <span id="cb1-197"><a href="#cb1-197" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-198"><a href="#cb1-198" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-199"><a href="#cb1-199" aria-hidden="true" tabindex="-1"></a><span class="fu">### Joining Datasets</span></span>
-<span id="cb1-200"><a href="#cb1-200" aria-hidden="true" tabindex="-1"></a>All the datasets do not have all the relevant primary keys to join them together. So to make sure the joins are appropriate, I started with the failure data. As mentioned earlier, failure data is processed such that each row represent the end condition of the wheel as it is replaced (either because it failed or for any other reason). This data contains all the information that can be used to uniquely identify a wheel, as well as the date when the replacement happened. With this information, I can join in the WILD data aggregated (which contains equipment number, truck, axle and side). I can ensure that only the data in the months between the date when the wheel was installed, and the date when the wheel was replaced is to be used).</span>
-<span id="cb1-201"><a href="#cb1-201" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-198"><a href="#cb1-198" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Processing of mileage data</span></span>
+<span id="cb1-199"><a href="#cb1-199" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-200"><a href="#cb1-200" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-201"><a href="#cb1-201" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Cleaning &amp; consistency checks</span></span>
 <span id="cb1-202"><a href="#cb1-202" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-203"><a href="#cb1-203" aria-hidden="true" tabindex="-1"></a><span class="fu">## Observations</span></span>
+<span id="cb1-203"><a href="#cb1-203" aria-hidden="true" tabindex="-1"></a>Purpose.</span>
 <span id="cb1-204"><a href="#cb1-204" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-205"><a href="#cb1-205" aria-hidden="true" tabindex="-1"></a><span class="fu">### EDA (WILD vs FAILURE)</span></span>
+<span id="cb1-205"><a href="#cb1-205" aria-hidden="true" tabindex="-1"></a>Make monthly mileage records coherent before any downstream use: fill  NAs, reconcile component miles with totals, and enforce consecutive-month consistency.</span>
 <span id="cb1-206"><a href="#cb1-206" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-207"><a href="#cb1-207" aria-hidden="true" tabindex="-1"></a>From monthly WILD aggregates and the cleaned failure table, I  visualize:</span>
+<span id="cb1-207"><a href="#cb1-207" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-208"><a href="#cb1-208" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-209"><a href="#cb1-209" aria-hidden="true" tabindex="-1"></a>Per-wheel timeseries of WILD features between install and failure (or censoring).</span>
+<span id="cb1-209"><a href="#cb1-209" aria-hidden="true" tabindex="-1"></a>Key steps (what the script does).</span>
 <span id="cb1-210"><a href="#cb1-210" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-211"><a href="#cb1-211" aria-hidden="true" tabindex="-1"></a>Distribution comparisons (box/violin) of WILD features at aligned months, by failure class.</span>
-<span id="cb1-212"><a href="#cb1-212" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-213"><a href="#cb1-213" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Data inputs</span></span>
-<span id="cb1-214"><a href="#cb1-214" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-215"><a href="#cb1-215" aria-hidden="true" tabindex="-1"></a>wild_agg (monthly WILD aggregates)</span>
-<span id="cb1-216"><a href="#cb1-216" aria-hidden="true" tabindex="-1"></a>One row per wheel_id × recordmonth with statistics such as mean, median, 10pct, 90pct for:</span>
-<span id="cb1-217"><a href="#cb1-217" aria-hidden="true" tabindex="-1"></a>maxvertical, averagevertical, dynamicvertical, dynamicratio.</span>
-<span id="cb1-218"><a href="#cb1-218" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-219"><a href="#cb1-219" aria-hidden="true" tabindex="-1"></a>clean_failure_data (wheel installs &amp; outcomes)</span>
-<span id="cb1-220"><a href="#cb1-220" aria-hidden="true" tabindex="-1"></a>One row per wheel install (uniquely: equipment × truck × axle × side × applieddate), including:</span>
-<span id="cb1-221"><a href="#cb1-221" aria-hidden="true" tabindex="-1"></a>wheel_id, applieddate_used (normalized install date), current observation recordmonth, and failurereason (with "not failed" for non-failures).</span>
-<span id="cb1-222"><a href="#cb1-222" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-223"><a href="#cb1-223" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Merge window &amp; sampling</span></span>
-<span id="cb1-224"><a href="#cb1-224" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-225"><a href="#cb1-225" aria-hidden="true" tabindex="-1"></a>A merge on wheel_id joins WILD with installs, then rows are filtered to the window</span>
-<span id="cb1-226"><a href="#cb1-226" aria-hidden="true" tabindex="-1"></a>recordmonth_wild ∈ <span class="co">[</span><span class="ot">applieddate_used, recordmonth</span><span class="co">]</span></span>
-<span id="cb1-227"><a href="#cb1-227" aria-hidden="true" tabindex="-1"></a>so we only keep WILD months observed between install and the analysis month for that wheel.</span>
-<span id="cb1-228"><a href="#cb1-228" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-229"><a href="#cb1-229" aria-hidden="true" tabindex="-1"></a>For plots, a small sample of wheels per failure reason is selected (e.g., 15 per class). These samples are for visualization only.</span>
+<span id="cb1-211"><a href="#cb1-211" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Load &amp; deduplicate. Reads mileage, parses recordmonth, drops exact duplicate rows.</span>
+<span id="cb1-212"><a href="#cb1-212" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Fill legacy NAs (pre-2025).</span>
+<span id="cb1-213"><a href="#cb1-213" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>For rows with recordmonth &lt; 2025-01-01, fills NAs with 0 in:</span>
+<span id="cb1-214"><a href="#cb1-214" aria-hidden="true" tabindex="-1"></a>    addedmileage, loadedtravelledmiles, emptytravelledmiles.</span>
+<span id="cb1-215"><a href="#cb1-215" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Pre-clean diagnostics.</span>
+<span id="cb1-216"><a href="#cb1-216" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Computes loaded_and_empty = emptytravelledmiles + loadedtravelledmiles and plots it against addedmileage to visualize alignment (or gaps).</span>
+<span id="cb1-217"><a href="#cb1-217" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Row-level reconciliation (clean_mileage).</span>
+<span id="cb1-218"><a href="#cb1-218" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>For rows where components and totals disagree or are zeroed, applies a set of fixes and tags the action taken in fix_used:</span>
+<span id="cb1-219"><a href="#cb1-219" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>If addedmileage == 0 and next month’s totalmileage is available, computes an expected added (next_total − current_total) and tags _added_initFix (no overwrite in this version—diagnostic tag only).</span>
+<span id="cb1-220"><a href="#cb1-220" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>If components are both positive and sum exceeds addedmileage, sets addedmileage = loaded + empty and tags _addedFix.</span>
+<span id="cb1-221"><a href="#cb1-221" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Consecutive-month consistency (fix_mileage_consistency_consecutive).</span>
+<span id="cb1-222"><a href="#cb1-222" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>For each equipmentnumber, enforces (when months are consecutive):</span>
+<span id="cb1-223"><a href="#cb1-223" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>totalmileage<span class="co">[</span><span class="ot">i</span><span class="co">]</span> ≥ totalmileage<span class="co">[</span><span class="ot">i−1</span><span class="co">]</span> + addedmileage<span class="co">[</span><span class="ot">i</span><span class="co">]</span>.</span>
+<span id="cb1-224"><a href="#cb1-224" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>If violated, increases totalmileage<span class="co">[</span><span class="ot">i</span><span class="co">]</span> to match the expected sum and flags is_mileage_fixed = True.</span>
+<span id="cb1-225"><a href="#cb1-225" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-226"><a href="#cb1-226" aria-hidden="true" tabindex="-1"></a>Once the cleaning is done, loaded mileage + empty mileage ~ added mileage</span>
+<span id="cb1-227"><a href="#cb1-227" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-228"><a href="#cb1-228" aria-hidden="true" tabindex="-1"></a><span class="al">![Loaded + Empty Mileage vs Added Mileage before Mileage Data Cleaning](images/Loaded+EmptyVsAddedMiles.png)</span></span>
+<span id="cb1-229"><a href="#cb1-229" aria-hidden="true" tabindex="-1"></a><span class="al">![Loaded + Empty Mileage vs Added Mileage after Mileage Data Cleaning](images/Cleaned_Loaded+EmptyVsAddedMiles.png)</span></span>
 <span id="cb1-230"><a href="#cb1-230" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-231"><a href="#cb1-231" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Timeseries plots (monthly WILD)</span></span>
+<span id="cb1-231"><a href="#cb1-231" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Slopes and changepoints</span></span>
 <span id="cb1-232"><a href="#cb1-232" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-233"><a href="#cb1-233" aria-hidden="true" tabindex="-1"></a>For each sampled wheel, for each metric/stat combination:</span>
-<span id="cb1-234"><a href="#cb1-234" aria-hidden="true" tabindex="-1"></a>Metrics: maxvertical, averagevertical, dynamicvertical, dynamicratio.</span>
-<span id="cb1-235"><a href="#cb1-235" aria-hidden="true" tabindex="-1"></a>Stats: 10pct, 90pct, mean, median.</span>
-<span id="cb1-236"><a href="#cb1-236" aria-hidden="true" tabindex="-1"></a>Plot a monthly line from install to outcome with:</span>
-<span id="cb1-237"><a href="#cb1-237" aria-hidden="true" tabindex="-1"></a>A vertical line at install and (if applicable) another at failure.</span>
-<span id="cb1-238"><a href="#cb1-238" aria-hidden="true" tabindex="-1"></a>If failurereason == "not failed", the series is censored at “today” for the plot (to show how far we’ve observed it without failure).</span>
-<span id="cb1-239"><a href="#cb1-239" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-240"><a href="#cb1-240" aria-hidden="true" tabindex="-1"></a>Y-axis uses a per-wheel y_max so each plot comfortably fits that wheel’s range. I noticed the max_vertical showed a significant uptick for failure reason = 'High Impact' as shown in the figure below.</span>
-<span id="cb1-241"><a href="#cb1-241" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-242"><a href="#cb1-242" aria-hidden="true" tabindex="-1"></a><span class="al">![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure](images/821_C_3.0_R_2017-10-01_high_impact_maxvertical_90pct.png)</span></span>
-<span id="cb1-243"><a href="#cb1-243" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-244"><a href="#cb1-244" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-245"><a href="#cb1-245" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-246"><a href="#cb1-246" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-247"><a href="#cb1-247" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-248"><a href="#cb1-248" aria-hidden="true" tabindex="-1"></a>Results — Statistical tests on WILD vs. failure</span>
-<span id="cb1-249"><a href="#cb1-249" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-250"><a href="#cb1-250" aria-hidden="true" tabindex="-1"></a>Sample &amp; coverage. We analyzed 45,006 eligible wheel installs (rows in the ratios table after filtering).</span>
-<span id="cb1-251"><a href="#cb1-251" aria-hidden="true" tabindex="-1"></a>The class makeup of the data is as follows:</span>
+<span id="cb1-233"><a href="#cb1-233" aria-hidden="true" tabindex="-1"></a>Purpose.</span>
+<span id="cb1-234"><a href="#cb1-234" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-235"><a href="#cb1-235" aria-hidden="true" tabindex="-1"></a>Quantify mileage trends and structural breaks: per-install partmileage slopes and per-equipment totalmileage changepoints/segment slopes.</span>
+<span id="cb1-236"><a href="#cb1-236" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-237"><a href="#cb1-237" aria-hidden="true" tabindex="-1"></a>Key steps.</span>
+<span id="cb1-238"><a href="#cb1-238" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-239"><a href="#cb1-239" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Visual audit of missing metadata.</span>
+<span id="cb1-240"><a href="#cb1-240" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>For selected equipmentnumber values, plots partmileage timeseries; colors points by applieddate and draws vertical lines at each install date—useful to spot gaps/inconsistencies per (axle, truck, side).</span>
+<span id="cb1-241"><a href="#cb1-241" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Per-install partmileage slope.</span>
+<span id="cb1-242"><a href="#cb1-242" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>For each (wheel_id, applieddate) sequence:</span>
+<span id="cb1-243"><a href="#cb1-243" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Regresses partmileage on days since first observation (OLS).</span>
+<span id="cb1-244"><a href="#cb1-244" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Outputs coefficient (slope), intercept, r2, and count_good.</span>
+<span id="cb1-245"><a href="#cb1-245" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Aggregates to a mileage_slope_summary by wheel_id (mean/median/std).</span>
+<span id="cb1-246"><a href="#cb1-246" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Changepoints on total mileage (per equipment).</span>
+<span id="cb1-247"><a href="#cb1-247" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Runs abrupt changepoint detection on totalmileage (rows before 2025-01-01).</span>
+<span id="cb1-248"><a href="#cb1-248" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Stores number of breaks, boolean flags (e.g., is_last_seg_flat), and the list of change_months.</span>
+<span id="cb1-249"><a href="#cb1-249" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Marks change months in the cleaned table and assigns segment IDs by cumulative sum over change flags.</span>
+<span id="cb1-250"><a href="#cb1-250" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Segment-wise totalmileage slopes.</span>
+<span id="cb1-251"><a href="#cb1-251" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Fits OLS slopes within each (equipmentnumber, segment_id) block.</span>
 <span id="cb1-252"><a href="#cb1-252" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-253"><a href="#cb1-253" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>not failed 30,987 (68.9%),</span>
-<span id="cb1-254"><a href="#cb1-254" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>high impact 5,438 (12.1%),</span>
-<span id="cb1-255"><a href="#cb1-255" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>thin flange 3,783 (8.4%),</span>
-<span id="cb1-256"><a href="#cb1-256" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>high flange 3,500 (7.8%),</span>
-<span id="cb1-257"><a href="#cb1-257" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>other 1,298 (2.9%).</span>
-<span id="cb1-258"><a href="#cb1-258" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-259"><a href="#cb1-259" aria-hidden="true" tabindex="-1"></a>We merged monthly WILD aggregates with the wheel-level table and restricted each sequence to months between install and the analysis month. For end-behavior, we required ≥4 pre-last months per install, then computed:</span>
-<span id="cb1-260"><a href="#cb1-260" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-261"><a href="#cb1-261" aria-hidden="true" tabindex="-1"></a>End mean: mean_maxvertical_90pct_end = mean of the last 3 months.</span>
+<span id="cb1-253"><a href="#cb1-253" aria-hidden="true" tabindex="-1"></a>Keep the slopes and a summary filtered to stronger trends (e.g., coefficient &gt; 0.3).</span>
+<span id="cb1-254"><a href="#cb1-254" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-255"><a href="#cb1-255" aria-hidden="true" tabindex="-1"></a><span class="al">![How Mileage Progresses over time for one wheel with different applied dates. (Equipment number 721 is shown)](images/C-4.0-R.png)</span></span>
+<span id="cb1-256"><a href="#cb1-256" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-257"><a href="#cb1-257" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-258"><a href="#cb1-258" aria-hidden="true" tabindex="-1"></a>Since we know that mileage information has a 3-month lag, I decided to add the projected partmileage, and loaded to empty ratio of the mileage as the features into the model. </span>
+<span id="cb1-259"><a href="#cb1-259" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-260"><a href="#cb1-260" aria-hidden="true" tabindex="-1"></a><span class="fu">### Joining Datasets</span></span>
+<span id="cb1-261"><a href="#cb1-261" aria-hidden="true" tabindex="-1"></a>All the datasets do not have all the relevant primary keys to join them together. So to make sure the joins are appropriate, I started with the failure data. As mentioned earlier, failure data is processed such that each row represent the end condition of the wheel as it is replaced (either because it failed or for any other reason). This data contains all the information that can be used to uniquely identify a wheel, as well as the date when the replacement happened. With this information, I can join in the WILD data aggregated (which contains equipment number, truck, axle and side). I can ensure that only the data in the months between the date when the wheel was installed, and the date when the wheel was replaced is to be used).</span>
 <span id="cb1-262"><a href="#cb1-262" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-263"><a href="#cb1-263" aria-hidden="true" tabindex="-1"></a>End escalation: maxvertical_90pct_end_ratio = (mean of last 3 months) ÷ (value 4th from the end).</span>
-<span id="cb1-264"><a href="#cb1-264" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-265"><a href="#cb1-265" aria-hidden="true" tabindex="-1"></a>Variance check. Levene’s test for the end-window escalation metric (maxvertical_90pct_end_ratio) was highly significant (p = 9.77×10⁻⁷⁵), indicating unequal variances across failure reasons. We therefore used Welch’s ANOVA. The Welch’s ANOVA showed a very large and highly significant difference between the End Means between failure reason (F(4, 5982.56) = 10410.34, p ≈ 0, partial η² = 0.507).</span>
-<span id="cb1-266"><a href="#cb1-266" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-267"><a href="#cb1-267" aria-hidden="true" tabindex="-1"></a>Figure references.</span>
-<span id="cb1-268"><a href="#cb1-268" aria-hidden="true" tabindex="-1"></a>Box/violin plots and a joint scatter were saved at:</span>
+<span id="cb1-263"><a href="#cb1-263" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-264"><a href="#cb1-264" aria-hidden="true" tabindex="-1"></a><span class="fu">## Observations</span></span>
+<span id="cb1-265"><a href="#cb1-265" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-266"><a href="#cb1-266" aria-hidden="true" tabindex="-1"></a><span class="fu">### EDA (WILD vs FAILURE)</span></span>
+<span id="cb1-267"><a href="#cb1-267" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-268"><a href="#cb1-268" aria-hidden="true" tabindex="-1"></a>From monthly WILD aggregates and the cleaned failure table, I  visualize:</span>
 <span id="cb1-269"><a href="#cb1-269" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-270"><a href="#cb1-270" aria-hidden="true" tabindex="-1"></a>plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndRatio_Box.png</span>
+<span id="cb1-270"><a href="#cb1-270" aria-hidden="true" tabindex="-1"></a>Per-wheel timeseries of WILD features between install and failure (or censoring).</span>
 <span id="cb1-271"><a href="#cb1-271" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-272"><a href="#cb1-272" aria-hidden="true" tabindex="-1"></a>plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndRatio_Violin.png</span>
+<span id="cb1-272"><a href="#cb1-272" aria-hidden="true" tabindex="-1"></a>Distribution comparisons (box/violin) of WILD features at aligned months, by failure class.</span>
 <span id="cb1-273"><a href="#cb1-273" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-274"><a href="#cb1-274" aria-hidden="true" tabindex="-1"></a>plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndValuesAnalysis.png</span>
+<span id="cb1-274"><a href="#cb1-274" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Data inputs</span></span>
 <span id="cb1-275"><a href="#cb1-275" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-276"><a href="#cb1-276" aria-hidden="true" tabindex="-1"></a>plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndValues_Violin.png</span>
-<span id="cb1-277"><a href="#cb1-277" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-278"><a href="#cb1-278" aria-hidden="true" tabindex="-1"></a>plots/WILD-EDA/HighImpact vs Others_MaxVerticalScatterPlot.png</span>
+<span id="cb1-276"><a href="#cb1-276" aria-hidden="true" tabindex="-1"></a>wild_agg (monthly WILD aggregates)</span>
+<span id="cb1-277"><a href="#cb1-277" aria-hidden="true" tabindex="-1"></a>One row per wheel_id × recordmonth with statistics such as mean, median, 10pct, 90pct for:</span>
+<span id="cb1-278"><a href="#cb1-278" aria-hidden="true" tabindex="-1"></a>maxvertical, averagevertical, dynamicvertical, dynamicratio.</span>
 <span id="cb1-279"><a href="#cb1-279" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-280"><a href="#cb1-280" aria-hidden="true" tabindex="-1"></a><span class="fu">### Distribution of failure data.</span></span>
-<span id="cb1-281"><a href="#cb1-281" aria-hidden="true" tabindex="-1"></a>Most frequently occuring </span>
-<span id="cb1-282"><a href="#cb1-282" aria-hidden="true" tabindex="-1"></a><span class="fu">### High Impact. </span></span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
+<span id="cb1-280"><a href="#cb1-280" aria-hidden="true" tabindex="-1"></a>clean_failure_data (wheel installs &amp; outcomes)</span>
+<span id="cb1-281"><a href="#cb1-281" aria-hidden="true" tabindex="-1"></a>One row per wheel install (uniquely: equipment × truck × axle × side × applieddate), including:</span>
+<span id="cb1-282"><a href="#cb1-282" aria-hidden="true" tabindex="-1"></a>wheel_id, applieddate_used (normalized install date), current observation recordmonth, and failurereason (with "not failed" for non-failures).</span>
+<span id="cb1-283"><a href="#cb1-283" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-284"><a href="#cb1-284" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Merge window &amp; sampling</span></span>
+<span id="cb1-285"><a href="#cb1-285" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-286"><a href="#cb1-286" aria-hidden="true" tabindex="-1"></a>A merge on wheel_id joins WILD with installs, then rows are filtered to the window</span>
+<span id="cb1-287"><a href="#cb1-287" aria-hidden="true" tabindex="-1"></a>recordmonth_wild ∈ <span class="co">[</span><span class="ot">applieddate_used, recordmonth</span><span class="co">]</span></span>
+<span id="cb1-288"><a href="#cb1-288" aria-hidden="true" tabindex="-1"></a>so we only keep WILD months observed between install and the analysis month for that wheel.</span>
+<span id="cb1-289"><a href="#cb1-289" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-290"><a href="#cb1-290" aria-hidden="true" tabindex="-1"></a>For plots, a small sample of wheels per failure reason is selected (e.g., 15 per class). These samples are for visualization only.</span>
+<span id="cb1-291"><a href="#cb1-291" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-292"><a href="#cb1-292" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Timeseries plots (monthly WILD)</span></span>
+<span id="cb1-293"><a href="#cb1-293" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-294"><a href="#cb1-294" aria-hidden="true" tabindex="-1"></a>For each sampled wheel, for each metric/stat combination:</span>
+<span id="cb1-295"><a href="#cb1-295" aria-hidden="true" tabindex="-1"></a>Metrics: maxvertical, averagevertical, dynamicvertical, dynamicratio.</span>
+<span id="cb1-296"><a href="#cb1-296" aria-hidden="true" tabindex="-1"></a>Stats: 10pct, 90pct, mean, median.</span>
+<span id="cb1-297"><a href="#cb1-297" aria-hidden="true" tabindex="-1"></a>Plot a monthly line from install to outcome with:</span>
+<span id="cb1-298"><a href="#cb1-298" aria-hidden="true" tabindex="-1"></a>A vertical line at install and (if applicable) another at failure.</span>
+<span id="cb1-299"><a href="#cb1-299" aria-hidden="true" tabindex="-1"></a>If failurereason == "not failed", the series is censored at “today” for the plot (to show how far we’ve observed it without failure).</span>
+<span id="cb1-300"><a href="#cb1-300" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-301"><a href="#cb1-301" aria-hidden="true" tabindex="-1"></a>Y-axis uses a per-wheel y_max so each plot comfortably fits that wheel’s range. I noticed the max_vertical showed a significant uptick for failure reason = 'High Impact' as shown in the figures below.</span>
+<span id="cb1-302"><a href="#cb1-302" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-303"><a href="#cb1-303" aria-hidden="true" tabindex="-1"></a><span class="al">![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 1)](images/821_C_3.0_R_2017-10-01_high_impact_maxvertical_90pct.png)</span></span>
+<span id="cb1-304"><a href="#cb1-304" aria-hidden="true" tabindex="-1"></a><span class="al">![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 2)](3_D_6.0_L_2016-07-01_high_impact_maxvertical_90pct.png)</span></span>
+<span id="cb1-305"><a href="#cb1-305" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-306"><a href="#cb1-306" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-307"><a href="#cb1-307" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Results — Statistical tests on WILD vs. failure</span></span>
+<span id="cb1-308"><a href="#cb1-308" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-309"><a href="#cb1-309" aria-hidden="true" tabindex="-1"></a>Sample &amp; coverage: We analyzed 45,006 eligible wheel installs (rows in the ratios table after filtering).</span>
+<span id="cb1-310"><a href="#cb1-310" aria-hidden="true" tabindex="-1"></a>The class makeup of the data is as follows:</span>
+<span id="cb1-311"><a href="#cb1-311" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-312"><a href="#cb1-312" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>not failed 30,987 (68.9%),</span>
+<span id="cb1-313"><a href="#cb1-313" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>high impact 5,438 (12.1%),</span>
+<span id="cb1-314"><a href="#cb1-314" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>thin flange 3,783 (8.4%),</span>
+<span id="cb1-315"><a href="#cb1-315" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>high flange 3,500 (7.8%),</span>
+<span id="cb1-316"><a href="#cb1-316" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>other 1,298 (2.9%).</span>
+<span id="cb1-317"><a href="#cb1-317" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-318"><a href="#cb1-318" aria-hidden="true" tabindex="-1"></a>We merged monthly WILD aggregates with the wheel-level table and restricted each sequence to months between install and the analysis month. For end-behavior, we required ≥4 pre-last months per install, then computed:</span>
+<span id="cb1-319"><a href="#cb1-319" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-320"><a href="#cb1-320" aria-hidden="true" tabindex="-1"></a>End mean: mean_maxvertical_90pct_end = mean of the last 3 months.</span>
+<span id="cb1-321"><a href="#cb1-321" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-322"><a href="#cb1-322" aria-hidden="true" tabindex="-1"></a>End escalation: maxvertical_90pct_end_ratio = (mean of last 3 months) ÷ (value 4th from the end).</span>
+<span id="cb1-323"><a href="#cb1-323" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-324"><a href="#cb1-324" aria-hidden="true" tabindex="-1"></a>Variance check. Levene’s test for the end-window escalation metric (maxvertical_90pct_end_ratio) was highly significant (p = 9.77×10⁻⁷⁵), indicating unequal variances across failure reasons. We therefore used Welch’s ANOVA. The Welch’s ANOVA showed a very large and highly significant difference between the End Means between failure reason (F(4, 5982.56) = 10410.34, p ≈ 0, partial η² = 0.507).</span>
+<span id="cb1-325"><a href="#cb1-325" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-326"><a href="#cb1-326" aria-hidden="true" tabindex="-1"></a>We could also visualize it via the violin plot showing the max_vertical (90pct) comparison between high impact failure vs all other failures</span>
+<span id="cb1-327"><a href="#cb1-327" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-328"><a href="#cb1-328" aria-hidden="true" tabindex="-1"></a><span class="al">![Violin Plot for Max Vertical (High Impact Failure vs Others)](violin_plot_is_high_impact_maxvertical-90pct.png)</span></span>
+<span id="cb1-329"><a href="#cb1-329" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-330"><a href="#cb1-330" aria-hidden="true" tabindex="-1"></a>Figure references.</span>
+<span id="cb1-331"><a href="#cb1-331" aria-hidden="true" tabindex="-1"></a>Box/violin plots and a joint scatter were saved at:</span>
+<span id="cb1-332"><a href="#cb1-332" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-333"><a href="#cb1-333" aria-hidden="true" tabindex="-1"></a>plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndRatio_Box.png</span>
+<span id="cb1-334"><a href="#cb1-334" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-335"><a href="#cb1-335" aria-hidden="true" tabindex="-1"></a>plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndRatio_Violin.png</span>
+<span id="cb1-336"><a href="#cb1-336" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-337"><a href="#cb1-337" aria-hidden="true" tabindex="-1"></a>plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndValuesAnalysis.png</span>
+<span id="cb1-338"><a href="#cb1-338" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-339"><a href="#cb1-339" aria-hidden="true" tabindex="-1"></a>plots/WILD-EDA/HighImpact vs Others_MaxVerticalEndValues_Violin.png</span>
+<span id="cb1-340"><a href="#cb1-340" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-341"><a href="#cb1-341" aria-hidden="true" tabindex="-1"></a>plots/WILD-EDA/HighImpact vs Others_MaxVerticalScatterPlot.png</span>
+<span id="cb1-342"><a href="#cb1-342" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-343"><a href="#cb1-343" aria-hidden="true" tabindex="-1"></a><span class="fu">### Distribution of failure data.</span></span>
+<span id="cb1-344"><a href="#cb1-344" aria-hidden="true" tabindex="-1"></a>Most frequently occuring </span>
+<span id="cb1-345"><a href="#cb1-345" aria-hidden="true" tabindex="-1"></a><span class="fu">### High Impact. </span></span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 
