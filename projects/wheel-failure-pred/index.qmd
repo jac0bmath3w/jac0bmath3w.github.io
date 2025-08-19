@@ -10,7 +10,7 @@ format:
     code-tools: true
 ---
 
-In this post, I go into details of how I attempted to solve the problem to predict the likelihood of a train wheel failure in the upcoming months.
+In this post, I go into details of how I attempted to solve the problem to predict the likelihood of a train wheel failure in the upcoming months. The source of the data and more details of the problem is available at https://www.kaggle.com/competitions/informs-ras-2025-problem-solving-competition/
 
 Abstract
 
