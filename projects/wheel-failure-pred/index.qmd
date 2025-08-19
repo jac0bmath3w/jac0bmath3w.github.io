@@ -356,41 +356,54 @@ Since WPD data contains information about flange height and flange thickness, I 
 
 ## Model
 
-Only one model was tried as I had other committments.
+### Train and Validation Split
 
-### Feature engineering & alignment (the three helpers)
 
-#### update_failure_data(...) — enrich the wheel-level table
-
-Purpose. Add simple, interpretable covariates to each wheel-month row before telemetry joins: prior failure count, a loaded-mileage ratio, and an equipment-level mileage slope.
+Purpose.
+Create reproducible train/validation datasets from the cleaned wheel table for downstream modeling. The split preserves the class mix of failurereason (stratified) and saves both subsets to versioned folders.
 
 Inputs.
 
-failure_data: wheel-level table with wheel_id, equipmentnumber, recordmonth, applieddate_used, failedin30days, partmileage, …
 
-mileage_ratio_summary: per-equipment table with trimmed_mean of loaded_to_added ratio
+- Cleaned wheel table (created earlier)
+- Parameter of interest (val_data_frac = 0.10 → 10% of rows are set aside for validation; 90% for training.)
 
-totalmileage_slope_summary: per-equipment table with coefficient_mean from totalmileage segment slopes
+
+####  Preprocessing (one row per install).
+
+- Sort rows by failedin30days (descending).
+- Drop duplicates on ["wheel_id", "applieddate_used"], keeping the first occurrence.
+Net effect: if multiple rows exist for the same wheel install, the kept row favors one with failedin30days = 1 (due to sorting).
+
+####  Split strategy.
+
+Use train_test_split with:
+- test_size = 0.10 (validation fraction from params)
+- stratify = failurereason (preserve label proportions)
+- random_state = 42 (reproducible shuffle)
+
+
+### Feature engineering & alignment
+
+The following functions help prepare the data to build the model. 
+
+#### update_failure_data(...) — enrich the wheel-level table
+
+Purpose.
+Add simple, interpretable covariates to each wheel-month row before joining other data. Features like prior failure count, a loaded-mileage ratio, and an equipment-level mileage slope are added.
+
+Inputs.
+
+- failure_data
+- mileage_ratio_summary
+- totalmileage_slope_summary
 
 Output. Same rows as failure_data, augmented with:
 
-n_prior_failure — cumulative # of earlier events for this wheel_id (per-install history, shifted so it’s strictly prior)
-
-loaded_ratio — equipment-level trimmed mean of loaded/added mileage
-
-loadedmileage — partmileage × loaded_ratio (quick proxy for the loaded share)
-
-mileage_slope — equipment-level mean slope of total mileage growth
-
-Logic.
-
-Sort by wheel_id, applieddate_used, recordmonth; compute cum_failures = cumsum(failedin30days) then shift to form prior failures.
-
-Left-join loaded_ratio and mileage_slope by equipmentnumber.
-
-Derive loadedmileage = partmileage × loaded_ratio.
-
-Why it matters. These three features capture history, usage mix, and fleet-level drift without touching the high-dimensional telemetry yet.
+- n_prior_failure — cumulative # of earlier events for this wheel_id (per-install history, shifted so it’s strictly prior)
+- loaded_ratio — equipment-level trimmed mean of loaded/added mileage
+- loadedmileage — partmileage × loaded_ratio (quick proxy for the loaded share)
+- mileage_slope — equipment-level mean slope of total mileage growth
 
 #### create_failure_wild(...) — align WILD months to each wheel’s window
 
@@ -398,41 +411,33 @@ Purpose. Attach monthly WILD aggregates to each wheel’s observation window—o
 
 Inputs.
 
-failure_data (after the update above)
-
-wild_agg: monthly WILD aggregates at the wheel level (wheel_id, recordmonth, feature stats)
+- failure_data (after the update above)
+- wild_agg: monthly WILD aggregates at the wheel level (wheel_id, recordmonth, feature stats)
 
 Output. A long table with all failure rows replicated across their valid WILD months, containing:
 
-recordmonth_wild — the WILD calendar month
+- recordmonth_wild — the WILD calendar month
+- All WILD feature stats for that month
+- The original failure columns for the matching wheel_id
 
-All WILD feature stats for that month
+Logic
 
-The original failure columns for the matching wheel_id
+- Chunk through wild_agg; in each chunk, rename recordmonth → recordmonth_wild and merge on wheel_id.
+- Filter to rows where recordmonth_wild ∈ [applieddate_used, recordmonth] so only post-install, pre-(or at)-outcome months remain.
+- Concatenate all chunks.
 
-Logic (in words).
+This yields a month-by-month panel per wheel that respects the install date and stops at the evaluation month—perfect for building calendar lags next.
 
-Chunk through wild_agg; in each chunk, rename recordmonth → recordmonth_wild and merge on wheel_id.
+#### generate_calendar_lags_with_applied_condition(...) — calendar-anchored lags
 
-Filter to rows where recordmonth_wild ∈ [applieddate_used, recordmonth] so only post-install, pre-(or at)-outcome months remain.
-
-Concatenate all chunks.
-
-Why it matters. This yields a month-by-month panel per wheel that respects the install date and stops at the evaluation month—perfect for building calendar lags next.
-
-#### generate_calendar_lags_with_applied_condition(...) — calendar-anchored lags, leakage-safe
-
-Purpose. For each wheel-month row, attach up to k months of historical values (lag1…lagk) for selected telemetry features—but never from before the wheel’s install date.
+Purpose. For each wheel-month row, attach up to k months of historical values (lag1…lagk) for selected features—but never from before the wheel’s install date.
 
 Inputs.
 
-df: the WILD-enriched failure table (from the function above)
-
-feature_cols: list of telemetry columns to lag (e.g., maxvertical_mean, …_90pct, geometry stats, alerts)
-
-Identifiers & dates: id_col (usually wheel_id), applied_col (applieddate_used), date_col (recordmonth_wild)
-
-trailing_months: number of calendar lags (default 6)
+- df: the WILD-enriched failure table (from the function above)
+- feature_cols: list of telemetry columns to lag (e.g., maxvertical_mean, …_90pct, geometry stats, alerts)
+- Identifiers & dates: id_col (usually wheel_id), applied_col (applieddate_used), date_col (recordmonth_wild)
+- trailing_months: number of calendar lags (default 6)
 
 Output.
 
@@ -442,72 +447,61 @@ A final alignment filter returns only rows where recordmonth_wild == recordmonth
 
 Logic.
 
-Sort by id_col, applied_col, date_col. Keep only the columns needed to compute lags.
+- Sort by id_col, applied_col, date_col. Keep only the columns needed to compute lags.
+- For each n = 1..k:
+  - Create a temporary copy where we shift the calendar forward by n months (lag_date = date_col + n months).
+  - Rename <feature> → <feature>_lagn and merge back on [id_col, applied_col, lag_date≡date_col].
+  - This effectively pulls the value at (t−n) onto the row at month t.
+- Guardrail: If (t − n) < applieddate_used, set those lag columns to NaN (no pre-install leakage).
+- Return only rows with recordmonth_wild == recordmonth to ensure the features and label are from the same calendar month.
 
-For each n = 1..k:
 
-Create a temporary copy where we shift the calendar forward by n months (lag_date = date_col + n months).
 
-Rename <feature> → <feature>_lagn and merge back on [id_col, applied_col, lag_date≡date_col].
+Lags are calendar-true (one per month), and not row-shifted. This way they keep the temporal signals. The install-date mask guarantees that early lags don’t peek before a wheel existed.  Including applied_col in the merge key keeps separate installs of the same wheel_id from bleeding into each other.
 
-This effectively pulls the value at (t−n) onto the row at month t.
+The following steps which utilize the above 3 functions are performed to gerneate the training data. 
 
-Guardrail: If (t − n) < applieddate_used, set those lag columns to NaN (no pre-install leakage).
+- Start with labeled splits (train_failure_data, val_failure_data).
+- Enrich with usage/history via update_failure_data(...).
+- Attach WILD panels via create_failure_wild(...).
+- Build leakage-safe calendar lags via generate_calendar_lags_with_applied_condition(...) (6 trailing months).
+- Join WPD (wheel) and THD (truck) on the same recordmonth_wild anchor; drop train-speed columns.
 
-Return only rows with recordmonth_wild == recordmonth to ensure the features and label are from the same calendar month.
+### Dimensionality control
 
-Why it matters.
+- High-corr pruning: Compute an absolute correlation matrix over numeric features and drop any feature whose correlation with a previous feature exceeds 0.70.
+- Administrative drops: Remove identifiers, timestamps, and non-predictive keys (e.g., wheel_id, truck_id, equipmentnumber, recordmonth(_wild), vendor/material codes, etc.).
+- Save  both the full lagged table and the reduced feature matrix for reproducibility.
 
-Lags are calendar-true (one per month), not row-shifted; they respect missing months.
+### Model & tuning
 
-The install-date mask guarantees that early lags don’t peek before a wheel existed.
+XGBoost was selected as the modelling approach. Using XGBoost, a multiclass model was fit. The details are given below. 
 
-Including applied_col in the merge key keeps separate installs of the same wheel_id from bleeding into each other.
+-  Model: XGBClassifier with objective="multi:softprob" (multiclass probabilities).
+- Target: failurereason (five classes).
+- Search: RandomizedSearchCV over standard XGB hyperparameters (depth, learning rate, trees, subsample, column subsample, gamma, min_child_weight, L1/L2).
+- CV: Stratified K-folds.
+- Primary metric: log loss (mlogloss / neg_log_loss).
+- Class weighting: Derives per-class weights from the validation distribution and applies them as sample weights during training to temper class imbalance.
+- Evaluation: Predict class probabilities on validation; report log loss.
 
-Where these sit in the modeling pipeline
+On the validation dataset, I achieved a log loss of 0.846. But it must be noted that the validation dataset is not synonymous to the test dataset 
 
-Start with labeled splits (train_failure_data, val_failure_data).
 
-Enrich with usage/history via update_failure_data(...).
+### Assumptions & design choices
 
-Attach WILD panels via create_failure_wild(...).
+Following summarizes the design choices I made to tackle this problem.
 
-Build leakage-safe calendar lags via generate_calendar_lags_with_applied_condition(...) (6 trailing months).
+- Number of models: Only 1 model, a multi class classifier was chosen. Ensemble model should be explored. 
+- Temporal leakage guard: Lags are generated post-install and aligned to record months, so the model only sees past telemetry relative to each target month.
+- Multicollinearity: A static 0.70 threshold is used for simplicity; SHAP/feature grouping could replace this later.
+- Class imbalance: Addressed via sample weights, not by down/up-sampling; preserves the full dataset.
+- Feature breadth over specificity: We include a wide panel of WILD/WPD/THD stats first, then let XGB + pruning do the heavy lifting.
 
-Join WPD (wheel) and THD (truck) on the same recordmonth_wild anchor; drop train-speed columns.
 
-#### Dimensionality control
+## Limitations & next steps
 
-High-corr pruning: Compute an absolute correlation matrix over numeric features and drop any feature whose correlation with a previous feature exceeds 0.70.
-
-Administrative drops: Remove identifiers, timestamps, and non-predictive keys (e.g., wheel_id, truck_id, equipmentnumber, recordmonth(_wild), vendor/material codes, etc.).
-
-Persist both the full lagged table and the reduced feature matrix for reproducibility.
-
-#### Model & tuning
-
-Model: XGBClassifier with objective="multi:softprob" (multiclass probabilities).
-
-Target: failurereason (five classes).
-
-Search: RandomizedSearchCV over standard XGB hyperparameters (depth, learning rate, trees, subsample, column subsample, gamma, min_child_weight, L1/L2).
-
-CV: Stratified K-folds.
-
-Primary metric: log loss (mlogloss / neg_log_loss).
-
-Class weighting: Derives per-class weights from the validation distribution and applies them as sample weights during training to temper class imbalance.
-
-Evaluation: Predict class probabilities on validation; report log loss. (Accuracy/confusion matrix can be added later if you like.)
-
-The script saves the tuned model via joblib.dump(...). The filename currently encodes the log-loss (e.g., xgboost_multiclass_model_ll:0.846.pkl), which makes model selection easy during iteration.
-
-Validity checks & edge cases (recommended to mention)
-
-Install boundaries: Verify that for early months after install, some lags are NA by design; that’s expected and correct.
-
-Multiple installs per wheel_id: Because merges include applieddate_used, features remain per-install, not just per wheel ID.
-
-Calendar gaps: The lagging is calendar-based; if a month is missing in WILD, the corresponding lag for that month won’t be back-filled—consider simple imputation in a later iteration if needed.
-
-Alignment: The final filter recordmonth_wild == recordmonth ensures features/label share the same month; if you ever switch to predicting future failure, remove this filter and re-define which month is the target.
+- Explainability: Add SHAP summaries to identify the most useful families/lags and to validate domain plausibility.
+- Temporal generalization: Consider time-based splits (e.g., train on older months, validate on newer) to mimic prospective performance.
+- Target framing: Multiclass reason is harder than failure vs not; a staged approach (binary failure first, then reason) could lift recall for rarer classes.
+- Different models for different failurereason: It was found that certain features may be useful for certain defect types. It may be worthwhile to try different models and create one ensemble model as the final one. 
