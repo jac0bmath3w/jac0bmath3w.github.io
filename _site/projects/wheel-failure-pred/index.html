@@ -205,6 +205,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#assumptions-design-choices" id="toc-assumptions-design-choices" class="nav-link" data-scroll-target="#assumptions-design-choices">Assumptions &amp; design choices</a></li>
   </ul></li>
   <li><a href="#limitations-next-steps" id="toc-limitations-next-steps" class="nav-link" data-scroll-target="#limitations-next-steps">Limitations &amp; Next Steps</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
   </ul>
 </nav>
     </div>
@@ -248,7 +249,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>In this post, I go into details of how I attempted to solve the problem to predict the likelihood of a train wheel failure in the upcoming months.</p>
+<p>In this post, I go into details of how I attempted to solve the problem to predict the likelihood of a train wheel failure in the upcoming months. The source of the data and more details of the problem is available at https://www.kaggle.com/competitions/informs-ras-2025-problem-solving-competition/</p>
+<p>Abstract</p>
+<p>This post documents a full, leakage-safe pipeline for predicting wheel failure reason on rail cars using monthly aggregates from WILD, THD, and WPD plus mileage-derived features. I first normalize the failure table to one row per wheel install (equipment × truck × axle × side × applieddate), then aggregate each detector stream to month-level summaries (mean/median/std/10th/90th percentiles, optional slopes). WILD is aligned to each install’s window (applieddate_used → recordmonth), and I build calendar lags over the prior 6 months while masking pre-install values. Additional covariates include prior failure count, loaded/added mileage ratio (per equipment), and total-mileage slopes from changepoint segments. After 90/10 stratified train/validation splitting and high-correlation pruning (|r|&gt;0.70), I fit a multiclass XGBoost model (soft probabilities, randomized search). Exploratory analysis and statistical tests show MaxVertical (90th percentile) tends to be higher and rising prior to high-impact failures. The model achieved a validation log loss ≈ 0.846; on a partial test subset with month-level rows, log loss was ≈ 0.207. I close with limitations (class imbalance, temporal generalization, per-defect nuances) and next steps (time-based splits, SHAP, calibration, and ensembles).</p>
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
 <p>Rail wheels are an important asset of the rail inventory, and any type of failure can be a safety hazard, even leading to derailment. Thus, regular maintainance and forward thinking predictive analytics plays a cruicial role in the safe operations of rail cars.</p>
@@ -703,6 +706,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Target framing: Multiclass reason is harder than failure vs not; a staged approach (binary failure first, then reason) could lift recall for rarer classes.</li>
 <li>Different models for different failurereason: It was found that certain features may be useful for certain defect types. It may be worthwhile to try different models and create one ensemble model as the final one.</li>
 </ul>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>This study demonstrates that a simple, disciplined pipeline—monthly aggregation, install-aware alignment, and calendar lags—can extract actionable signal for multiclass wheel-failure prediction. Among detectors, WILD (especially MaxVertical-90th) shows the clearest pre-failure escalation for high-impact events; analogous patterns for high-/thin-flange were weaker in THD/WPD. The XGBoost baseline, trained on a broad but pruned feature panel and guarded against leakage, produces well-calibrated probabilities (by design) and competitive log-loss on validation, with encouraging performance on a month-level test slice. That said, the framing (multiclass reason vs.&nbsp;failure/no-failure), temporal drift, and class imbalance remain open challenges. The most promising next steps are: (i) time-ordered evaluation to measure true prospective performance, (ii) explainability (SHAP) to confirm domain-plausible drivers, (iii) probability calibration for thresholding, and (iv) modeling variants—binary failure stage-1 followed by reason classification, per-defect specialists, and lightweight ensembles. With these additions—and mileage projection for late months formalized—the system should translate into more reliable, earlier warnings for rail operations.</p>
 
 
 <!-- -->
@@ -1172,502 +1179,511 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true</span></span>
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>In this post, I go into details of how I attempted to solve the problem to predict the likelihood of a train wheel failure in the upcoming months.</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>In this post, I go into details of how I attempted to solve the problem to predict the likelihood of a train wheel failure in the upcoming months. The source of the data and more details of the problem is available at https://www.kaggle.com/competitions/informs-ras-2025-problem-solving-competition/</span>
 <span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="fu">##  Introduction</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>Abstract</span>
 <span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>Rail wheels are an important asset of the rail inventory, and any type of failure can be a safety hazard, even leading to derailment. Thus, regular maintainance and forward thinking predictive analytics plays a cruicial role in the safe operations of rail cars.</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>This post documents a full, leakage-safe pipeline for predicting wheel failure reason on rail cars using monthly aggregates from WILD, THD, and WPD plus mileage-derived features. I first normalize the failure table to one row per wheel install (equipment × truck × axle × side × applieddate), then aggregate each detector stream to month-level summaries (mean/median/std/10th/90th percentiles, optional slopes). WILD is aligned to each install’s window (applieddate_used → recordmonth), and I build calendar lags over the prior 6 months while masking pre-install values. Additional covariates include prior failure count, loaded/added mileage ratio (per equipment), and total-mileage slopes from changepoint segments. After 90/10 stratified train/validation splitting and high-correlation pruning (|r|&gt;0.70), I fit a multiclass XGBoost model (soft probabilities, randomized search). Exploratory analysis and statistical tests show MaxVertical (90th percentile) tends to be higher and rising prior to high-impact failures. The model achieved a validation log loss ≈ 0.846; on a partial test subset with month-level rows, log loss was ≈ 0.207. I close with limitations (class imbalance, temporal generalization, per-defect nuances) and next steps (time-based splits, SHAP, calibration, and ensembles).</span>
 <span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>In this problem, there are 3 specific types of wheel failures that are being considered. Any other type of failure is grouped into one category 'Other'. The 3 types are</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="fu">##  Introduction</span></span>
 <span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>High Impact</span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>High Flange</span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Thin Flange</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>Rail wheels are an important asset of the rail inventory, and any type of failure can be a safety hazard, even leading to derailment. Thus, regular maintainance and forward thinking predictive analytics plays a cruicial role in the safe operations of rail cars.</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>In this problem, there are 3 specific types of wheel failures that are being considered. Any other type of failure is grouped into one category 'Other'. The 3 types are</span>
 <span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="fu">## Data</span></span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>To uniquely identify a wheel for this problem, I looked at the following features:</span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Equipment (uniquely identified by the equipment number)</span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Truck (Uniquely identified by the column 'truck')</span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Axle number (Number to represent the axle within a truck)</span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Side (Left or Right wheel on the axle).</span>
-<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Applied Date (The date when the wheel was installed). </span>
-<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>For this analysis 4 data sources are combined:</span>
-<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="fu">### WILD data (Wheel Impact Load Detector)</span></span>
-<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>Wild data consist of wheel impacts measured at different WILD stations spread across the network. It gives information about when the measurement was made, the impact (or load). Different columns give information about the max vertical impact, average vertical impact, dynamic ratio etc.</span>
-<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>High Impact</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>High Flange</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Thin Flange</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="fu">## Data</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>To uniquely identify a wheel for this problem, I looked at the following features:</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Equipment (uniquely identified by the equipment number)</span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Truck (Uniquely identified by the column 'truck')</span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Axle number (Number to represent the axle within a truck)</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Side (Left or Right wheel on the axle).</span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Applied Date (The date when the wheel was installed). </span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>For this analysis 4 data sources are combined:</span>
 <span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a><span class="fu">### THD data (Truck Hunting Detector)</span></span>
-<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>This dataset contains information indicating when the rail wheels are oscillating excessively. This is measured by hunting index.</span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a><span class="fu">### WILD data (Wheel Impact Load Detector)</span></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>Wild data consist of wheel impacts measured at different WILD stations spread across the network. It gives information about when the measurement was made, the impact (or load). Different columns give information about the max vertical impact, average vertical impact, dynamic ratio etc.</span>
 <span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a><span class="fu">### WPD data (Wheel Profile Detector)</span></span>
-<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a>This dataset consists information about the measurements of the wheel. It includes flange height, flange width, slope etc.</span>
-<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a><span class="fu">### Mileage Data</span></span>
-<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a>This dataset provides information about how many miles each equipment travelled each month. It was also pointed out that mileage information is only available with a 3 month lag, indicating that a sub-model is required to predict where how far each wheel would have travelled during the months that we need to predict. </span>
-<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a><span class="fu">### Wheel Failure Data</span></span>
-<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a>We also have wheel failure data giving information about the month a particular wheel failed and the reason for failure.</span>
-<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a>The failure data contains information for each month. So, once a wheel is installed, we have information about the wheel till it failed or is replaced (all the rows for a wheel would have the column 'failedin30days' == 0 until the last row (unless it is replaced without failure). </span>
-<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a>The data for any particular wheel under the WILD, THD, and WPD would only be available if a wheel passes thru the sensor. So it may be possible that we don't have any data for some months.</span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a><span class="fu">### THD data (Truck Hunting Detector)</span></span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>This dataset contains information indicating when the rail wheels are oscillating excessively. This is measured by hunting index.</span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a><span class="fu">### WPD data (Wheel Profile Detector)</span></span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a>This dataset consists information about the measurements of the wheel. It includes flange height, flange width, slope etc.</span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a><span class="fu">### Mileage Data</span></span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a>This dataset provides information about how many miles each equipment travelled each month. It was also pointed out that mileage information is only available with a 3 month lag, indicating that a sub-model is required to predict where how far each wheel would have travelled during the months that we need to predict. </span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a><span class="fu">### Wheel Failure Data</span></span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a>We also have wheel failure data giving information about the month a particular wheel failed and the reason for failure.</span>
 <span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a><span class="fu">## Data Processing Methodology </span></span>
-<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a>Given the data is a time series (for each wheel, historic data is available over a period of time), we could look at this problem as a signal processing problem.</span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>The failure data contains information for each month. So, once a wheel is installed, we have information about the wheel till it failed or is replaced (all the rows for a wheel would have the column 'failedin30days' == 0 until the last row (unless it is replaced without failure). </span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>The data for any particular wheel under the WILD, THD, and WPD would only be available if a wheel passes thru the sensor. So it may be possible that we don't have any data for some months.</span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a><span class="fu">### Data Processing</span></span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a><span class="fu">## Data Processing Methodology </span></span>
 <span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Aggregation of data</span></span>
-<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a>I developed a function that aggregates data at a monthly level. I look at different aggregation methods including, mean, trimmed mean, median, 90 percentile, 10 percentile, etc. My reasoning are as following:</span>
+<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a>Given the data is a time series (for each wheel, historic data is available over a period of time), we could look at this problem as a signal processing problem.</span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a><span class="fu">### Data Processing</span></span>
 <span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>the objective of this problem is to make a prediction for the upcoming month. The prediction is made at a montly level. So it makes sense to have the datra at the montlhy level.</span>
-<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>This procedure greatly reduces the memory requirements as we are now only storing the aggregated data (which is useful as I am using a processor with only 8 Gigs of RAM).</span>
-<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Methodology for Data Aggregation</span></span>
-<span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-74"><a href="#cb2-74" aria-hidden="true" tabindex="-1"></a>I take raw WPD/THD/WILD time-series and rolling them up to one row per wheel per month, producing a bundle of summary stats (mean/median/std/percentiles/etc.)—plus optional trend (slope)—so those features can be joined to your wheel-level failure table for EDA or modeling.</span>
+<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Aggregation of data</span></span>
+<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a>I developed a function that aggregates data at a monthly level. I look at different aggregation methods including, mean, trimmed mean, median, 90 percentile, 10 percentile, etc. My reasoning are as following:</span>
+<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>the objective of this problem is to make a prediction for the upcoming month. The prediction is made at a montly level. So it makes sense to have the datra at the montlhy level.</span>
+<span id="cb2-74"><a href="#cb2-74" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>This procedure greatly reduces the memory requirements as we are now only storing the aggregated data (which is useful as I am using a processor with only 8 Gigs of RAM).</span>
 <span id="cb2-75"><a href="#cb2-75" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-76"><a href="#cb2-76" aria-hidden="true" tabindex="-1"></a>The relevant functions to achieve this output include:</span>
+<span id="cb2-76"><a href="#cb2-76" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Methodology for Data Aggregation</span></span>
 <span id="cb2-77"><a href="#cb2-77" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a><span class="ss">1.  </span>_aggregate_single_group(...) — summarize one (wheel_id, month) group</span>
+<span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a>I take raw WPD/THD/WILD time-series and rolling them up to one row per wheel per month, producing a bundle of summary stats (mean/median/std/percentiles/etc.)—plus optional trend (slope)—so those features can be joined to your wheel-level failure table for EDA or modeling.</span>
 <span id="cb2-79"><a href="#cb2-79" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a>  Inputs (via the args tuple):</span>
+<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a>The relevant functions to achieve this output include:</span>
 <span id="cb2-81"><a href="#cb2-81" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-82"><a href="#cb2-82" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>(entity_id, month): the group key (e.g., a wheel_id and its recordmonth).</span>
-<span id="cb2-83"><a href="#cb2-83" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>group: the pandas DataFrame slice for that key.</span>
-<span id="cb2-84"><a href="#cb2-84" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>id_col, date_col, agg_date_col: column names for ID, raw timestamp, and month.</span>
-<span id="cb2-85"><a href="#cb2-85" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>agg_config: dict like {column_name: <span class="co">[</span><span class="ot">list of stats</span><span class="co">]</span>} that drives what to compute.</span>
-<span id="cb2-86"><a href="#cb2-86" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-87"><a href="#cb2-87" aria-hidden="true" tabindex="-1"></a>What it does:</span>
-<span id="cb2-88"><a href="#cb2-88" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-89"><a href="#cb2-89" aria-hidden="true" tabindex="-1"></a>Starts a result row = {id_col: entity_id, agg_date_col: month}.</span>
+<span id="cb2-82"><a href="#cb2-82" aria-hidden="true" tabindex="-1"></a><span class="ss">1.  </span>_aggregate_single_group(...) — summarize one (wheel_id, month) group</span>
+<span id="cb2-83"><a href="#cb2-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-84"><a href="#cb2-84" aria-hidden="true" tabindex="-1"></a>  Inputs (via the args tuple):</span>
+<span id="cb2-85"><a href="#cb2-85" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-86"><a href="#cb2-86" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>(entity_id, month): the group key (e.g., a wheel_id and its recordmonth).</span>
+<span id="cb2-87"><a href="#cb2-87" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>group: the pandas DataFrame slice for that key.</span>
+<span id="cb2-88"><a href="#cb2-88" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>id_col, date_col, agg_date_col: column names for ID, raw timestamp, and month.</span>
+<span id="cb2-89"><a href="#cb2-89" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>agg_config: dict like {column_name: <span class="co">[</span><span class="ot">list of stats</span><span class="co">]</span>} that drives what to compute.</span>
 <span id="cb2-90"><a href="#cb2-90" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-91"><a href="#cb2-91" aria-hidden="true" tabindex="-1"></a>For each col listed in agg_config (and present in group), it computes</span>
-<span id="cb2-92"><a href="#cb2-92" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>The requested statistics, (e.g., mean, std, count, sum, median)</span>
-<span id="cb2-93"><a href="#cb2-93" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Percentiles: 10pct and 90pct via np.percentile(...)</span>
-<span id="cb2-94"><a href="#cb2-94" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Trimmed_mean </span>
-<span id="cb2-95"><a href="#cb2-95" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Slope via compute_slope(series, group<span class="co">[</span><span class="ot">date_col</span><span class="co">]</span>) (trend within the month)</span>
-<span id="cb2-96"><a href="#cb2-96" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-97"><a href="#cb2-97" aria-hidden="true" tabindex="-1"></a>Each stat is stored as f"{col}_{stat}" (e.g., averagevertical_mean).</span>
-<span id="cb2-98"><a href="#cb2-98" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-99"><a href="#cb2-99" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-100"><a href="#cb2-100" aria-hidden="true" tabindex="-1"></a>Returns the single row dict (one per wheel×month group).</span>
-<span id="cb2-101"><a href="#cb2-101" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-102"><a href="#cb2-102" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>aggregate_parallel(...) — run it across all groups with multiprocessing</span>
+<span id="cb2-91"><a href="#cb2-91" aria-hidden="true" tabindex="-1"></a>What it does:</span>
+<span id="cb2-92"><a href="#cb2-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-93"><a href="#cb2-93" aria-hidden="true" tabindex="-1"></a>Starts a result row = {id_col: entity_id, agg_date_col: month}.</span>
+<span id="cb2-94"><a href="#cb2-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-95"><a href="#cb2-95" aria-hidden="true" tabindex="-1"></a>For each col listed in agg_config (and present in group), it computes</span>
+<span id="cb2-96"><a href="#cb2-96" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>The requested statistics, (e.g., mean, std, count, sum, median)</span>
+<span id="cb2-97"><a href="#cb2-97" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Percentiles: 10pct and 90pct via np.percentile(...)</span>
+<span id="cb2-98"><a href="#cb2-98" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Trimmed_mean </span>
+<span id="cb2-99"><a href="#cb2-99" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Slope via compute_slope(series, group<span class="co">[</span><span class="ot">date_col</span><span class="co">]</span>) (trend within the month)</span>
+<span id="cb2-100"><a href="#cb2-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-101"><a href="#cb2-101" aria-hidden="true" tabindex="-1"></a>Each stat is stored as f"{col}_{stat}" (e.g., averagevertical_mean).</span>
+<span id="cb2-102"><a href="#cb2-102" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-103"><a href="#cb2-103" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-104"><a href="#cb2-104" aria-hidden="true" tabindex="-1"></a>   Inputs:</span>
-<span id="cb2-105"><a href="#cb2-105" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>the full DataFrame df,</span>
-<span id="cb2-106"><a href="#cb2-106" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>column names (id_col, date_col, agg_date_col),</span>
-<span id="cb2-107"><a href="#cb2-107" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>the agg_config dict</span>
-<span id="cb2-108"><a href="#cb2-108" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-109"><a href="#cb2-109" aria-hidden="true" tabindex="-1"></a>What it does:</span>
-<span id="cb2-110"><a href="#cb2-110" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-111"><a href="#cb2-111" aria-hidden="true" tabindex="-1"></a>Parses date_col to datetime (errors="coerce") and drops rows with missing dates. It then groups the data by <span class="co">[</span><span class="ot">id_col, agg_date_col</span><span class="co">]</span> (e.g., wheel_id × recordmonth). After that it, builds a task_list of argument tuples for each group. To speed up the process, I used process pool with cpu_count() - 1 workers. Fianlly, it collects all returned row dicts into a list and converts it to a DataFrame—one row per wheel×month with the requested features.</span>
+<span id="cb2-104"><a href="#cb2-104" aria-hidden="true" tabindex="-1"></a>Returns the single row dict (one per wheel×month group).</span>
+<span id="cb2-105"><a href="#cb2-105" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-106"><a href="#cb2-106" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>aggregate_parallel(...) — run it across all groups with multiprocessing</span>
+<span id="cb2-107"><a href="#cb2-107" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-108"><a href="#cb2-108" aria-hidden="true" tabindex="-1"></a>   Inputs:</span>
+<span id="cb2-109"><a href="#cb2-109" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>the full DataFrame df,</span>
+<span id="cb2-110"><a href="#cb2-110" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>column names (id_col, date_col, agg_date_col),</span>
+<span id="cb2-111"><a href="#cb2-111" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>the agg_config dict</span>
 <span id="cb2-112"><a href="#cb2-112" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-113"><a href="#cb2-113" aria-hidden="true" tabindex="-1"></a>Outputs: A wide DataFrame where columns follow the pattern <span class="dt">&lt;</span><span class="kw">original_column</span><span class="dt">&gt;</span>_<span class="dt">&lt;</span><span class="kw">stat</span><span class="dt">&gt;</span> (e.g., dynamicratio_90pct, maxvertical_std, etc.), plus the key columns (id_col, agg_date_col).</span>
+<span id="cb2-113"><a href="#cb2-113" aria-hidden="true" tabindex="-1"></a>What it does:</span>
 <span id="cb2-114"><a href="#cb2-114" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-115"><a href="#cb2-115" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-116"><a href="#cb2-116" aria-hidden="true" tabindex="-1"></a>This aggregator yields monthly feature vectors per wheel.</span>
-<span id="cb2-117"><a href="#cb2-117" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-118"><a href="#cb2-118" aria-hidden="true" tabindex="-1"></a>Joining them (e.g., by wheel_id + month alignment logic) gives you explanatory features (WILD/WPD/THD) around the time of failure or censoring, supporting plots of distributions, drift over time, and eventually survival or hazard modeling.</span>
+<span id="cb2-115"><a href="#cb2-115" aria-hidden="true" tabindex="-1"></a>Parses date_col to datetime (errors="coerce") and drops rows with missing dates. It then groups the data by <span class="co">[</span><span class="ot">id_col, agg_date_col</span><span class="co">]</span> (e.g., wheel_id × recordmonth). After that it, builds a task_list of argument tuples for each group. To speed up the process, I used process pool with cpu_count() - 1 workers. Fianlly, it collects all returned row dicts into a list and converts it to a DataFrame—one row per wheel×month with the requested features.</span>
+<span id="cb2-116"><a href="#cb2-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-117"><a href="#cb2-117" aria-hidden="true" tabindex="-1"></a>Outputs: A wide DataFrame where columns follow the pattern <span class="dt">&lt;</span><span class="kw">original_column</span><span class="dt">&gt;</span>_<span class="dt">&lt;</span><span class="kw">stat</span><span class="dt">&gt;</span> (e.g., dynamicratio_90pct, maxvertical_std, etc.), plus the key columns (id_col, agg_date_col).</span>
+<span id="cb2-118"><a href="#cb2-118" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-119"><a href="#cb2-119" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-120"><a href="#cb2-120" aria-hidden="true" tabindex="-1"></a>This process is repeated for WILD, THD, and WPD data to get montly aggregates. </span>
+<span id="cb2-120"><a href="#cb2-120" aria-hidden="true" tabindex="-1"></a>This aggregator yields monthly feature vectors per wheel.</span>
 <span id="cb2-121"><a href="#cb2-121" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-122"><a href="#cb2-122" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-123"><a href="#cb2-123" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Processing of failure data</span></span>
-<span id="cb2-124"><a href="#cb2-124" aria-hidden="true" tabindex="-1"></a>Since failure data is exploded at the monthly level and most of the rows indicate a row with no failure (i.e., failure happens later down the line or the wheel did not fail at all), it made sense to me to reduce the data such that each wheel (uniaquely identified by equiment number, truck, axle, side, applieddate) would be represented by just one row (which is the last row chronologically).</span>
+<span id="cb2-122"><a href="#cb2-122" aria-hidden="true" tabindex="-1"></a>Joining them (e.g., by wheel_id + month alignment logic) gives you explanatory features (WILD/WPD/THD) around the time of failure or censoring, supporting plots of distributions, drift over time, and eventually survival or hazard modeling.</span>
+<span id="cb2-123"><a href="#cb2-123" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-124"><a href="#cb2-124" aria-hidden="true" tabindex="-1"></a>This process is repeated for WILD, THD, and WPD data to get montly aggregates. </span>
 <span id="cb2-125"><a href="#cb2-125" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-126"><a href="#cb2-126" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Processing pipeline</span></span>
-<span id="cb2-127"><a href="#cb2-127" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-128"><a href="#cb2-128" aria-hidden="true" tabindex="-1"></a>Goal: Start from monthly wheel records and end with one row per physical wheel instance (equipment × truck × axle × side × applieddate) that carries a clear failure status, and  failure reason. </span>
+<span id="cb2-126"><a href="#cb2-126" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-127"><a href="#cb2-127" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Processing of failure data</span></span>
+<span id="cb2-128"><a href="#cb2-128" aria-hidden="true" tabindex="-1"></a>Since failure data is exploded at the monthly level and most of the rows indicate a row with no failure (i.e., failure happens later down the line or the wheel did not fail at all), it made sense to me to reduce the data such that each wheel (uniaquely identified by equiment number, truck, axle, side, applieddate) would be represented by just one row (which is the last row chronologically).</span>
 <span id="cb2-129"><a href="#cb2-129" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-130"><a href="#cb2-130" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Read &amp; normalize</span></span>
+<span id="cb2-130"><a href="#cb2-130" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Processing pipeline</span></span>
 <span id="cb2-131"><a href="#cb2-131" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-132"><a href="#cb2-132" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Loads the CSV into failure_data_org.</span>
-<span id="cb2-133"><a href="#cb2-133" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Parses applieddate and recordmonth as datetimes.</span>
-<span id="cb2-134"><a href="#cb2-134" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Builds a composite wheel_id via make_wheel_id(...) (encodes equipment, truck, axle, and side).</span>
-<span id="cb2-135"><a href="#cb2-135" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Fills missing failurereason values with the sentinel string "not failed" so non-failures are explicit.</span>
-<span id="cb2-136"><a href="#cb2-136" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-137"><a href="#cb2-137" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Within-month de-duplication (per wheel_id × recordmonth)</span></span>
-<span id="cb2-138"><a href="#cb2-138" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-139"><a href="#cb2-139" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Sorts by wheel_id, recordmonth, failedin30days (descending), then applieddate (ascending) to prioritize failure evidence and earlier installs.</span>
-<span id="cb2-140"><a href="#cb2-140" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>For each (wheel_id, recordmonth) group:</span>
-<span id="cb2-141"><a href="#cb2-141" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Single row: keep it.</span>
-<span id="cb2-142"><a href="#cb2-142" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>No failures present (failedin30days sum = 0): keep the earliest applieddate in that month.</span>
-<span id="cb2-143"><a href="#cb2-143" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Failures present:</span>
-<span id="cb2-144"><a href="#cb2-144" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Keep only rows where failedin30days == 1.</span>
-<span id="cb2-145"><a href="#cb2-145" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>If exactly one failure row exists: keep it.</span>
-<span id="cb2-146"><a href="#cb2-146" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>If multiple failure rows exist:</span>
-<span id="cb2-147"><a href="#cb2-147" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Remove trivial duplicates after dropping vendornumbersuppliercode and material.</span>
-<span id="cb2-148"><a href="#cb2-148" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>If multiple distinct failure reasons remain, keep them all (they’re meaningfully different).</span>
-<span id="cb2-149"><a href="#cb2-149" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Otherwise (same reason), keep the earliest occurrence for that month.</span>
-<span id="cb2-150"><a href="#cb2-150" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-151"><a href="#cb2-151" aria-hidden="true" tabindex="-1"></a>This logic is implemented in a function called process_failure_data(...) and applied only to groups with more than one row; already-unique groups are set aside to be re-combined later.</span>
-<span id="cb2-152"><a href="#cb2-152" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-153"><a href="#cb2-153" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Reassemble partly-cleaned table</span></span>
+<span id="cb2-132"><a href="#cb2-132" aria-hidden="true" tabindex="-1"></a>Goal: Start from monthly wheel records and end with one row per physical wheel instance (equipment × truck × axle × side × applieddate) that carries a clear failure status, and  failure reason. </span>
+<span id="cb2-133"><a href="#cb2-133" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-134"><a href="#cb2-134" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Read &amp; normalize</span></span>
+<span id="cb2-135"><a href="#cb2-135" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-136"><a href="#cb2-136" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Loads the CSV into failure_data_org.</span>
+<span id="cb2-137"><a href="#cb2-137" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Parses applieddate and recordmonth as datetimes.</span>
+<span id="cb2-138"><a href="#cb2-138" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Builds a composite wheel_id via make_wheel_id(...) (encodes equipment, truck, axle, and side).</span>
+<span id="cb2-139"><a href="#cb2-139" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Fills missing failurereason values with the sentinel string "not failed" so non-failures are explicit.</span>
+<span id="cb2-140"><a href="#cb2-140" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-141"><a href="#cb2-141" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Within-month de-duplication (per wheel_id × recordmonth)</span></span>
+<span id="cb2-142"><a href="#cb2-142" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-143"><a href="#cb2-143" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Sorts by wheel_id, recordmonth, failedin30days (descending), then applieddate (ascending) to prioritize failure evidence and earlier installs.</span>
+<span id="cb2-144"><a href="#cb2-144" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>For each (wheel_id, recordmonth) group:</span>
+<span id="cb2-145"><a href="#cb2-145" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Single row: keep it.</span>
+<span id="cb2-146"><a href="#cb2-146" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>No failures present (failedin30days sum = 0): keep the earliest applieddate in that month.</span>
+<span id="cb2-147"><a href="#cb2-147" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Failures present:</span>
+<span id="cb2-148"><a href="#cb2-148" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Keep only rows where failedin30days == 1.</span>
+<span id="cb2-149"><a href="#cb2-149" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>If exactly one failure row exists: keep it.</span>
+<span id="cb2-150"><a href="#cb2-150" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>If multiple failure rows exist:</span>
+<span id="cb2-151"><a href="#cb2-151" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Remove trivial duplicates after dropping vendornumbersuppliercode and material.</span>
+<span id="cb2-152"><a href="#cb2-152" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>If multiple distinct failure reasons remain, keep them all (they’re meaningfully different).</span>
+<span id="cb2-153"><a href="#cb2-153" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Otherwise (same reason), keep the earliest occurrence for that month.</span>
 <span id="cb2-154"><a href="#cb2-154" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-155"><a href="#cb2-155" aria-hidden="true" tabindex="-1"></a><span class="ss"> - </span>rows_to_process selects only the multi-row groups (based on an upstream group_sizes index).</span>
-<span id="cb2-156"><a href="#cb2-156" aria-hidden="true" tabindex="-1"></a><span class="ss"> - </span>processed_rows applies the grouping logic above.</span>
-<span id="cb2-157"><a href="#cb2-157" aria-hidden="true" tabindex="-1"></a><span class="ss"> - </span>partly_cleaned is the union of processed_rows and unique_rows, then sorted by wheel_id and recordmonth.</span>
+<span id="cb2-155"><a href="#cb2-155" aria-hidden="true" tabindex="-1"></a>This logic is implemented in a function called process_failure_data(...) and applied only to groups with more than one row; already-unique groups are set aside to be re-combined later.</span>
+<span id="cb2-156"><a href="#cb2-156" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-157"><a href="#cb2-157" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Reassemble partly-cleaned table</span></span>
 <span id="cb2-158"><a href="#cb2-158" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-159"><a href="#cb2-159" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-160"><a href="#cb2-160" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Across-month consolidation (per wheel_id)</span></span>
-<span id="cb2-161"><a href="#cb2-161" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-162"><a href="#cb2-162" aria-hidden="true" tabindex="-1"></a>For each wheel’s timeline (sorted by recordmonth), keeps rows where applieddate changes compared to the next row and drops the last row in each wheel sequence.</span>
+<span id="cb2-159"><a href="#cb2-159" aria-hidden="true" tabindex="-1"></a><span class="ss"> - </span>rows_to_process selects only the multi-row groups (based on an upstream group_sizes index).</span>
+<span id="cb2-160"><a href="#cb2-160" aria-hidden="true" tabindex="-1"></a><span class="ss"> - </span>processed_rows applies the grouping logic above.</span>
+<span id="cb2-161"><a href="#cb2-161" aria-hidden="true" tabindex="-1"></a><span class="ss"> - </span>partly_cleaned is the union of processed_rows and unique_rows, then sorted by wheel_id and recordmonth.</span>
+<span id="cb2-162"><a href="#cb2-162" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-163"><a href="#cb2-163" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-164"><a href="#cb2-164" aria-hidden="true" tabindex="-1"></a>Practical effect: removes repeated monthly observations tied to the same installation event, retaining the boundaries between installation episodes.</span>
+<span id="cb2-164"><a href="#cb2-164" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Across-month consolidation (per wheel_id)</span></span>
 <span id="cb2-165"><a href="#cb2-165" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-166"><a href="#cb2-166" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Split by outcome and collapse to one row per install</span></span>
+<span id="cb2-166"><a href="#cb2-166" aria-hidden="true" tabindex="-1"></a>For each wheel’s timeline (sorted by recordmonth), keeps rows where applieddate changes compared to the next row and drops the last row in each wheel sequence.</span>
 <span id="cb2-167"><a href="#cb2-167" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-168"><a href="#cb2-168" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Failed subset: failed = partly_cleaned<span class="co">[</span><span class="ot">failurereason != "not failed"</span><span class="co">]</span></span>
-<span id="cb2-169"><a href="#cb2-169" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Drops vendornumbersuppliercode and material.</span>
-<span id="cb2-170"><a href="#cb2-170" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Removes exact duplicates.</span>
-<span id="cb2-171"><a href="#cb2-171" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Computes time_diff: for each (wheel_id, applieddate_used), the span between the max and min recordmonth. This is a diagnostic of how long that install appears across the monthly logs.</span>
-<span id="cb2-172"><a href="#cb2-172" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Keeps the first observation by recordmonth for each (wheel_id, applieddate_used) so one row represents that failed install.</span>
-<span id="cb2-173"><a href="#cb2-173" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Not-failed subset: not_failed = partly_cleaned<span class="co">[</span><span class="ot">failurereason == "not failed"</span><span class="co">]</span></span>
-<span id="cb2-174"><a href="#cb2-174" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Keeps the last observation by recordmonth for each (wheel_id, applieddate_used) so the row represents the most recent non-failure state for that install.</span>
-<span id="cb2-175"><a href="#cb2-175" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-176"><a href="#cb2-176" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Final dataset and derived time in service</span></span>
-<span id="cb2-177"><a href="#cb2-177" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-178"><a href="#cb2-178" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>Concatenates the collapsed failed and not_failed subsets into clean_failure_data.</span>
-<span id="cb2-179"><a href="#cb2-179" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>Re-parses dates (safety) and computes time_used = (recordmonth − applieddate) in days, representing time-in-service at the observation.</span>
-<span id="cb2-180"><a href="#cb2-180" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-181"><a href="#cb2-181" aria-hidden="true" tabindex="-1"></a>After this we get. </span>
-<span id="cb2-182"><a href="#cb2-182" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-183"><a href="#cb2-183" aria-hidden="true" tabindex="-1"></a>clean_failure_data — one row per wheel instance (equipment × truck × axle × side × applieddate) carrying:</span>
-<span id="cb2-184"><a href="#cb2-184" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>failurereason (or "not failed"), and</span>
-<span id="cb2-185"><a href="#cb2-185" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>time_used (days in service at the observation month).</span>
-<span id="cb2-186"><a href="#cb2-186" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>failed / not_failed — intermediate tables used to collapse histories to a single row per install.</span>
-<span id="cb2-187"><a href="#cb2-187" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>time_diff — per-install span of months observed (useful for QA on the consolidation).</span>
-<span id="cb2-188"><a href="#cb2-188" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-189"><a href="#cb2-189" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Assumptions captured in the code</span></span>
-<span id="cb2-190"><a href="#cb2-190" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-191"><a href="#cb2-191" aria-hidden="true" tabindex="-1"></a><span class="in">      - When multiple failure rows exist in the same month, vendor/material IDs are ignored for de-duplication to avoid counting trivial differences.</span></span>
-<span id="cb2-192"><a href="#cb2-192" aria-hidden="true" tabindex="-1"></a><span class="in">      - The workflow references upstream objects (failure_data, group_sizes, unique_rows, make_wheel_id, applieddate_used) that are expected to be defined earlier in your notebook/script.</span></span>
-<span id="cb2-193"><a href="#cb2-193" aria-hidden="true" tabindex="-1"></a><span class="in">      - The across-month filter keeps rows where applieddate changes and drops the last row of each wheel’s sequence; this intentionally emphasizes installation-change boundaries.</span></span>
+<span id="cb2-168"><a href="#cb2-168" aria-hidden="true" tabindex="-1"></a>Practical effect: removes repeated monthly observations tied to the same installation event, retaining the boundaries between installation episodes.</span>
+<span id="cb2-169"><a href="#cb2-169" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-170"><a href="#cb2-170" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Split by outcome and collapse to one row per install</span></span>
+<span id="cb2-171"><a href="#cb2-171" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-172"><a href="#cb2-172" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Failed subset: failed = partly_cleaned<span class="co">[</span><span class="ot">failurereason != "not failed"</span><span class="co">]</span></span>
+<span id="cb2-173"><a href="#cb2-173" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Drops vendornumbersuppliercode and material.</span>
+<span id="cb2-174"><a href="#cb2-174" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Removes exact duplicates.</span>
+<span id="cb2-175"><a href="#cb2-175" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Computes time_diff: for each (wheel_id, applieddate_used), the span between the max and min recordmonth. This is a diagnostic of how long that install appears across the monthly logs.</span>
+<span id="cb2-176"><a href="#cb2-176" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Keeps the first observation by recordmonth for each (wheel_id, applieddate_used) so one row represents that failed install.</span>
+<span id="cb2-177"><a href="#cb2-177" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Not-failed subset: not_failed = partly_cleaned<span class="co">[</span><span class="ot">failurereason == "not failed"</span><span class="co">]</span></span>
+<span id="cb2-178"><a href="#cb2-178" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Keeps the last observation by recordmonth for each (wheel_id, applieddate_used) so the row represents the most recent non-failure state for that install.</span>
+<span id="cb2-179"><a href="#cb2-179" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-180"><a href="#cb2-180" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Final dataset and derived time in service</span></span>
+<span id="cb2-181"><a href="#cb2-181" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-182"><a href="#cb2-182" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>Concatenates the collapsed failed and not_failed subsets into clean_failure_data.</span>
+<span id="cb2-183"><a href="#cb2-183" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>Re-parses dates (safety) and computes time_used = (recordmonth − applieddate) in days, representing time-in-service at the observation.</span>
+<span id="cb2-184"><a href="#cb2-184" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-185"><a href="#cb2-185" aria-hidden="true" tabindex="-1"></a>After this we get. </span>
+<span id="cb2-186"><a href="#cb2-186" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-187"><a href="#cb2-187" aria-hidden="true" tabindex="-1"></a>clean_failure_data — one row per wheel instance (equipment × truck × axle × side × applieddate) carrying:</span>
+<span id="cb2-188"><a href="#cb2-188" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>failurereason (or "not failed"), and</span>
+<span id="cb2-189"><a href="#cb2-189" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>time_used (days in service at the observation month).</span>
+<span id="cb2-190"><a href="#cb2-190" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>failed / not_failed — intermediate tables used to collapse histories to a single row per install.</span>
+<span id="cb2-191"><a href="#cb2-191" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>time_diff — per-install span of months observed (useful for QA on the consolidation).</span>
+<span id="cb2-192"><a href="#cb2-192" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-193"><a href="#cb2-193" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Assumptions captured in the code</span></span>
 <span id="cb2-194"><a href="#cb2-194" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-195"><a href="#cb2-195" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Processing of mileage data</span></span>
-<span id="cb2-196"><a href="#cb2-196" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-197"><a href="#cb2-197" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-198"><a href="#cb2-198" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Cleaning &amp; consistency checks</span></span>
-<span id="cb2-199"><a href="#cb2-199" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-200"><a href="#cb2-200" aria-hidden="true" tabindex="-1"></a>Purpose.</span>
+<span id="cb2-195"><a href="#cb2-195" aria-hidden="true" tabindex="-1"></a><span class="in">      - When multiple failure rows exist in the same month, vendor/material IDs are ignored for de-duplication to avoid counting trivial differences.</span></span>
+<span id="cb2-196"><a href="#cb2-196" aria-hidden="true" tabindex="-1"></a><span class="in">      - The workflow references upstream objects (failure_data, group_sizes, unique_rows, make_wheel_id, applieddate_used) that are expected to be defined earlier in your notebook/script.</span></span>
+<span id="cb2-197"><a href="#cb2-197" aria-hidden="true" tabindex="-1"></a><span class="in">      - The across-month filter keeps rows where applieddate changes and drops the last row of each wheel’s sequence; this intentionally emphasizes installation-change boundaries.</span></span>
+<span id="cb2-198"><a href="#cb2-198" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-199"><a href="#cb2-199" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Processing of mileage data</span></span>
+<span id="cb2-200"><a href="#cb2-200" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-201"><a href="#cb2-201" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-202"><a href="#cb2-202" aria-hidden="true" tabindex="-1"></a>Make monthly mileage records coherent before any downstream use: fill  NAs, reconcile component miles with totals, and enforce consecutive-month consistency.</span>
+<span id="cb2-202"><a href="#cb2-202" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Cleaning &amp; consistency checks</span></span>
 <span id="cb2-203"><a href="#cb2-203" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-204"><a href="#cb2-204" aria-hidden="true" tabindex="-1"></a>Before this script, the loaded and empty mileage seem to have several inconsistencies with the added miles as shown in the figure below.</span>
+<span id="cb2-204"><a href="#cb2-204" aria-hidden="true" tabindex="-1"></a>Purpose.</span>
 <span id="cb2-205"><a href="#cb2-205" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-206"><a href="#cb2-206" aria-hidden="true" tabindex="-1"></a><span class="al">![Loaded + Empty Mileage vs Added Mileage before Mileage Data Cleaning](images/Loaded+EmptyVsAddedMiles.png)</span></span>
+<span id="cb2-206"><a href="#cb2-206" aria-hidden="true" tabindex="-1"></a>Make monthly mileage records coherent before any downstream use: fill  NAs, reconcile component miles with totals, and enforce consecutive-month consistency.</span>
 <span id="cb2-207"><a href="#cb2-207" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-208"><a href="#cb2-208" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-209"><a href="#cb2-209" aria-hidden="true" tabindex="-1"></a>Key steps (what the script does).</span>
-<span id="cb2-210"><a href="#cb2-210" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-211"><a href="#cb2-211" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Load &amp; deduplicate. Reads mileage, parses recordmonth, drops exact duplicate rows.</span>
-<span id="cb2-212"><a href="#cb2-212" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Fill legacy NAs (pre-2025).</span>
-<span id="cb2-213"><a href="#cb2-213" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>For rows with recordmonth &lt; 2025-01-01, fills NAs with 0 in:</span>
-<span id="cb2-214"><a href="#cb2-214" aria-hidden="true" tabindex="-1"></a>    addedmileage, loadedtravelledmiles, emptytravelledmiles.</span>
-<span id="cb2-215"><a href="#cb2-215" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Pre-clean diagnostics.</span>
-<span id="cb2-216"><a href="#cb2-216" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Computes loaded_and_empty = emptytravelledmiles + loadedtravelledmiles and plots it against addedmileage to visualize alignment (or gaps).</span>
-<span id="cb2-217"><a href="#cb2-217" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Row-level reconciliation (clean_mileage).</span>
-<span id="cb2-218"><a href="#cb2-218" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>For rows where components and totals disagree or are zeroed, applies a set of fixes and tags the action taken in fix_used:</span>
-<span id="cb2-219"><a href="#cb2-219" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>If addedmileage == 0 and next month’s totalmileage is available, computes an expected added (next_total − current_total) and tags _added_initFix (no overwrite in this version—diagnostic tag only).</span>
-<span id="cb2-220"><a href="#cb2-220" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>If components are both positive and sum exceeds addedmileage, sets addedmileage = loaded + empty and tags _addedFix.</span>
-<span id="cb2-221"><a href="#cb2-221" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Consecutive-month consistency (fix_mileage_consistency_consecutive).</span>
-<span id="cb2-222"><a href="#cb2-222" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>For each equipmentnumber, enforces (when months are consecutive):</span>
-<span id="cb2-223"><a href="#cb2-223" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>totalmileage<span class="co">[</span><span class="ot">i</span><span class="co">]</span> ≥ totalmileage<span class="co">[</span><span class="ot">i−1</span><span class="co">]</span> + addedmileage<span class="co">[</span><span class="ot">i</span><span class="co">]</span>.</span>
-<span id="cb2-224"><a href="#cb2-224" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>If violated, increases totalmileage<span class="co">[</span><span class="ot">i</span><span class="co">]</span> to match the expected sum and flags is_mileage_fixed = True.</span>
-<span id="cb2-225"><a href="#cb2-225" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-226"><a href="#cb2-226" aria-hidden="true" tabindex="-1"></a>Once the cleaning is done, loaded mileage + empty mileage ~ added mileage</span>
-<span id="cb2-227"><a href="#cb2-227" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-228"><a href="#cb2-228" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-229"><a href="#cb2-229" aria-hidden="true" tabindex="-1"></a><span class="al">![Loaded + Empty Mileage vs Added Mileage after Mileage Data Cleaning](images/Cleaned_Loaded+EmptyVsAddedMiles.png)</span></span>
-<span id="cb2-230"><a href="#cb2-230" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-231"><a href="#cb2-231" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Slopes and changepoints</span></span>
+<span id="cb2-208"><a href="#cb2-208" aria-hidden="true" tabindex="-1"></a>Before this script, the loaded and empty mileage seem to have several inconsistencies with the added miles as shown in the figure below.</span>
+<span id="cb2-209"><a href="#cb2-209" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-210"><a href="#cb2-210" aria-hidden="true" tabindex="-1"></a><span class="al">![Loaded + Empty Mileage vs Added Mileage before Mileage Data Cleaning](images/Loaded+EmptyVsAddedMiles.png)</span></span>
+<span id="cb2-211"><a href="#cb2-211" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-212"><a href="#cb2-212" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-213"><a href="#cb2-213" aria-hidden="true" tabindex="-1"></a>Key steps (what the script does).</span>
+<span id="cb2-214"><a href="#cb2-214" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-215"><a href="#cb2-215" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Load &amp; deduplicate. Reads mileage, parses recordmonth, drops exact duplicate rows.</span>
+<span id="cb2-216"><a href="#cb2-216" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Fill legacy NAs (pre-2025).</span>
+<span id="cb2-217"><a href="#cb2-217" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>For rows with recordmonth &lt; 2025-01-01, fills NAs with 0 in:</span>
+<span id="cb2-218"><a href="#cb2-218" aria-hidden="true" tabindex="-1"></a>    addedmileage, loadedtravelledmiles, emptytravelledmiles.</span>
+<span id="cb2-219"><a href="#cb2-219" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Pre-clean diagnostics.</span>
+<span id="cb2-220"><a href="#cb2-220" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Computes loaded_and_empty = emptytravelledmiles + loadedtravelledmiles and plots it against addedmileage to visualize alignment (or gaps).</span>
+<span id="cb2-221"><a href="#cb2-221" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Row-level reconciliation (clean_mileage).</span>
+<span id="cb2-222"><a href="#cb2-222" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>For rows where components and totals disagree or are zeroed, applies a set of fixes and tags the action taken in fix_used:</span>
+<span id="cb2-223"><a href="#cb2-223" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>If addedmileage == 0 and next month’s totalmileage is available, computes an expected added (next_total − current_total) and tags _added_initFix (no overwrite in this version—diagnostic tag only).</span>
+<span id="cb2-224"><a href="#cb2-224" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>If components are both positive and sum exceeds addedmileage, sets addedmileage = loaded + empty and tags _addedFix.</span>
+<span id="cb2-225"><a href="#cb2-225" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Consecutive-month consistency (fix_mileage_consistency_consecutive).</span>
+<span id="cb2-226"><a href="#cb2-226" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>For each equipmentnumber, enforces (when months are consecutive):</span>
+<span id="cb2-227"><a href="#cb2-227" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>totalmileage<span class="co">[</span><span class="ot">i</span><span class="co">]</span> ≥ totalmileage<span class="co">[</span><span class="ot">i−1</span><span class="co">]</span> + addedmileage<span class="co">[</span><span class="ot">i</span><span class="co">]</span>.</span>
+<span id="cb2-228"><a href="#cb2-228" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>If violated, increases totalmileage<span class="co">[</span><span class="ot">i</span><span class="co">]</span> to match the expected sum and flags is_mileage_fixed = True.</span>
+<span id="cb2-229"><a href="#cb2-229" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-230"><a href="#cb2-230" aria-hidden="true" tabindex="-1"></a>Once the cleaning is done, loaded mileage + empty mileage ~ added mileage</span>
+<span id="cb2-231"><a href="#cb2-231" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-232"><a href="#cb2-232" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-233"><a href="#cb2-233" aria-hidden="true" tabindex="-1"></a>Purpose.</span>
+<span id="cb2-233"><a href="#cb2-233" aria-hidden="true" tabindex="-1"></a><span class="al">![Loaded + Empty Mileage vs Added Mileage after Mileage Data Cleaning](images/Cleaned_Loaded+EmptyVsAddedMiles.png)</span></span>
 <span id="cb2-234"><a href="#cb2-234" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-235"><a href="#cb2-235" aria-hidden="true" tabindex="-1"></a>Quantify mileage trends and structural breaks: per-install partmileage slopes and per-equipment totalmileage changepoints/segment slopes.</span>
+<span id="cb2-235"><a href="#cb2-235" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Slopes and changepoints</span></span>
 <span id="cb2-236"><a href="#cb2-236" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-237"><a href="#cb2-237" aria-hidden="true" tabindex="-1"></a>Key steps.</span>
+<span id="cb2-237"><a href="#cb2-237" aria-hidden="true" tabindex="-1"></a>Purpose.</span>
 <span id="cb2-238"><a href="#cb2-238" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-239"><a href="#cb2-239" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Visual audit of missing mileage data. </span>
-<span id="cb2-240"><a href="#cb2-240" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>For selected equipmentnumber values, plots partmileage timeseries; colors points by applieddate and draws vertical lines at each install date—useful to spot gaps/inconsistencies per (axle, truck, side).</span>
-<span id="cb2-241"><a href="#cb2-241" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Per-install partmileage slope.</span>
-<span id="cb2-242"><a href="#cb2-242" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>For each (wheel_id, applieddate) sequence:</span>
-<span id="cb2-243"><a href="#cb2-243" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Regresses partmileage on days since first observation (OLS).</span>
-<span id="cb2-244"><a href="#cb2-244" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Outputs coefficient (slope), intercept, r2, and count_good.</span>
-<span id="cb2-245"><a href="#cb2-245" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Aggregates to a mileage_slope_summary by wheel_id (mean/median/std).</span>
-<span id="cb2-246"><a href="#cb2-246" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Changepoints on total mileage (per equipment).</span>
-<span id="cb2-247"><a href="#cb2-247" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Runs abrupt changepoint detection on totalmileage (rows before 2025-01-01).</span>
-<span id="cb2-248"><a href="#cb2-248" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Stores number of breaks, boolean flags (e.g., is_last_seg_flat), and the list of change_months.</span>
-<span id="cb2-249"><a href="#cb2-249" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Marks change months in the cleaned table and assigns segment IDs by cumulative sum over change flags.</span>
-<span id="cb2-250"><a href="#cb2-250" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Segment-wise totalmileage slopes.</span>
-<span id="cb2-251"><a href="#cb2-251" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Fits OLS slopes within each (equipmentnumber, segment_id) block.</span>
-<span id="cb2-252"><a href="#cb2-252" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>For each equipment, find the aggregate of the different slopes calculated after different install dates. </span>
-<span id="cb2-253"><a href="#cb2-253" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-254"><a href="#cb2-254" aria-hidden="true" tabindex="-1"></a>Keep the slopes and a summary filtered to stronger trends (e.g., coefficient &gt; 0.3).</span>
-<span id="cb2-255"><a href="#cb2-255" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-256"><a href="#cb2-256" aria-hidden="true" tabindex="-1"></a><span class="al">![How Mileage Progresses over time for one wheel with different applied dates. (Equipment number 721 is shown)](images/C-4.0-R.png)</span></span>
+<span id="cb2-239"><a href="#cb2-239" aria-hidden="true" tabindex="-1"></a>Quantify mileage trends and structural breaks: per-install partmileage slopes and per-equipment totalmileage changepoints/segment slopes.</span>
+<span id="cb2-240"><a href="#cb2-240" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-241"><a href="#cb2-241" aria-hidden="true" tabindex="-1"></a>Key steps.</span>
+<span id="cb2-242"><a href="#cb2-242" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-243"><a href="#cb2-243" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Visual audit of missing mileage data. </span>
+<span id="cb2-244"><a href="#cb2-244" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>For selected equipmentnumber values, plots partmileage timeseries; colors points by applieddate and draws vertical lines at each install date—useful to spot gaps/inconsistencies per (axle, truck, side).</span>
+<span id="cb2-245"><a href="#cb2-245" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Per-install partmileage slope.</span>
+<span id="cb2-246"><a href="#cb2-246" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>For each (wheel_id, applieddate) sequence:</span>
+<span id="cb2-247"><a href="#cb2-247" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Regresses partmileage on days since first observation (OLS).</span>
+<span id="cb2-248"><a href="#cb2-248" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Outputs coefficient (slope), intercept, r2, and count_good.</span>
+<span id="cb2-249"><a href="#cb2-249" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Aggregates to a mileage_slope_summary by wheel_id (mean/median/std).</span>
+<span id="cb2-250"><a href="#cb2-250" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Changepoints on total mileage (per equipment).</span>
+<span id="cb2-251"><a href="#cb2-251" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Runs abrupt changepoint detection on totalmileage (rows before 2025-01-01).</span>
+<span id="cb2-252"><a href="#cb2-252" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Stores number of breaks, boolean flags (e.g., is_last_seg_flat), and the list of change_months.</span>
+<span id="cb2-253"><a href="#cb2-253" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Marks change months in the cleaned table and assigns segment IDs by cumulative sum over change flags.</span>
+<span id="cb2-254"><a href="#cb2-254" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Segment-wise totalmileage slopes.</span>
+<span id="cb2-255"><a href="#cb2-255" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Fits OLS slopes within each (equipmentnumber, segment_id) block.</span>
+<span id="cb2-256"><a href="#cb2-256" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>For each equipment, find the aggregate of the different slopes calculated after different install dates. </span>
 <span id="cb2-257"><a href="#cb2-257" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-258"><a href="#cb2-258" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-259"><a href="#cb2-259" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Loaded Mileage vs Added Mileage Analysis</span></span>
-<span id="cb2-260"><a href="#cb2-260" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-261"><a href="#cb2-261" aria-hidden="true" tabindex="-1"></a>Purpose.</span>
-<span id="cb2-262"><a href="#cb2-262" aria-hidden="true" tabindex="-1"></a>Characterize how loaded miles relate to added miles over time and by equipment; highlight stability, spread, and behavior around structural changes.</span>
-<span id="cb2-263"><a href="#cb2-263" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-264"><a href="#cb2-264" aria-hidden="true" tabindex="-1"></a>Key steps.</span>
-<span id="cb2-265"><a href="#cb2-265" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-266"><a href="#cb2-266" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Compute ratio with zero handling.</span>
-<span id="cb2-267"><a href="#cb2-267" aria-hidden="true" tabindex="-1"></a>    loaded_to_added = loadedtravelledmiles / addedmileage, with a sentinel −1 when addedmileage == 0 (to avoid division by zero).</span>
-<span id="cb2-268"><a href="#cb2-268" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Per-equipment summary.</span>
-<span id="cb2-269"><a href="#cb2-269" aria-hidden="true" tabindex="-1"></a>    For each equipmentnumber, reports mean/median/std/min/max/count and trimmed mean/median (drop two smallest and two largest values) for robustness.</span>
-<span id="cb2-270"><a href="#cb2-270" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Spot checks against changepoints.</span>
-<span id="cb2-271"><a href="#cb2-271" aria-hidden="true" tabindex="-1"></a>    For a random sample of equipment IDs, plots the ratio through time with vertical lines and date labels at the detected change_months.</span>
-<span id="cb2-272"><a href="#cb2-272" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-273"><a href="#cb2-273" aria-hidden="true" tabindex="-1"></a>Since we know that mileage information has a 3-month lag, I decided to add the projected partmileage (using mileage slope calculated), and loaded to empty ratio of the mileage as the features into the model.</span>
-<span id="cb2-274"><a href="#cb2-274" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-275"><a href="#cb2-275" aria-hidden="true" tabindex="-1"></a><span class="fu">### Joining Datasets</span></span>
-<span id="cb2-276"><a href="#cb2-276" aria-hidden="true" tabindex="-1"></a>All the datasets do not have all the relevant primary keys to join them together. So to make sure the joins are appropriate, I started with the failure data. As mentioned earlier, failure data is processed such that each row represent the end condition of the wheel as it is replaced (either because it failed or for any other reason). This data contains all the information that can be used to uniquely identify a wheel, as well as the date when the replacement happened. With this information, I can join in the WILD data aggregated (which contains equipment number, truck, axle and side). I can ensure that only the data in the months between the date when the wheel was installed, and the date when the wheel was replaced is to be used).</span>
-<span id="cb2-277"><a href="#cb2-277" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-258"><a href="#cb2-258" aria-hidden="true" tabindex="-1"></a>Keep the slopes and a summary filtered to stronger trends (e.g., coefficient &gt; 0.3).</span>
+<span id="cb2-259"><a href="#cb2-259" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-260"><a href="#cb2-260" aria-hidden="true" tabindex="-1"></a><span class="al">![How Mileage Progresses over time for one wheel with different applied dates. (Equipment number 721 is shown)](images/C-4.0-R.png)</span></span>
+<span id="cb2-261"><a href="#cb2-261" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-262"><a href="#cb2-262" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-263"><a href="#cb2-263" aria-hidden="true" tabindex="-1"></a><span class="fu">##### Loaded Mileage vs Added Mileage Analysis</span></span>
+<span id="cb2-264"><a href="#cb2-264" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-265"><a href="#cb2-265" aria-hidden="true" tabindex="-1"></a>Purpose.</span>
+<span id="cb2-266"><a href="#cb2-266" aria-hidden="true" tabindex="-1"></a>Characterize how loaded miles relate to added miles over time and by equipment; highlight stability, spread, and behavior around structural changes.</span>
+<span id="cb2-267"><a href="#cb2-267" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-268"><a href="#cb2-268" aria-hidden="true" tabindex="-1"></a>Key steps.</span>
+<span id="cb2-269"><a href="#cb2-269" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-270"><a href="#cb2-270" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Compute ratio with zero handling.</span>
+<span id="cb2-271"><a href="#cb2-271" aria-hidden="true" tabindex="-1"></a>    loaded_to_added = loadedtravelledmiles / addedmileage, with a sentinel −1 when addedmileage == 0 (to avoid division by zero).</span>
+<span id="cb2-272"><a href="#cb2-272" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Per-equipment summary.</span>
+<span id="cb2-273"><a href="#cb2-273" aria-hidden="true" tabindex="-1"></a>    For each equipmentnumber, reports mean/median/std/min/max/count and trimmed mean/median (drop two smallest and two largest values) for robustness.</span>
+<span id="cb2-274"><a href="#cb2-274" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Spot checks against changepoints.</span>
+<span id="cb2-275"><a href="#cb2-275" aria-hidden="true" tabindex="-1"></a>    For a random sample of equipment IDs, plots the ratio through time with vertical lines and date labels at the detected change_months.</span>
+<span id="cb2-276"><a href="#cb2-276" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-277"><a href="#cb2-277" aria-hidden="true" tabindex="-1"></a>Since we know that mileage information has a 3-month lag, I decided to add the projected partmileage (using mileage slope calculated), and loaded to empty ratio of the mileage as the features into the model.</span>
 <span id="cb2-278"><a href="#cb2-278" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-279"><a href="#cb2-279" aria-hidden="true" tabindex="-1"></a><span class="fu">## Observations</span></span>
-<span id="cb2-280"><a href="#cb2-280" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-281"><a href="#cb2-281" aria-hidden="true" tabindex="-1"></a><span class="fu">### EDA (WILD vs FAILURE)</span></span>
+<span id="cb2-279"><a href="#cb2-279" aria-hidden="true" tabindex="-1"></a><span class="fu">### Joining Datasets</span></span>
+<span id="cb2-280"><a href="#cb2-280" aria-hidden="true" tabindex="-1"></a>All the datasets do not have all the relevant primary keys to join them together. So to make sure the joins are appropriate, I started with the failure data. As mentioned earlier, failure data is processed such that each row represent the end condition of the wheel as it is replaced (either because it failed or for any other reason). This data contains all the information that can be used to uniquely identify a wheel, as well as the date when the replacement happened. With this information, I can join in the WILD data aggregated (which contains equipment number, truck, axle and side). I can ensure that only the data in the months between the date when the wheel was installed, and the date when the wheel was replaced is to be used).</span>
+<span id="cb2-281"><a href="#cb2-281" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-282"><a href="#cb2-282" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-283"><a href="#cb2-283" aria-hidden="true" tabindex="-1"></a>From monthly WILD aggregates and the cleaned failure table, I  visualize:</span>
+<span id="cb2-283"><a href="#cb2-283" aria-hidden="true" tabindex="-1"></a><span class="fu">## Observations</span></span>
 <span id="cb2-284"><a href="#cb2-284" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-285"><a href="#cb2-285" aria-hidden="true" tabindex="-1"></a>Per-wheel timeseries of WILD features between install and failure (or censoring).</span>
+<span id="cb2-285"><a href="#cb2-285" aria-hidden="true" tabindex="-1"></a><span class="fu">### EDA (WILD vs FAILURE)</span></span>
 <span id="cb2-286"><a href="#cb2-286" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-287"><a href="#cb2-287" aria-hidden="true" tabindex="-1"></a>Distribution comparisons (box/violin) of WILD features at aligned months, by failure class.</span>
+<span id="cb2-287"><a href="#cb2-287" aria-hidden="true" tabindex="-1"></a>From monthly WILD aggregates and the cleaned failure table, I  visualize:</span>
 <span id="cb2-288"><a href="#cb2-288" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-289"><a href="#cb2-289" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Data inputs</span></span>
+<span id="cb2-289"><a href="#cb2-289" aria-hidden="true" tabindex="-1"></a>Per-wheel timeseries of WILD features between install and failure (or censoring).</span>
 <span id="cb2-290"><a href="#cb2-290" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-291"><a href="#cb2-291" aria-hidden="true" tabindex="-1"></a>wild_agg (monthly WILD aggregates)</span>
-<span id="cb2-292"><a href="#cb2-292" aria-hidden="true" tabindex="-1"></a>One row per wheel_id × recordmonth with statistics such as mean, median, 10pct, 90pct for:</span>
-<span id="cb2-293"><a href="#cb2-293" aria-hidden="true" tabindex="-1"></a>maxvertical, averagevertical, dynamicvertical, dynamicratio.</span>
+<span id="cb2-291"><a href="#cb2-291" aria-hidden="true" tabindex="-1"></a>Distribution comparisons (box/violin) of WILD features at aligned months, by failure class.</span>
+<span id="cb2-292"><a href="#cb2-292" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-293"><a href="#cb2-293" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Data inputs</span></span>
 <span id="cb2-294"><a href="#cb2-294" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-295"><a href="#cb2-295" aria-hidden="true" tabindex="-1"></a>clean_failure_data (wheel installs &amp; outcomes)</span>
-<span id="cb2-296"><a href="#cb2-296" aria-hidden="true" tabindex="-1"></a>One row per wheel install (uniquely: equipment × truck × axle × side × applieddate), including:</span>
-<span id="cb2-297"><a href="#cb2-297" aria-hidden="true" tabindex="-1"></a>wheel_id, applieddate_used (normalized install date), current observation recordmonth, and failurereason (with "not failed" for non-failures).</span>
+<span id="cb2-295"><a href="#cb2-295" aria-hidden="true" tabindex="-1"></a>wild_agg (monthly WILD aggregates)</span>
+<span id="cb2-296"><a href="#cb2-296" aria-hidden="true" tabindex="-1"></a>One row per wheel_id × recordmonth with statistics such as mean, median, 10pct, 90pct for:</span>
+<span id="cb2-297"><a href="#cb2-297" aria-hidden="true" tabindex="-1"></a>maxvertical, averagevertical, dynamicvertical, dynamicratio.</span>
 <span id="cb2-298"><a href="#cb2-298" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-299"><a href="#cb2-299" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Merge window &amp; sampling</span></span>
-<span id="cb2-300"><a href="#cb2-300" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-301"><a href="#cb2-301" aria-hidden="true" tabindex="-1"></a>A merge on wheel_id joins WILD with installs, then rows are filtered to the window</span>
-<span id="cb2-302"><a href="#cb2-302" aria-hidden="true" tabindex="-1"></a>recordmonth_wild ∈ <span class="co">[</span><span class="ot">applieddate_used, recordmonth</span><span class="co">]</span></span>
-<span id="cb2-303"><a href="#cb2-303" aria-hidden="true" tabindex="-1"></a>so we only keep WILD months observed between install and the analysis month for that wheel.</span>
+<span id="cb2-299"><a href="#cb2-299" aria-hidden="true" tabindex="-1"></a>clean_failure_data (wheel installs &amp; outcomes)</span>
+<span id="cb2-300"><a href="#cb2-300" aria-hidden="true" tabindex="-1"></a>One row per wheel install (uniquely: equipment × truck × axle × side × applieddate), including:</span>
+<span id="cb2-301"><a href="#cb2-301" aria-hidden="true" tabindex="-1"></a>wheel_id, applieddate_used (normalized install date), current observation recordmonth, and failurereason (with "not failed" for non-failures).</span>
+<span id="cb2-302"><a href="#cb2-302" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-303"><a href="#cb2-303" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Merge window &amp; sampling</span></span>
 <span id="cb2-304"><a href="#cb2-304" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-305"><a href="#cb2-305" aria-hidden="true" tabindex="-1"></a>For plots, a small sample of wheels per failure reason is selected (e.g., 15 per class). These samples are for visualization only.</span>
-<span id="cb2-306"><a href="#cb2-306" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-307"><a href="#cb2-307" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Timeseries plots (monthly WILD)</span></span>
+<span id="cb2-305"><a href="#cb2-305" aria-hidden="true" tabindex="-1"></a>A merge on wheel_id joins WILD with installs, then rows are filtered to the window</span>
+<span id="cb2-306"><a href="#cb2-306" aria-hidden="true" tabindex="-1"></a>recordmonth_wild ∈ <span class="co">[</span><span class="ot">applieddate_used, recordmonth</span><span class="co">]</span></span>
+<span id="cb2-307"><a href="#cb2-307" aria-hidden="true" tabindex="-1"></a>so we only keep WILD months observed between install and the analysis month for that wheel.</span>
 <span id="cb2-308"><a href="#cb2-308" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-309"><a href="#cb2-309" aria-hidden="true" tabindex="-1"></a>For each sampled wheel, for each metric/stat combination:</span>
-<span id="cb2-310"><a href="#cb2-310" aria-hidden="true" tabindex="-1"></a>Metrics: maxvertical, averagevertical, dynamicvertical, dynamicratio.</span>
-<span id="cb2-311"><a href="#cb2-311" aria-hidden="true" tabindex="-1"></a>Stats: 10pct, 90pct, mean, median.</span>
-<span id="cb2-312"><a href="#cb2-312" aria-hidden="true" tabindex="-1"></a>Plot a monthly line from install to outcome with:</span>
-<span id="cb2-313"><a href="#cb2-313" aria-hidden="true" tabindex="-1"></a>A vertical line at install and (if applicable) another at failure.</span>
-<span id="cb2-314"><a href="#cb2-314" aria-hidden="true" tabindex="-1"></a>If failurereason == "not failed", the series is censored at “today” for the plot (to show how far we’ve observed it without failure).</span>
-<span id="cb2-315"><a href="#cb2-315" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-316"><a href="#cb2-316" aria-hidden="true" tabindex="-1"></a>Y-axis uses a per-wheel y_max so each plot comfortably fits that wheel’s range. I noticed the max_vertical showed a significant uptick for failure reason = 'High Impact' as shown in the figures below.</span>
-<span id="cb2-317"><a href="#cb2-317" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-318"><a href="#cb2-318" aria-hidden="true" tabindex="-1"></a><span class="al">![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 1)](images/821_C_3.0_R_2017-10-01_high_impact_maxvertical_90pct.png)</span></span>
-<span id="cb2-319"><a href="#cb2-319" aria-hidden="true" tabindex="-1"></a><span class="al">![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 2)](images/3_D_6.0_L_2016-07-01_high_impact_maxvertical_90pct.png)</span></span>
-<span id="cb2-320"><a href="#cb2-320" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-309"><a href="#cb2-309" aria-hidden="true" tabindex="-1"></a>For plots, a small sample of wheels per failure reason is selected (e.g., 15 per class). These samples are for visualization only.</span>
+<span id="cb2-310"><a href="#cb2-310" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-311"><a href="#cb2-311" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Timeseries plots (monthly WILD)</span></span>
+<span id="cb2-312"><a href="#cb2-312" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-313"><a href="#cb2-313" aria-hidden="true" tabindex="-1"></a>For each sampled wheel, for each metric/stat combination:</span>
+<span id="cb2-314"><a href="#cb2-314" aria-hidden="true" tabindex="-1"></a>Metrics: maxvertical, averagevertical, dynamicvertical, dynamicratio.</span>
+<span id="cb2-315"><a href="#cb2-315" aria-hidden="true" tabindex="-1"></a>Stats: 10pct, 90pct, mean, median.</span>
+<span id="cb2-316"><a href="#cb2-316" aria-hidden="true" tabindex="-1"></a>Plot a monthly line from install to outcome with:</span>
+<span id="cb2-317"><a href="#cb2-317" aria-hidden="true" tabindex="-1"></a>A vertical line at install and (if applicable) another at failure.</span>
+<span id="cb2-318"><a href="#cb2-318" aria-hidden="true" tabindex="-1"></a>If failurereason == "not failed", the series is censored at “today” for the plot (to show how far we’ve observed it without failure).</span>
+<span id="cb2-319"><a href="#cb2-319" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-320"><a href="#cb2-320" aria-hidden="true" tabindex="-1"></a>Y-axis uses a per-wheel y_max so each plot comfortably fits that wheel’s range. I noticed the max_vertical showed a significant uptick for failure reason = 'High Impact' as shown in the figures below.</span>
 <span id="cb2-321"><a href="#cb2-321" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-322"><a href="#cb2-322" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Results — Statistical tests on WILD vs. failure</span></span>
-<span id="cb2-323"><a href="#cb2-323" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-324"><a href="#cb2-324" aria-hidden="true" tabindex="-1"></a>Sample &amp; coverage: We analyzed 45,006 eligible wheel installs (rows in the ratios table after filtering).</span>
-<span id="cb2-325"><a href="#cb2-325" aria-hidden="true" tabindex="-1"></a>The class makeup of the data is as follows:</span>
-<span id="cb2-326"><a href="#cb2-326" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-327"><a href="#cb2-327" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>not failed 30,987 (68.9%),</span>
-<span id="cb2-328"><a href="#cb2-328" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>high impact 5,438 (12.1%),</span>
-<span id="cb2-329"><a href="#cb2-329" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>thin flange 3,783 (8.4%),</span>
-<span id="cb2-330"><a href="#cb2-330" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>high flange 3,500 (7.8%),</span>
-<span id="cb2-331"><a href="#cb2-331" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>other 1,298 (2.9%).</span>
-<span id="cb2-332"><a href="#cb2-332" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-333"><a href="#cb2-333" aria-hidden="true" tabindex="-1"></a>We merged monthly WILD aggregates with the wheel-level table and restricted each sequence to months between install and the analysis month. For end-behavior, we required ≥4 pre-last months per install, then computed:</span>
-<span id="cb2-334"><a href="#cb2-334" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-335"><a href="#cb2-335" aria-hidden="true" tabindex="-1"></a>End mean: mean_maxvertical_90pct_end = mean of the last 3 months.</span>
+<span id="cb2-322"><a href="#cb2-322" aria-hidden="true" tabindex="-1"></a><span class="al">![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 1)](images/821_C_3.0_R_2017-10-01_high_impact_maxvertical_90pct.png)</span></span>
+<span id="cb2-323"><a href="#cb2-323" aria-hidden="true" tabindex="-1"></a><span class="al">![Max Vertical Jump Towards The End of Wheel Life for High Impact Failure (example 2)](images/3_D_6.0_L_2016-07-01_high_impact_maxvertical_90pct.png)</span></span>
+<span id="cb2-324"><a href="#cb2-324" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-325"><a href="#cb2-325" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-326"><a href="#cb2-326" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Results — Statistical tests on WILD vs. failure</span></span>
+<span id="cb2-327"><a href="#cb2-327" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-328"><a href="#cb2-328" aria-hidden="true" tabindex="-1"></a>Sample &amp; coverage: We analyzed 45,006 eligible wheel installs (rows in the ratios table after filtering).</span>
+<span id="cb2-329"><a href="#cb2-329" aria-hidden="true" tabindex="-1"></a>The class makeup of the data is as follows:</span>
+<span id="cb2-330"><a href="#cb2-330" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-331"><a href="#cb2-331" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>not failed 30,987 (68.9%),</span>
+<span id="cb2-332"><a href="#cb2-332" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>high impact 5,438 (12.1%),</span>
+<span id="cb2-333"><a href="#cb2-333" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>thin flange 3,783 (8.4%),</span>
+<span id="cb2-334"><a href="#cb2-334" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>high flange 3,500 (7.8%),</span>
+<span id="cb2-335"><a href="#cb2-335" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>other 1,298 (2.9%).</span>
 <span id="cb2-336"><a href="#cb2-336" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-337"><a href="#cb2-337" aria-hidden="true" tabindex="-1"></a>End escalation: maxvertical_90pct_end_ratio = (mean of last 3 months) ÷ (value 4th from the end).</span>
+<span id="cb2-337"><a href="#cb2-337" aria-hidden="true" tabindex="-1"></a>We merged monthly WILD aggregates with the wheel-level table and restricted each sequence to months between install and the analysis month. For end-behavior, we required ≥4 pre-last months per install, then computed:</span>
 <span id="cb2-338"><a href="#cb2-338" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-339"><a href="#cb2-339" aria-hidden="true" tabindex="-1"></a>Variance check. Levene’s test for the end-window escalation metric (maxvertical_90pct_end_ratio) was highly significant (p = 9.77×10⁻⁷⁵), indicating unequal variances across failure reasons. We therefore used Welch’s ANOVA. The Welch’s ANOVA showed a very large and highly significant difference between the End Means between failure reason (F(4, 5982.56) = 10410.34, p ≈ 0, partial η² = 0.507).</span>
+<span id="cb2-339"><a href="#cb2-339" aria-hidden="true" tabindex="-1"></a>End mean: mean_maxvertical_90pct_end = mean of the last 3 months.</span>
 <span id="cb2-340"><a href="#cb2-340" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-341"><a href="#cb2-341" aria-hidden="true" tabindex="-1"></a>We could also visualize it via the violin plot showing the max_vertical (90pct) comparison between high impact failure vs all other failures</span>
+<span id="cb2-341"><a href="#cb2-341" aria-hidden="true" tabindex="-1"></a>End escalation: maxvertical_90pct_end_ratio = (mean of last 3 months) ÷ (value 4th from the end).</span>
 <span id="cb2-342"><a href="#cb2-342" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-343"><a href="#cb2-343" aria-hidden="true" tabindex="-1"></a><span class="al">![Violin Plot for Max Vertical (High Impact Failure vs Others)](images/violin_plot_is_high_impact_maxvertical-90pct.png)</span></span>
+<span id="cb2-343"><a href="#cb2-343" aria-hidden="true" tabindex="-1"></a>Variance check. Levene’s test for the end-window escalation metric (maxvertical_90pct_end_ratio) was highly significant (p = 9.77×10⁻⁷⁵), indicating unequal variances across failure reasons. We therefore used Welch’s ANOVA. The Welch’s ANOVA showed a very large and highly significant difference between the End Means between failure reason (F(4, 5982.56) = 10410.34, p ≈ 0, partial η² = 0.507).</span>
 <span id="cb2-344"><a href="#cb2-344" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-345"><a href="#cb2-345" aria-hidden="true" tabindex="-1"></a><span class="fu">### EDA (THD vs FAILURE)</span></span>
+<span id="cb2-345"><a href="#cb2-345" aria-hidden="true" tabindex="-1"></a>We could also visualize it via the violin plot showing the max_vertical (90pct) comparison between high impact failure vs all other failures</span>
 <span id="cb2-346"><a href="#cb2-346" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-347"><a href="#cb2-347" aria-hidden="true" tabindex="-1"></a>Similar analysis was done on THD data as well. It was difficult to see any patterns like I saw in max_vertical vs high impact in THD data.</span>
+<span id="cb2-347"><a href="#cb2-347" aria-hidden="true" tabindex="-1"></a><span class="al">![Violin Plot for Max Vertical (High Impact Failure vs Others)](images/violin_plot_is_high_impact_maxvertical-90pct.png)</span></span>
 <span id="cb2-348"><a href="#cb2-348" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-349"><a href="#cb2-349" aria-hidden="true" tabindex="-1"></a><span class="fu">### EDA (WPD vs FAILURE)</span></span>
+<span id="cb2-349"><a href="#cb2-349" aria-hidden="true" tabindex="-1"></a><span class="fu">### EDA (THD vs FAILURE)</span></span>
 <span id="cb2-350"><a href="#cb2-350" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-351"><a href="#cb2-351" aria-hidden="true" tabindex="-1"></a>Since WPD data contains information about flange height and flange thickness, I built a hypothesis that these features would be helpful to determine the failure types of 'high flange' and 'thin flange'. However this was not readily visible via plots as shown below. </span>
+<span id="cb2-351"><a href="#cb2-351" aria-hidden="true" tabindex="-1"></a>Similar analysis was done on THD data as well. It was difficult to see any patterns like I saw in max_vertical vs high impact in THD data.</span>
 <span id="cb2-352"><a href="#cb2-352" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-353"><a href="#cb2-353" aria-hidden="true" tabindex="-1"></a><span class="al">![Violin Plot for Flange Height (High Flange Failure vs Others)](images/violin_plot_is_high_flange_flangeheight-90pct.png)</span></span>
+<span id="cb2-353"><a href="#cb2-353" aria-hidden="true" tabindex="-1"></a><span class="fu">### EDA (WPD vs FAILURE)</span></span>
 <span id="cb2-354"><a href="#cb2-354" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-355"><a href="#cb2-355" aria-hidden="true" tabindex="-1"></a><span class="al">![Violin Plot for Flange Thickness (Thin Flange Failure vs Others)](images/violin_plot_is_thin_flange_flangethickness-10pct.png)</span></span>
+<span id="cb2-355"><a href="#cb2-355" aria-hidden="true" tabindex="-1"></a>Since WPD data contains information about flange height and flange thickness, I built a hypothesis that these features would be helpful to determine the failure types of 'high flange' and 'thin flange'. However this was not readily visible via plots as shown below. </span>
 <span id="cb2-356"><a href="#cb2-356" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-357"><a href="#cb2-357" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-358"><a href="#cb2-358" aria-hidden="true" tabindex="-1"></a><span class="fu">## Model</span></span>
-<span id="cb2-359"><a href="#cb2-359" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-360"><a href="#cb2-360" aria-hidden="true" tabindex="-1"></a><span class="fu">### Train and Validation Split</span></span>
+<span id="cb2-357"><a href="#cb2-357" aria-hidden="true" tabindex="-1"></a><span class="al">![Violin Plot for Flange Height (High Flange Failure vs Others)](images/violin_plot_is_high_flange_flangeheight-90pct.png)</span></span>
+<span id="cb2-358"><a href="#cb2-358" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-359"><a href="#cb2-359" aria-hidden="true" tabindex="-1"></a><span class="al">![Violin Plot for Flange Thickness (Thin Flange Failure vs Others)](images/violin_plot_is_thin_flange_flangethickness-10pct.png)</span></span>
+<span id="cb2-360"><a href="#cb2-360" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-361"><a href="#cb2-361" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-362"><a href="#cb2-362" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-363"><a href="#cb2-363" aria-hidden="true" tabindex="-1"></a>Purpose.</span>
-<span id="cb2-364"><a href="#cb2-364" aria-hidden="true" tabindex="-1"></a>Create reproducible train/validation datasets from the cleaned wheel table for downstream modeling. The split preserves the class mix of failurereason (stratified) and saves both subsets to versioned folders.</span>
+<span id="cb2-362"><a href="#cb2-362" aria-hidden="true" tabindex="-1"></a><span class="fu">## Model</span></span>
+<span id="cb2-363"><a href="#cb2-363" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-364"><a href="#cb2-364" aria-hidden="true" tabindex="-1"></a><span class="fu">### Train and Validation Split</span></span>
 <span id="cb2-365"><a href="#cb2-365" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-366"><a href="#cb2-366" aria-hidden="true" tabindex="-1"></a>Inputs.</span>
-<span id="cb2-367"><a href="#cb2-367" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-368"><a href="#cb2-368" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-369"><a href="#cb2-369" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Cleaned wheel table (created earlier)</span>
-<span id="cb2-370"><a href="#cb2-370" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Parameter of interest (val_data_frac = 0.10 → 10% of rows are set aside for validation; 90% for training.)</span>
+<span id="cb2-366"><a href="#cb2-366" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-367"><a href="#cb2-367" aria-hidden="true" tabindex="-1"></a>Purpose.</span>
+<span id="cb2-368"><a href="#cb2-368" aria-hidden="true" tabindex="-1"></a>Create reproducible train/validation datasets from the cleaned wheel table for downstream modeling. The split preserves the class mix of failurereason (stratified) and saves both subsets to versioned folders.</span>
+<span id="cb2-369"><a href="#cb2-369" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-370"><a href="#cb2-370" aria-hidden="true" tabindex="-1"></a>Inputs.</span>
 <span id="cb2-371"><a href="#cb2-371" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-372"><a href="#cb2-372" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-373"><a href="#cb2-373" aria-hidden="true" tabindex="-1"></a><span class="fu">####  Preprocessing (one row per install).</span></span>
-<span id="cb2-374"><a href="#cb2-374" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-375"><a href="#cb2-375" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Sort rows by failedin30days (descending).</span>
-<span id="cb2-376"><a href="#cb2-376" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Drop duplicates on <span class="co">[</span><span class="ot">"wheel_id", "applieddate_used"</span><span class="co">]</span>, keeping the first occurrence.</span>
-<span id="cb2-377"><a href="#cb2-377" aria-hidden="true" tabindex="-1"></a>Net effect: if multiple rows exist for the same wheel install, the kept row favors one with failedin30days = 1 (due to sorting).</span>
+<span id="cb2-373"><a href="#cb2-373" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Cleaned wheel table (created earlier)</span>
+<span id="cb2-374"><a href="#cb2-374" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Parameter of interest (val_data_frac = 0.10 → 10% of rows are set aside for validation; 90% for training.)</span>
+<span id="cb2-375"><a href="#cb2-375" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-376"><a href="#cb2-376" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-377"><a href="#cb2-377" aria-hidden="true" tabindex="-1"></a><span class="fu">####  Preprocessing (one row per install).</span></span>
 <span id="cb2-378"><a href="#cb2-378" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-379"><a href="#cb2-379" aria-hidden="true" tabindex="-1"></a><span class="fu">####  Split strategy.</span></span>
-<span id="cb2-380"><a href="#cb2-380" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-381"><a href="#cb2-381" aria-hidden="true" tabindex="-1"></a>Use train_test_split with:</span>
-<span id="cb2-382"><a href="#cb2-382" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>test_size = 0.10 (validation fraction from params)</span>
-<span id="cb2-383"><a href="#cb2-383" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>stratify = failurereason (preserve label proportions)</span>
-<span id="cb2-384"><a href="#cb2-384" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>random_state = 42 (reproducible shuffle)</span>
-<span id="cb2-385"><a href="#cb2-385" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-386"><a href="#cb2-386" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-387"><a href="#cb2-387" aria-hidden="true" tabindex="-1"></a><span class="fu">### Feature engineering &amp; alignment</span></span>
-<span id="cb2-388"><a href="#cb2-388" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-389"><a href="#cb2-389" aria-hidden="true" tabindex="-1"></a>The following functions help prepare the data to build the model. </span>
+<span id="cb2-379"><a href="#cb2-379" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Sort rows by failedin30days (descending).</span>
+<span id="cb2-380"><a href="#cb2-380" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Drop duplicates on <span class="co">[</span><span class="ot">"wheel_id", "applieddate_used"</span><span class="co">]</span>, keeping the first occurrence.</span>
+<span id="cb2-381"><a href="#cb2-381" aria-hidden="true" tabindex="-1"></a>Net effect: if multiple rows exist for the same wheel install, the kept row favors one with failedin30days = 1 (due to sorting).</span>
+<span id="cb2-382"><a href="#cb2-382" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-383"><a href="#cb2-383" aria-hidden="true" tabindex="-1"></a><span class="fu">####  Split strategy.</span></span>
+<span id="cb2-384"><a href="#cb2-384" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-385"><a href="#cb2-385" aria-hidden="true" tabindex="-1"></a>Use train_test_split with:</span>
+<span id="cb2-386"><a href="#cb2-386" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>test_size = 0.10 (validation fraction from params)</span>
+<span id="cb2-387"><a href="#cb2-387" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>stratify = failurereason (preserve label proportions)</span>
+<span id="cb2-388"><a href="#cb2-388" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>random_state = 42 (reproducible shuffle)</span>
+<span id="cb2-389"><a href="#cb2-389" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-390"><a href="#cb2-390" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-391"><a href="#cb2-391" aria-hidden="true" tabindex="-1"></a><span class="fu">#### update_failure_data(...) — enrich the wheel-level table</span></span>
+<span id="cb2-391"><a href="#cb2-391" aria-hidden="true" tabindex="-1"></a><span class="fu">### Feature engineering &amp; alignment</span></span>
 <span id="cb2-392"><a href="#cb2-392" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-393"><a href="#cb2-393" aria-hidden="true" tabindex="-1"></a>Purpose.</span>
-<span id="cb2-394"><a href="#cb2-394" aria-hidden="true" tabindex="-1"></a>Add simple, interpretable covariates to each wheel-month row before joining other data. Features like prior failure count, a loaded-mileage ratio, and an equipment-level mileage slope are added.</span>
-<span id="cb2-395"><a href="#cb2-395" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-396"><a href="#cb2-396" aria-hidden="true" tabindex="-1"></a>Inputs.</span>
-<span id="cb2-397"><a href="#cb2-397" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-398"><a href="#cb2-398" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>failure_data</span>
-<span id="cb2-399"><a href="#cb2-399" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>mileage_ratio_summary</span>
-<span id="cb2-400"><a href="#cb2-400" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>totalmileage_slope_summary</span>
+<span id="cb2-393"><a href="#cb2-393" aria-hidden="true" tabindex="-1"></a>The following functions help prepare the data to build the model. </span>
+<span id="cb2-394"><a href="#cb2-394" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-395"><a href="#cb2-395" aria-hidden="true" tabindex="-1"></a><span class="fu">#### update_failure_data(...) — enrich the wheel-level table</span></span>
+<span id="cb2-396"><a href="#cb2-396" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-397"><a href="#cb2-397" aria-hidden="true" tabindex="-1"></a>Purpose.</span>
+<span id="cb2-398"><a href="#cb2-398" aria-hidden="true" tabindex="-1"></a>Add simple, interpretable covariates to each wheel-month row before joining other data. Features like prior failure count, a loaded-mileage ratio, and an equipment-level mileage slope are added.</span>
+<span id="cb2-399"><a href="#cb2-399" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-400"><a href="#cb2-400" aria-hidden="true" tabindex="-1"></a>Inputs.</span>
 <span id="cb2-401"><a href="#cb2-401" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-402"><a href="#cb2-402" aria-hidden="true" tabindex="-1"></a>Output. Same rows as failure_data, augmented with:</span>
-<span id="cb2-403"><a href="#cb2-403" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-404"><a href="#cb2-404" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>n_prior_failure — cumulative # of earlier events for this wheel_id (per-install history, shifted so it’s strictly prior)</span>
-<span id="cb2-405"><a href="#cb2-405" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>loaded_ratio — equipment-level trimmed mean of loaded/added mileage</span>
-<span id="cb2-406"><a href="#cb2-406" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>loadedmileage — partmileage × loaded_ratio (quick proxy for the loaded share)</span>
-<span id="cb2-407"><a href="#cb2-407" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>mileage_slope — equipment-level mean slope of total mileage growth</span>
-<span id="cb2-408"><a href="#cb2-408" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-409"><a href="#cb2-409" aria-hidden="true" tabindex="-1"></a><span class="fu">#### create_failure_wild(...) — align WILD months to each wheel’s window</span></span>
-<span id="cb2-410"><a href="#cb2-410" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-411"><a href="#cb2-411" aria-hidden="true" tabindex="-1"></a>Purpose. Attach monthly WILD aggregates to each wheel’s observation window—only the months between install and the analysis month for that row.</span>
+<span id="cb2-402"><a href="#cb2-402" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>failure_data</span>
+<span id="cb2-403"><a href="#cb2-403" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>mileage_ratio_summary</span>
+<span id="cb2-404"><a href="#cb2-404" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>totalmileage_slope_summary</span>
+<span id="cb2-405"><a href="#cb2-405" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-406"><a href="#cb2-406" aria-hidden="true" tabindex="-1"></a>Output. Same rows as failure_data, augmented with:</span>
+<span id="cb2-407"><a href="#cb2-407" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-408"><a href="#cb2-408" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>n_prior_failure — cumulative # of earlier events for this wheel_id (per-install history, shifted so it’s strictly prior)</span>
+<span id="cb2-409"><a href="#cb2-409" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>loaded_ratio — equipment-level trimmed mean of loaded/added mileage</span>
+<span id="cb2-410"><a href="#cb2-410" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>loadedmileage — partmileage × loaded_ratio (quick proxy for the loaded share)</span>
+<span id="cb2-411"><a href="#cb2-411" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>mileage_slope — equipment-level mean slope of total mileage growth</span>
 <span id="cb2-412"><a href="#cb2-412" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-413"><a href="#cb2-413" aria-hidden="true" tabindex="-1"></a>Inputs.</span>
+<span id="cb2-413"><a href="#cb2-413" aria-hidden="true" tabindex="-1"></a><span class="fu">#### create_failure_wild(...) — align WILD months to each wheel’s window</span></span>
 <span id="cb2-414"><a href="#cb2-414" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-415"><a href="#cb2-415" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>failure_data (after the update above)</span>
-<span id="cb2-416"><a href="#cb2-416" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>wild_agg: monthly WILD aggregates at the wheel level (wheel_id, recordmonth, feature stats)</span>
-<span id="cb2-417"><a href="#cb2-417" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-418"><a href="#cb2-418" aria-hidden="true" tabindex="-1"></a>Output. A long table with all failure rows replicated across their valid WILD months, containing:</span>
-<span id="cb2-419"><a href="#cb2-419" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-420"><a href="#cb2-420" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>recordmonth_wild — the WILD calendar month</span>
-<span id="cb2-421"><a href="#cb2-421" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>All WILD feature stats for that month</span>
-<span id="cb2-422"><a href="#cb2-422" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>The original failure columns for the matching wheel_id</span>
+<span id="cb2-415"><a href="#cb2-415" aria-hidden="true" tabindex="-1"></a>Purpose. Attach monthly WILD aggregates to each wheel’s observation window—only the months between install and the analysis month for that row.</span>
+<span id="cb2-416"><a href="#cb2-416" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-417"><a href="#cb2-417" aria-hidden="true" tabindex="-1"></a>Inputs.</span>
+<span id="cb2-418"><a href="#cb2-418" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-419"><a href="#cb2-419" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>failure_data (after the update above)</span>
+<span id="cb2-420"><a href="#cb2-420" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>wild_agg: monthly WILD aggregates at the wheel level (wheel_id, recordmonth, feature stats)</span>
+<span id="cb2-421"><a href="#cb2-421" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-422"><a href="#cb2-422" aria-hidden="true" tabindex="-1"></a>Output. A long table with all failure rows replicated across their valid WILD months, containing:</span>
 <span id="cb2-423"><a href="#cb2-423" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-424"><a href="#cb2-424" aria-hidden="true" tabindex="-1"></a>Logic</span>
-<span id="cb2-425"><a href="#cb2-425" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-426"><a href="#cb2-426" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Chunk through wild_agg; in each chunk, rename recordmonth → recordmonth_wild and merge on wheel_id.</span>
-<span id="cb2-427"><a href="#cb2-427" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Filter to rows where recordmonth_wild ∈ <span class="co">[</span><span class="ot">applieddate_used, recordmonth</span><span class="co">]</span> so only post-install, pre-(or at)-outcome months remain.</span>
-<span id="cb2-428"><a href="#cb2-428" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Concatenate all chunks.</span>
+<span id="cb2-424"><a href="#cb2-424" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>recordmonth_wild — the WILD calendar month</span>
+<span id="cb2-425"><a href="#cb2-425" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>All WILD feature stats for that month</span>
+<span id="cb2-426"><a href="#cb2-426" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>The original failure columns for the matching wheel_id</span>
+<span id="cb2-427"><a href="#cb2-427" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-428"><a href="#cb2-428" aria-hidden="true" tabindex="-1"></a>Logic</span>
 <span id="cb2-429"><a href="#cb2-429" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-430"><a href="#cb2-430" aria-hidden="true" tabindex="-1"></a>This yields a month-by-month panel per wheel that respects the install date and stops at the evaluation month—perfect for building calendar lags next.</span>
-<span id="cb2-431"><a href="#cb2-431" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-432"><a href="#cb2-432" aria-hidden="true" tabindex="-1"></a><span class="fu">#### generate_calendar_lags_with_applied_condition(...) — calendar-anchored lags</span></span>
+<span id="cb2-430"><a href="#cb2-430" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Chunk through wild_agg; in each chunk, rename recordmonth → recordmonth_wild and merge on wheel_id.</span>
+<span id="cb2-431"><a href="#cb2-431" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Filter to rows where recordmonth_wild ∈ <span class="co">[</span><span class="ot">applieddate_used, recordmonth</span><span class="co">]</span> so only post-install, pre-(or at)-outcome months remain.</span>
+<span id="cb2-432"><a href="#cb2-432" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Concatenate all chunks.</span>
 <span id="cb2-433"><a href="#cb2-433" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-434"><a href="#cb2-434" aria-hidden="true" tabindex="-1"></a>Purpose. For each wheel-month row, attach up to k months of historical values (lag1…lagk) for selected features—but never from before the wheel’s install date.</span>
+<span id="cb2-434"><a href="#cb2-434" aria-hidden="true" tabindex="-1"></a>This yields a month-by-month panel per wheel that respects the install date and stops at the evaluation month—perfect for building calendar lags next.</span>
 <span id="cb2-435"><a href="#cb2-435" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-436"><a href="#cb2-436" aria-hidden="true" tabindex="-1"></a>Inputs.</span>
+<span id="cb2-436"><a href="#cb2-436" aria-hidden="true" tabindex="-1"></a><span class="fu">#### generate_calendar_lags_with_applied_condition(...) — calendar-anchored lags</span></span>
 <span id="cb2-437"><a href="#cb2-437" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-438"><a href="#cb2-438" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>df: the WILD-enriched failure table (from the function above)</span>
-<span id="cb2-439"><a href="#cb2-439" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>feature_cols: list of telemetry columns to lag (e.g., maxvertical_mean, …_90pct, geometry stats, alerts)</span>
-<span id="cb2-440"><a href="#cb2-440" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Identifiers &amp; dates: id_col (usually wheel_id), applied_col (applieddate_used), date_col (recordmonth_wild)</span>
-<span id="cb2-441"><a href="#cb2-441" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>trailing_months: number of calendar lags (default 6)</span>
-<span id="cb2-442"><a href="#cb2-442" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-443"><a href="#cb2-443" aria-hidden="true" tabindex="-1"></a>Output.</span>
-<span id="cb2-444"><a href="#cb2-444" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-445"><a href="#cb2-445" aria-hidden="true" tabindex="-1"></a>The same rows as df, plus columns like <span class="dt">&lt;</span><span class="kw">feature</span><span class="dt">&gt;</span>_lag1, …, <span class="dt">&lt;</span><span class="kw">feature</span><span class="dt">&gt;</span>_lag6.</span>
+<span id="cb2-438"><a href="#cb2-438" aria-hidden="true" tabindex="-1"></a>Purpose. For each wheel-month row, attach up to k months of historical values (lag1…lagk) for selected features—but never from before the wheel’s install date.</span>
+<span id="cb2-439"><a href="#cb2-439" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-440"><a href="#cb2-440" aria-hidden="true" tabindex="-1"></a>Inputs.</span>
+<span id="cb2-441"><a href="#cb2-441" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-442"><a href="#cb2-442" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>df: the WILD-enriched failure table (from the function above)</span>
+<span id="cb2-443"><a href="#cb2-443" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>feature_cols: list of telemetry columns to lag (e.g., maxvertical_mean, …_90pct, geometry stats, alerts)</span>
+<span id="cb2-444"><a href="#cb2-444" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Identifiers &amp; dates: id_col (usually wheel_id), applied_col (applieddate_used), date_col (recordmonth_wild)</span>
+<span id="cb2-445"><a href="#cb2-445" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>trailing_months: number of calendar lags (default 6)</span>
 <span id="cb2-446"><a href="#cb2-446" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-447"><a href="#cb2-447" aria-hidden="true" tabindex="-1"></a>A final alignment filter returns only rows where recordmonth_wild == recordmonth (so each training/validation row is anchored to its label month).</span>
+<span id="cb2-447"><a href="#cb2-447" aria-hidden="true" tabindex="-1"></a>Output.</span>
 <span id="cb2-448"><a href="#cb2-448" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-449"><a href="#cb2-449" aria-hidden="true" tabindex="-1"></a>Logic.</span>
+<span id="cb2-449"><a href="#cb2-449" aria-hidden="true" tabindex="-1"></a>The same rows as df, plus columns like <span class="dt">&lt;</span><span class="kw">feature</span><span class="dt">&gt;</span>_lag1, …, <span class="dt">&lt;</span><span class="kw">feature</span><span class="dt">&gt;</span>_lag6.</span>
 <span id="cb2-450"><a href="#cb2-450" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-451"><a href="#cb2-451" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Sort by id_col, applied_col, date_col. Keep only the columns needed to compute lags.</span>
-<span id="cb2-452"><a href="#cb2-452" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>For each n = 1..k:</span>
-<span id="cb2-453"><a href="#cb2-453" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Create a temporary copy where we shift the calendar forward by n months (lag_date = date_col + n months).</span>
-<span id="cb2-454"><a href="#cb2-454" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Rename <span class="dt">&lt;</span><span class="kw">feature</span><span class="dt">&gt;</span> → <span class="dt">&lt;</span><span class="kw">feature</span><span class="dt">&gt;</span>_lagn and merge back on <span class="co">[</span><span class="ot">id_col, applied_col, lag_date≡date_col</span><span class="co">]</span>.</span>
-<span id="cb2-455"><a href="#cb2-455" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>This effectively pulls the value at (t−n) onto the row at month t.</span>
-<span id="cb2-456"><a href="#cb2-456" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Guardrail: If (t − n) &lt; applieddate_used, set those lag columns to NaN (no pre-install leakage).</span>
-<span id="cb2-457"><a href="#cb2-457" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Return only rows with recordmonth_wild == recordmonth to ensure the features and label are from the same calendar month.</span>
-<span id="cb2-458"><a href="#cb2-458" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-459"><a href="#cb2-459" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-460"><a href="#cb2-460" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-461"><a href="#cb2-461" aria-hidden="true" tabindex="-1"></a>Lags are calendar-true (one per month), and not row-shifted. This way they keep the temporal signals. The install-date mask guarantees that early lags don’t peek before a wheel existed.  Including applied_col in the merge key keeps separate installs of the same wheel_id from bleeding into each other.</span>
+<span id="cb2-451"><a href="#cb2-451" aria-hidden="true" tabindex="-1"></a>A final alignment filter returns only rows where recordmonth_wild == recordmonth (so each training/validation row is anchored to its label month).</span>
+<span id="cb2-452"><a href="#cb2-452" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-453"><a href="#cb2-453" aria-hidden="true" tabindex="-1"></a>Logic.</span>
+<span id="cb2-454"><a href="#cb2-454" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-455"><a href="#cb2-455" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Sort by id_col, applied_col, date_col. Keep only the columns needed to compute lags.</span>
+<span id="cb2-456"><a href="#cb2-456" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>For each n = 1..k:</span>
+<span id="cb2-457"><a href="#cb2-457" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Create a temporary copy where we shift the calendar forward by n months (lag_date = date_col + n months).</span>
+<span id="cb2-458"><a href="#cb2-458" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Rename <span class="dt">&lt;</span><span class="kw">feature</span><span class="dt">&gt;</span> → <span class="dt">&lt;</span><span class="kw">feature</span><span class="dt">&gt;</span>_lagn and merge back on <span class="co">[</span><span class="ot">id_col, applied_col, lag_date≡date_col</span><span class="co">]</span>.</span>
+<span id="cb2-459"><a href="#cb2-459" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>This effectively pulls the value at (t−n) onto the row at month t.</span>
+<span id="cb2-460"><a href="#cb2-460" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Guardrail: If (t − n) &lt; applieddate_used, set those lag columns to NaN (no pre-install leakage).</span>
+<span id="cb2-461"><a href="#cb2-461" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Return only rows with recordmonth_wild == recordmonth to ensure the features and label are from the same calendar month.</span>
 <span id="cb2-462"><a href="#cb2-462" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-463"><a href="#cb2-463" aria-hidden="true" tabindex="-1"></a>The following steps which utilize the above 3 functions are performed to gerneate the training data. </span>
+<span id="cb2-463"><a href="#cb2-463" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-464"><a href="#cb2-464" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-465"><a href="#cb2-465" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Start with labeled splits (train_failure_data, val_failure_data).</span>
-<span id="cb2-466"><a href="#cb2-466" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Enrich with usage/history via update_failure_data(...).</span>
-<span id="cb2-467"><a href="#cb2-467" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Attach WILD panels via create_failure_wild(...).</span>
-<span id="cb2-468"><a href="#cb2-468" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Build leakage-safe calendar lags via generate_calendar_lags_with_applied_condition(...) (6 trailing months).</span>
-<span id="cb2-469"><a href="#cb2-469" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Join WPD (wheel) and THD (truck) on the same recordmonth_wild anchor; drop train-speed columns.</span>
-<span id="cb2-470"><a href="#cb2-470" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-471"><a href="#cb2-471" aria-hidden="true" tabindex="-1"></a><span class="fu">### Dimensionality control</span></span>
-<span id="cb2-472"><a href="#cb2-472" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-473"><a href="#cb2-473" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>High-corr pruning: Compute an absolute correlation matrix over numeric features and drop any feature whose correlation with a previous feature exceeds 0.70.</span>
-<span id="cb2-474"><a href="#cb2-474" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Administrative drops: Remove identifiers, timestamps, and non-predictive keys (e.g., wheel_id, truck_id, equipmentnumber, recordmonth(_wild), vendor/material codes, etc.).</span>
-<span id="cb2-475"><a href="#cb2-475" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Save  both the full lagged table and the reduced feature matrix for reproducibility.</span>
+<span id="cb2-465"><a href="#cb2-465" aria-hidden="true" tabindex="-1"></a>Lags are calendar-true (one per month), and not row-shifted. This way they keep the temporal signals. The install-date mask guarantees that early lags don’t peek before a wheel existed.  Including applied_col in the merge key keeps separate installs of the same wheel_id from bleeding into each other.</span>
+<span id="cb2-466"><a href="#cb2-466" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-467"><a href="#cb2-467" aria-hidden="true" tabindex="-1"></a>The following steps which utilize the above 3 functions are performed to gerneate the training data. </span>
+<span id="cb2-468"><a href="#cb2-468" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-469"><a href="#cb2-469" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Start with labeled splits (train_failure_data, val_failure_data).</span>
+<span id="cb2-470"><a href="#cb2-470" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Enrich with usage/history via update_failure_data(...).</span>
+<span id="cb2-471"><a href="#cb2-471" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Attach WILD panels via create_failure_wild(...).</span>
+<span id="cb2-472"><a href="#cb2-472" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Build leakage-safe calendar lags via generate_calendar_lags_with_applied_condition(...) (6 trailing months).</span>
+<span id="cb2-473"><a href="#cb2-473" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Join WPD (wheel) and THD (truck) on the same recordmonth_wild anchor; drop train-speed columns.</span>
+<span id="cb2-474"><a href="#cb2-474" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-475"><a href="#cb2-475" aria-hidden="true" tabindex="-1"></a><span class="fu">### Dimensionality control</span></span>
 <span id="cb2-476"><a href="#cb2-476" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-477"><a href="#cb2-477" aria-hidden="true" tabindex="-1"></a><span class="fu">### Model &amp; tuning</span></span>
-<span id="cb2-478"><a href="#cb2-478" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-479"><a href="#cb2-479" aria-hidden="true" tabindex="-1"></a>XGBoost was selected as the modelling approach. Using XGBoost, a multiclass model was fit. The details are given below. </span>
+<span id="cb2-477"><a href="#cb2-477" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>High-corr pruning: Compute an absolute correlation matrix over numeric features and drop any feature whose correlation with a previous feature exceeds 0.70.</span>
+<span id="cb2-478"><a href="#cb2-478" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Administrative drops: Remove identifiers, timestamps, and non-predictive keys (e.g., wheel_id, truck_id, equipmentnumber, recordmonth(_wild), vendor/material codes, etc.).</span>
+<span id="cb2-479"><a href="#cb2-479" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Save  both the full lagged table and the reduced feature matrix for reproducibility.</span>
 <span id="cb2-480"><a href="#cb2-480" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-481"><a href="#cb2-481" aria-hidden="true" tabindex="-1"></a><span class="ss">-  </span>Model: XGBClassifier with objective="multi:softprob" (multiclass probabilities).</span>
-<span id="cb2-482"><a href="#cb2-482" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Target: failurereason (five classes).</span>
-<span id="cb2-483"><a href="#cb2-483" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Search: RandomizedSearchCV over standard XGB hyperparameters (depth, learning rate, trees, subsample, column subsample, gamma, min_child_weight, L1/L2).</span>
-<span id="cb2-484"><a href="#cb2-484" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>CV: Stratified K-folds.</span>
-<span id="cb2-485"><a href="#cb2-485" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Primary metric: log loss (mlogloss / neg_log_loss).</span>
-<span id="cb2-486"><a href="#cb2-486" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Class weighting: Derives per-class weights from the validation distribution and applies them as sample weights during training to temper class imbalance.</span>
-<span id="cb2-487"><a href="#cb2-487" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Evaluation: Predict class probabilities on validation; report log loss.</span>
-<span id="cb2-488"><a href="#cb2-488" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-489"><a href="#cb2-489" aria-hidden="true" tabindex="-1"></a>On the validation dataset, I achieved a log loss of 0.846. But it must be noted that the validation dataset is not synonymous to the test dataset. The validation set is condensed to form only one row per wheel with one applieddate. This is not the case for test set, as test set has one month per wheel. The result on part of the test data gave 0.207 as the log loss. </span>
-<span id="cb2-490"><a href="#cb2-490" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-491"><a href="#cb2-491" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-492"><a href="#cb2-492" aria-hidden="true" tabindex="-1"></a><span class="fu">### Assumptions &amp; design choices</span></span>
-<span id="cb2-493"><a href="#cb2-493" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-494"><a href="#cb2-494" aria-hidden="true" tabindex="-1"></a>Following summarizes the design choices I made to tackle this problem.</span>
+<span id="cb2-481"><a href="#cb2-481" aria-hidden="true" tabindex="-1"></a><span class="fu">### Model &amp; tuning</span></span>
+<span id="cb2-482"><a href="#cb2-482" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-483"><a href="#cb2-483" aria-hidden="true" tabindex="-1"></a>XGBoost was selected as the modelling approach. Using XGBoost, a multiclass model was fit. The details are given below. </span>
+<span id="cb2-484"><a href="#cb2-484" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-485"><a href="#cb2-485" aria-hidden="true" tabindex="-1"></a><span class="ss">-  </span>Model: XGBClassifier with objective="multi:softprob" (multiclass probabilities).</span>
+<span id="cb2-486"><a href="#cb2-486" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Target: failurereason (five classes).</span>
+<span id="cb2-487"><a href="#cb2-487" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Search: RandomizedSearchCV over standard XGB hyperparameters (depth, learning rate, trees, subsample, column subsample, gamma, min_child_weight, L1/L2).</span>
+<span id="cb2-488"><a href="#cb2-488" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>CV: Stratified K-folds.</span>
+<span id="cb2-489"><a href="#cb2-489" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Primary metric: log loss (mlogloss / neg_log_loss).</span>
+<span id="cb2-490"><a href="#cb2-490" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Class weighting: Derives per-class weights from the validation distribution and applies them as sample weights during training to temper class imbalance.</span>
+<span id="cb2-491"><a href="#cb2-491" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Evaluation: Predict class probabilities on validation; report log loss.</span>
+<span id="cb2-492"><a href="#cb2-492" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-493"><a href="#cb2-493" aria-hidden="true" tabindex="-1"></a>On the validation dataset, I achieved a log loss of 0.846. But it must be noted that the validation dataset is not synonymous to the test dataset. The validation set is condensed to form only one row per wheel with one applieddate. This is not the case for test set, as test set has one month per wheel. The result on part of the test data gave 0.207 as the log loss. </span>
+<span id="cb2-494"><a href="#cb2-494" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-495"><a href="#cb2-495" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-496"><a href="#cb2-496" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Number of models: Only 1 model, a multi class classifier was chosen. Ensemble model should be explored. </span>
-<span id="cb2-497"><a href="#cb2-497" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Temporal leakage guard: Lags are generated post-install and aligned to record months, so the model only sees past telemetry relative to each target month.</span>
-<span id="cb2-498"><a href="#cb2-498" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Multicollinearity: A static 0.70 threshold is used for simplicity; SHAP/feature grouping could replace this later.</span>
-<span id="cb2-499"><a href="#cb2-499" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Class imbalance: Addressed via sample weights, not by down/up-sampling; preserves the full dataset.</span>
-<span id="cb2-500"><a href="#cb2-500" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Feature breadth over specificity: We include a wide panel of WILD/WPD/THD stats first, then let XGB + pruning do the heavy lifting.</span>
-<span id="cb2-501"><a href="#cb2-501" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-502"><a href="#cb2-502" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-503"><a href="#cb2-503" aria-hidden="true" tabindex="-1"></a><span class="fu">## Limitations &amp; Next Steps</span></span>
-<span id="cb2-504"><a href="#cb2-504" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-505"><a href="#cb2-505" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Explainability: Add SHAP summaries to identify the most useful families/lags and to validate domain plausibility.</span>
-<span id="cb2-506"><a href="#cb2-506" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Temporal generalization: Consider time-based splits (e.g., train on older months, validate on newer) to mimic prospective performance.</span>
-<span id="cb2-507"><a href="#cb2-507" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Target framing: Multiclass reason is harder than failure vs not; a staged approach (binary failure first, then reason) could lift recall for rarer classes.</span>
-<span id="cb2-508"><a href="#cb2-508" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Different models for different failurereason: It was found that certain features may be useful for certain defect types. It may be worthwhile to try different models and create one ensemble model as the final one. </span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
+<span id="cb2-496"><a href="#cb2-496" aria-hidden="true" tabindex="-1"></a><span class="fu">### Assumptions &amp; design choices</span></span>
+<span id="cb2-497"><a href="#cb2-497" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-498"><a href="#cb2-498" aria-hidden="true" tabindex="-1"></a>Following summarizes the design choices I made to tackle this problem.</span>
+<span id="cb2-499"><a href="#cb2-499" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-500"><a href="#cb2-500" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Number of models: Only 1 model, a multi class classifier was chosen. Ensemble model should be explored. </span>
+<span id="cb2-501"><a href="#cb2-501" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Temporal leakage guard: Lags are generated post-install and aligned to record months, so the model only sees past telemetry relative to each target month.</span>
+<span id="cb2-502"><a href="#cb2-502" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Multicollinearity: A static 0.70 threshold is used for simplicity; SHAP/feature grouping could replace this later.</span>
+<span id="cb2-503"><a href="#cb2-503" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Class imbalance: Addressed via sample weights, not by down/up-sampling; preserves the full dataset.</span>
+<span id="cb2-504"><a href="#cb2-504" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Feature breadth over specificity: We include a wide panel of WILD/WPD/THD stats first, then let XGB + pruning do the heavy lifting.</span>
+<span id="cb2-505"><a href="#cb2-505" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-506"><a href="#cb2-506" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-507"><a href="#cb2-507" aria-hidden="true" tabindex="-1"></a><span class="fu">## Limitations &amp; Next Steps</span></span>
+<span id="cb2-508"><a href="#cb2-508" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-509"><a href="#cb2-509" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Explainability: Add SHAP summaries to identify the most useful families/lags and to validate domain plausibility.</span>
+<span id="cb2-510"><a href="#cb2-510" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Temporal generalization: Consider time-based splits (e.g., train on older months, validate on newer) to mimic prospective performance.</span>
+<span id="cb2-511"><a href="#cb2-511" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Target framing: Multiclass reason is harder than failure vs not; a staged approach (binary failure first, then reason) could lift recall for rarer classes.</span>
+<span id="cb2-512"><a href="#cb2-512" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Different models for different failurereason: It was found that certain features may be useful for certain defect types. It may be worthwhile to try different models and create one ensemble model as the final one.</span>
+<span id="cb2-513"><a href="#cb2-513" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-514"><a href="#cb2-514" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-515"><a href="#cb2-515" aria-hidden="true" tabindex="-1"></a><span class="fu">## Conclusion</span></span>
+<span id="cb2-516"><a href="#cb2-516" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-517"><a href="#cb2-517" aria-hidden="true" tabindex="-1"></a>This study demonstrates that a simple, disciplined pipeline—monthly aggregation, install-aware alignment, and calendar lags—can extract actionable signal for multiclass wheel-failure prediction. Among detectors, WILD (especially MaxVertical-90th) shows the clearest pre-failure escalation for high-impact events; analogous patterns for high-/thin-flange were weaker in THD/WPD. The XGBoost baseline, trained on a broad but pruned feature panel and guarded against leakage, produces well-calibrated probabilities (by design) and competitive log-loss on validation, with encouraging performance on a month-level test slice. That said, the framing (multiclass reason vs. failure/no-failure), temporal drift, and class imbalance remain open challenges. The most promising next steps are: (i) time-ordered evaluation to measure true prospective performance, (ii) explainability (SHAP) to confirm domain-plausible drivers, (iii) probability calibration for thresholding, and (iv) modeling variants—binary failure stage-1 followed by reason classification, per-defect specialists, and lightweight ensembles. With these additions—and mileage projection for late months formalized—the system should translate into more reliable, earlier warnings for rail operations.</span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 
