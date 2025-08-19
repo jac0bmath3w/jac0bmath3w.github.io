@@ -48,6 +48,7 @@ This dataset consists information about the measurements of the wheel. It includ
 ### Mileage Data
 This dataset provides information about how many miles each equipment travelled each month. It was also pointed out that mileage information is only available with a 3 month lag, indicating that a sub-model is required to predict where how far each wheel would have travelled during the months that we need to predict. 
 
+### Wheel Failure Data
 We also have wheel failure data giving information about the month a particular wheel failed and the reason for failure.
 
 The failure data contains information for each month. So, once a wheel is installed, we have information about the wheel till it failed or is replaced (all the rows for a wheel would have the column 'failedin30days' == 0 until the last row (unless it is replaced without failure). 
@@ -122,7 +123,7 @@ This process is repeated for WILD, THD, and WPD data to get montly aggregates.
 #### Processing of failure data
 Since failure data is exploded at the monthly level and most of the rows indicate a row with no failure (i.e., failure happens later down the line or the wheel did not fail at all), it made sense to me to reduce the data such that each wheel (uniaquely identified by equiment number, truck, axle, side, applieddate) would be represented by just one row (which is the last row chronologically).
 
-Processing pipeline (what the code does)
+##### Processing pipeline
 
 Goal: Start from monthly wheel records and end with one row per physical wheel instance (equipment × truck × axle × side × applieddate) that carries a clear failure status, and  failure reason. 
 
@@ -185,15 +186,11 @@ clean_failure_data — one row per wheel instance (equipment × truck × axle ×
   - failed / not_failed — intermediate tables used to collapse histories to a single row per install.
   - time_diff — per-install span of months observed (useful for QA on the consolidation).
 
-##### Assumptions captured in the code (not changing behavior—just noting)
+##### Assumptions captured in the code
 
-
-
-When multiple failure rows exist in the same month, vendor/material IDs are ignored for de-duplication to avoid counting trivial differences.
-
-The workflow references upstream objects (failure_data, group_sizes, unique_rows, make_wheel_id, applieddate_used) that are expected to be defined earlier in your notebook/script.
-
-The across-month filter keeps rows where applieddate changes and drops the last row of each wheel’s sequence; this intentionally emphasizes installation-change boundaries.
+      - When multiple failure rows exist in the same month, vendor/material IDs are ignored for de-duplication to avoid counting trivial differences.
+      - The workflow references upstream objects (failure_data, group_sizes, unique_rows, make_wheel_id, applieddate_used) that are expected to be defined earlier in your notebook/script.
+      - The across-month filter keeps rows where applieddate changes and drops the last row of each wheel’s sequence; this intentionally emphasizes installation-change boundaries.
 
 #### Processing of mileage data
 
@@ -204,6 +201,9 @@ Purpose.
 
 Make monthly mileage records coherent before any downstream use: fill  NAs, reconcile component miles with totals, and enforce consecutive-month consistency.
 
+Before this script, the loaded and empty mileage seem to have several inconsistencies with the added miles as shown in the figure below.
+
+![Loaded + Empty Mileage vs Added Mileage before Mileage Data Cleaning](images/Loaded+EmptyVsAddedMiles.png)
 
 
 Key steps (what the script does).
@@ -225,7 +225,7 @@ Key steps (what the script does).
 
 Once the cleaning is done, loaded mileage + empty mileage ~ added mileage
 
-![Loaded + Empty Mileage vs Added Mileage before Mileage Data Cleaning](images/Loaded+EmptyVsAddedMiles.png)
+
 ![Loaded + Empty Mileage vs Added Mileage after Mileage Data Cleaning](images/Cleaned_Loaded+EmptyVsAddedMiles.png)
 
 ##### Slopes and changepoints
@@ -236,7 +236,7 @@ Quantify mileage trends and structural breaks: per-install partmileage slopes an
 
 Key steps.
 
-- Visual audit of missing metadata.
+- Visual audit of missing mileage data. 
 - For selected equipmentnumber values, plots partmileage timeseries; colors points by applieddate and draws vertical lines at each install date—useful to spot gaps/inconsistencies per (axle, truck, side).
 - Per-install partmileage slope.
 - For each (wheel_id, applieddate) sequence:
@@ -249,6 +249,7 @@ Key steps.
   - Marks change months in the cleaned table and assigns segment IDs by cumulative sum over change flags.
   - Segment-wise totalmileage slopes.
   - Fits OLS slopes within each (equipmentnumber, segment_id) block.
+- For each equipment, find the aggregate of the different slopes calculated after different install dates. 
 
 Keep the slopes and a summary filtered to stronger trends (e.g., coefficient > 0.3).
 
@@ -485,7 +486,7 @@ XGBoost was selected as the modelling approach. Using XGBoost, a multiclass mode
 - Class weighting: Derives per-class weights from the validation distribution and applies them as sample weights during training to temper class imbalance.
 - Evaluation: Predict class probabilities on validation; report log loss.
 
-On the validation dataset, I achieved a log loss of 0.846. But it must be noted that the validation dataset is not synonymous to the test dataset 
+On the validation dataset, I achieved a log loss of 0.846. But it must be noted that the validation dataset is not synonymous to the test dataset. The validation set is condensed to form only one row per wheel with one applieddate. This is not the case for test set, as test set has one month per wheel. The result on part of the test data gave 0.207 as the log loss. 
 
 
 ### Assumptions & design choices
@@ -499,7 +500,7 @@ Following summarizes the design choices I made to tackle this problem.
 - Feature breadth over specificity: We include a wide panel of WILD/WPD/THD stats first, then let XGB + pruning do the heavy lifting.
 
 
-## Limitations & next steps
+## Limitations & Next Steps
 
 - Explainability: Add SHAP summaries to identify the most useful families/lags and to validate domain plausibility.
 - Temporal generalization: Consider time-based splits (e.g., train on older months, validate on newer) to mimic prospective performance.
