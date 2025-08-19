@@ -176,7 +176,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract">Abstract</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
   <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a>
   <ul class="collapse">
   <li><a href="#wild-data-wheel-impact-load-detector" id="toc-wild-data-wheel-impact-load-detector" class="nav-link" data-scroll-target="#wild-data-wheel-impact-load-detector">WILD data (Wheel Impact Load Detector)</a></li>
@@ -250,8 +251,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>In this post, I go into details of how I attempted to solve the problem to predict the likelihood of a train wheel failure in the upcoming months. The source of the data and more details of the problem is available at https://www.kaggle.com/competitions/informs-ras-2025-problem-solving-competition/</p>
-<p>Abstract</p>
+<section id="abstract" class="level2">
+<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
 <p>This post documents a full, leakage-safe pipeline for predicting wheel failure reason on rail cars using monthly aggregates from WILD, THD, and WPD plus mileage-derived features. I first normalize the failure table to one row per wheel install (equipment × truck × axle × side × applieddate), then aggregate each detector stream to month-level summaries (mean/median/std/10th/90th percentiles, optional slopes). WILD is aligned to each install’s window (applieddate_used → recordmonth), and I build calendar lags over the prior 6 months while masking pre-install values. Additional covariates include prior failure count, loaded/added mileage ratio (per equipment), and total-mileage slopes from changepoint segments. After 90/10 stratified train/validation splitting and high-correlation pruning (|r|&gt;0.70), I fit a multiclass XGBoost model (soft probabilities, randomized search). Exploratory analysis and statistical tests show MaxVertical (90th percentile) tends to be higher and rising prior to high-impact failures. The model achieved a validation log loss ≈ 0.846; on a partial test subset with month-level rows, log loss was ≈ 0.207. I close with limitations (class imbalance, temporal generalization, per-defect nuances) and next steps (time-based splits, SHAP, calibration, and ensembles).</p>
+</section>
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
 <p>Rail wheels are an important asset of the rail inventory, and any type of failure can be a safety hazard, even leading to derailment. Thus, regular maintainance and forward thinking predictive analytics plays a cruicial role in the safe operations of rail cars.</p>
@@ -1181,7 +1184,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>In this post, I go into details of how I attempted to solve the problem to predict the likelihood of a train wheel failure in the upcoming months. The source of the data and more details of the problem is available at https://www.kaggle.com/competitions/informs-ras-2025-problem-solving-competition/</span>
 <span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>Abstract</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="fu">## Abstract</span></span>
 <span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>This post documents a full, leakage-safe pipeline for predicting wheel failure reason on rail cars using monthly aggregates from WILD, THD, and WPD plus mileage-derived features. I first normalize the failure table to one row per wheel install (equipment × truck × axle × side × applieddate), then aggregate each detector stream to month-level summaries (mean/median/std/10th/90th percentiles, optional slopes). WILD is aligned to each install’s window (applieddate_used → recordmonth), and I build calendar lags over the prior 6 months while masking pre-install values. Additional covariates include prior failure count, loaded/added mileage ratio (per equipment), and total-mileage slopes from changepoint segments. After 90/10 stratified train/validation splitting and high-correlation pruning (|r|&gt;0.70), I fit a multiclass XGBoost model (soft probabilities, randomized search). Exploratory analysis and statistical tests show MaxVertical (90th percentile) tends to be higher and rising prior to high-impact failures. The model achieved a validation log loss ≈ 0.846; on a partial test subset with month-level rows, log loss was ≈ 0.207. I close with limitations (class imbalance, temporal generalization, per-defect nuances) and next steps (time-based splits, SHAP, calibration, and ensembles).</span>
 <span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a></span>
