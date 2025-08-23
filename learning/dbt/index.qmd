@@ -43,7 +43,7 @@ I wanted to use real world data as I was learning. So for this purpose I downloa
 
 DBT looks specifically for a file named dbt_project.yml in the project root. This file tells dbt how to organize and materialize everything we do in this project. My dbt_project.yml file looks like this 
 
-```{r, echo: false}
+```yaml
 name: 'dbt_intro'
 version: '1.0.0'
 config-version: 2
@@ -71,3 +71,42 @@ seeds:
 ```
 
 The explanation for each of the lines is as follows:
+
+- 'name' is the name of the project. I chose dbt_intro as the name
+- 'version' is the projects version.
+- 'config-version'. DBT had an old format which is config-version:1. The modern format is config-version:2. So all current projects has 2 as the config-version
+- 'profile' tells dbt which database connection setting to use, which would be added in profiles.yml later. 
+- 'model-paths': the directory where all the models are stored. You can have different sub directories in this directory for each layers (including raw, staging, intermediate and mart)
+- 'seed-path' : the directory where .csv seeds are stored. Seeds are typically small reference data. It is always stored as a .csv file. 
+- 'materialized' tells how the models are built in the database.
+  - view means that an SQL view is created,
+  - table means that dbt runs the query and stores it as a table.
+  - incremental means that dbt builds a table once, then only adds new or changed data each run
+  - ephemeral means that dbt doesn't build anything in DB. It inlines the SQL as a subquery in downstream models.
+- 'models' configuration for models.
+  - 'staging': raw but cleaned data, do basic cleaning like type casting, renaming columns, etc. This would mirror the source table
+  - 'intermediate': join staging tables, do calculations and add logic
+  - 'mart': final business facing models. 
+- 'seeds' configuration for seeds.
+  - 'quote-columns': false indicates don't auto quote columns. I.e., don't add quotations around column names. Simple, lowercase names with underscore are cleaner and safer. 
+  
+ # profiles.yml
+
+DBT needs to know how to connect to the data warehouse. To do that it looks for profiles.yml in the default location. '.dbt' is a hidden directory where dbt expects to find the profiles.yml. 
+
+```sh
+~/.dbt/profiles.yml
+```
+
+When we build the models, dbt reads 'dbt_projects.yml' from the project folder. It then looks for a matching profile name in 'profiles.yml'. In our case, the profile name is dbt-intro. It then uses the connection details there. We can keep a version of profiles.yml in our repo for version control purposes, but we need to have a version of it in the default location. There is only one 'profiles.yml' stored at '~/.dbt/' for all projects in the machine. Inside this file, we can define multiple profiles.
+
+```yaml
+dbt_intro:                                # (1) Profile name, must match "profile:" in dbt_project.yml
+    target: dev                           # (2) Default environment to use
+    outputs:                              # (3) List of available environments/connections
+        dev:                              # (4) Name of this environment
+            type: duckdb                  # (5) Warehouse type (DuckDB, Postgres, BigQuery, Snowflake, etc.)
+            path: data/warehouse.duckdb   # (6) Path to DuckDB file (your local warehouse DB)
+            threads: 2                    # (7) Number of parallel threads dbt can use (compiles/runs faster)
+            schema: main                  # (8) Default schema inside the warehouse (like a namespace)
+```
