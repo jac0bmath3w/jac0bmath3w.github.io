@@ -67,7 +67,6 @@ seeds:
     dbt_intro: 
      +quote_columns: false
 
----
 ```
 
 The explanation for each of the lines is as follows:
@@ -84,6 +83,7 @@ The explanation for each of the lines is as follows:
   - incremental means that dbt builds a table once, then only adds new or changed data each run
   - ephemeral means that dbt doesn't build anything in DB. It inlines the SQL as a subquery in downstream models.
 - 'models' configuration for models.
+  - 'raw': I set the configuration for this in the model file itself. So it isn't included here. 
   - 'staging': raw but cleaned data, do basic cleaning like type casting, renaming columns, etc. This would mirror the source table
   - 'intermediate': join staging tables, do calculations and add logic
   - 'mart': final business facing models. 
@@ -109,4 +109,67 @@ dbt_intro:                                # (1) Profile name, must match "profil
             path: data/warehouse.duckdb   # (6) Path to DuckDB file (your local warehouse DB)
             threads: 2                    # (7) Number of parallel threads dbt can use (compiles/runs faster)
             schema: main                  # (8) Default schema inside the warehouse (like a namespace)
+```
+
+# Models
+
+This is where we write the SQL queries to process the data. I have four directories in it.
+
+## Raw
+
+This is where I read in the data from source (/data). In raw, I apply only the minimum technical cleanup (e.g., safer column names) to make the data queryable. Here are the two raw models.
+
+raw_ev_charging_stations.sql
+```sql
+{{ config(materialized='table', schema='raw') }}
+
+-- Load WA EV charging stations (EV only) into raw.ev_charging_stations
+with src as (
+  select *
+  from read_csv_auto('data/alt_fuel_stations (Aug 20 2025).csv', header=true)
+)
+select
+  "Station Name"        as station_name,
+  City                  as city,
+  State                 as state,
+  cast(ZIP as varchar)  as postal_code,
+  "EV Level1 EVSE Num"  as level1_ports,
+  "EV Level2 EVSE Num"  as level2_ports,
+  "EV DC Fast Count"    as fast_chargers,
+  Latitude              as latitude,
+  Longitude             as longitude,
+  "EV Network"          as ev_network,
+  "EV Connector Types"  as connector_types,
+  "Date Last Confirmed" as last_confirmed,
+  "Open Date"           as open_date,
+  "Fuel Type Code"      as fuel_type_code,
+  "Status Code"         as status_code
+from src
+where "Fuel Type Code" = 'ELEC'
+```
+
+raw_ev_registrations.sql
+```sql
+{{ config(materialized='table', schema='raw') }}
+
+-- Load Washington EV registrations from the local CSV into raw.ev_registrations
+select
+  "VIN (1-10)"                                        as vin_prefix,
+  County                                              as county,
+  City                                                as city,
+  State                                               as state,
+  "Postal Code"                                       as postal_code,
+  "Model Year"                                        as model_year,
+  Make                                                as make,
+  Model                                               as model,
+  "Electric Vehicle Type"                             as ev_type,
+  "Clean Alternative Fuel Vehicle (CAFV) Eligibility" as cafv_eligibility,
+  "Electric Range"                                    as electric_range,
+  "Base MSRP"                                         as base_msrp,
+  "Legislative District"                              as legislative_district,
+  "DOL Vehicle ID"                                    as dol_vehicle_id,
+  "Vehicle Location"                                  as vehicle_location,
+  "Electric Utility"                                  as electric_utility,
+  "2020 Census Tract"                                 as census_tract
+from read_csv_auto('data/Electric_Vehicle_Population_Data.csv', header=true)
 ```
