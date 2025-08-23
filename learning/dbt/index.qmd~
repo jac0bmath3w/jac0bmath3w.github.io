@@ -1,0 +1,13 @@
+---
+title: "Learning DBT"
+author: "Jacob Mathew"
+date: Fri Aug 22 21:28:15 CDT 2025
+categories: [dbt, data, data_engineering, data_science]
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-tools: true
+---
+
+

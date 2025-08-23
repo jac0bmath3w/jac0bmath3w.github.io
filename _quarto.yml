@@ -19,6 +19,10 @@ website:
           menu:
             - text: Wheel Failure Prediction
               href: projects/wheel-failure-pred/index.qmd
+        - text: Learning
+          menu:
+            - text: DBT
+              href: learning/dbt/index.qmd	      
 
         - text: About
           href: about/index.qmd

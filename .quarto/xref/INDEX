@@ -27,6 +27,10 @@
     "index.html": "109e9434"
   },
   "projects/wheel-failure-pred/index.qmd": {
-    "index.html": "9b7b7d0c"
+    "index.html": "9b7b7d0c",
+    "index.tex": "0813ddaa"
+  },
+  "learning/dbt/index.qmd": {
+    "index.html": "fe411e92"
   }
 }

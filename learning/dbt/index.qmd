@@ -98,7 +98,7 @@ DBT needs to know how to connect to the data warehouse. To do that it looks for 
 ~/.dbt/profiles.yml
 ```
 
-When we build the models, dbt reads 'dbt_projects.yml' from the project folder. It then looks for a matching profile name in 'profiles.yml'. In our case, the profile name is dbt-intro. It then uses the connection details there. We can keep a version of profiles.yml in our repo for version control purposes, but we need to have a version of it in the default location. There is only one 'profiles.yml' stored at '~/.dbt/' for all projects in the machine. Inside this file, we can define multiple profiles.
+When we build the models, dbt reads 'dbt_project.yml' from the project folder. It then looks for a matching profile name in 'profiles.yml'. In our case, the profile name is dbt-intro. It then uses the connection details there. We can keep a version of profiles.yml in our repo for version control purposes, but we need to have a version of it in the default location. There is only one 'profiles.yml' stored at '~/.dbt/' for all projects in the machine. Inside this file, we can define multiple profiles.
 
 ```yaml
 dbt_intro:                                # (1) Profile name, must match "profile:" in dbt_project.yml
@@ -123,7 +123,7 @@ raw_ev_charging_stations.sql
 ```sql
 {{ config(materialized='table', schema='raw') }}
 
--- Load WA EV charging stations (EV only) into raw.ev_charging_stations
+
 with src as (
   select *
   from read_csv_auto('data/alt_fuel_stations (Aug 20 2025).csv', header=true)
@@ -152,7 +152,6 @@ raw_ev_registrations.sql
 ```sql
 {{ config(materialized='table', schema='raw') }}
 
--- Load Washington EV registrations from the local CSV into raw.ev_registrations
 select
   "VIN (1-10)"                                        as vin_prefix,
   County                                              as county,
@@ -173,3 +172,51 @@ select
   "2020 Census Tract"                                 as census_tract
 from read_csv_auto('data/Electric_Vehicle_Population_Data.csv', header=true)
 ```
+
+Note how I added {{ config(materialized='table', schema='raw') }} to the top of each of the models (and not included it in dbt_project.yml).
+
+### Building the model.
+
+There are several ways to build the model. We use selectors with -s to tell dbt what to build.
+
+#### By folder name
+```sh
+dbt run -s raw
+```
+
+Matches anything under models/raw because raw is part of the model's fully qualified name (FQN).
+
+#### By explicit path
+```sh
+dbt run -s path:models/raw
+```
+
+This guarentees to select just this directory. This is a more unambiguous way of running the model.
+
+#### By exact model name
+```sh
+dbt run -s raw_ev_registrations raw_ev_charging_stations
+```
+
+We explicitly state what models we want to run. 
+
+When we run this command, dbt does the following:
+
+1. load config and connect
+   - reads dbt_project.yml
+   - looks up matching profile (in this case it is dbt-intro) in ~/.dbt/profiles.yml
+   - connects to data/warehouse.duckdb (as given in profiles.yml).
+   - sets concurrency to 2 threads (as given in profiles.yml)
+2. parse the project
+   - scans 'models/' for .sql and schema.yml (In our case, schema = 'raw' is given in the model).
+   - builds from the source mentioned in the model. (Later in staging, intermediate etc, we reference the models built in raw).
+3. build a DAG (Directed Acyclic Graph)
+   - Here in raw, models don't depend on anything, and so they are the start of the graph.
+4. compiles SQL
+5. runs SQL
+   - make sure the schema exists (in this case it is raw) or creates it. By default it would be called 'main_raw'.
+   - since materialized is set to tables, it creates/overwrites physical tables. The following tables are created
+      - main_raw.raw_ev_registrations
+      - main_raw.raw_ev_charging_stations
+6. create summary and logs
+   - in target/ some files are created (I didn't check out what they are yet). 
