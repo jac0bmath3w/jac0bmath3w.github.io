@@ -43,7 +43,7 @@ I wanted to use real world data as I was learning. So for this purpose I downloa
 
 DBT looks specifically for a file named dbt_project.yml in the project root. This file tells dbt how to organize and materialize everything we do in this project. My dbt_project.yml file looks like this 
 
----
+```{yml, echo: false}
 name: 'dbt_intro'
 version: '1.0.0'
 config-version: 2
@@ -68,3 +68,6 @@ seeds:
      +quote_columns: false
 
 ---
+
+The explanation for each of the lines is as follows:
+```
