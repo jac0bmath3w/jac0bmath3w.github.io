@@ -1,0 +1,22 @@
+---
+title: "Learning DBT"
+author: "Jacob Mathew"
+date: Fri Aug 22 21:28:15 CDT 2025
+categories: [dbt, data, data_engineering, data_science]
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-tools: true
+---
+
+DBT or Data Build Tool is an open source command line tool that has gained popularity in the recent years. It allows DE to transform data using SQL queries more effectively (according to Wikipedia). In this blog, I document my learning steps and the questions I had along the way.
+
+# Installation.
+
+I created a new conda environment locally, and used pip to install dbt. I also installed duckDB adapter while I am at it.
+'''sh
+pip install dbt-core
+pip install dbt-duckdb
+'''
+
