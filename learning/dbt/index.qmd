@@ -15,8 +15,56 @@ DBT or Data Build Tool is an open source command line tool that has gained popul
 # Installation.
 
 I created a new conda environment locally, and used pip to install dbt. I also installed duckDB adapter while I am at it.
-'''sh
+```sh
 pip install dbt-core
 pip install dbt-duckdb
-'''
+```
 
+The version that I started with was 1.10.9 (and 1.9.4 for duckdb).
+
+# Data
+
+I wanted to use real world data as I was learning. So for this purpose I downloaded the following two datasets,
+
+- Electric Vehicle Popoulation Data from https://catalog.data.gov/dataset/electric-vehicle-population-data
+- Alternate Fuel Data Center from https://afdc.energy.gov/corridors (I downloaded for WA)
+
+# Folder Structure
+
+- data ( Where I saved the raw data)
+- dbt_project.yml
+- logs (dbt automatically creates this)
+- models (folder for each layers of models)
+- profiles.yml 
+- seeds
+- target (dbt automatically creates this)
+
+# dbt_project.yml
+
+DBT looks specifically for a file named dbt_project.yml in the project root. This file tells dbt how to organize and materialize everything we do in this project. My dbt_project.yml file looks like this 
+
+---
+name: 'dbt_intro'
+version: '1.0.0'
+config-version: 2
+
+profile: 'dbt_intro'
+
+model-paths: ['models']
+seed-paths: ['seeds']
+
+models:
+    dbt_intro:
+     +materialized: view
+     staging:
+      +materialized: view
+     intermediate:
+      +materialized: table
+     marts:
+      +materialized: table
+
+seeds:
+    dbt_intro: 
+     +quote_columns: false
+
+---
