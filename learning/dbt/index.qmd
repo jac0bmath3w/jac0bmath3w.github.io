@@ -204,19 +204,150 @@ When we run this command, dbt does the following:
 
 1. load config and connect
    - reads dbt_project.yml
-   - looks up matching profile (in this case it is dbt-intro) in ~/.dbt/profiles.yml
+   - looks up matching profile (in this case it is dbt_intro) in ~/.dbt/profiles.yml
    - connects to data/warehouse.duckdb (as given in profiles.yml).
    - sets concurrency to 2 threads (as given in profiles.yml)
 2. parse the project
-   - scans 'models/' for .sql and schema.yml (In our case, schema = 'raw' is given in the model).
-   - builds from the source mentioned in the model. (Later in staging, intermediate etc, we reference the models built in raw).
+   - scans 'models/' for .sql and schema. 
 3. build a DAG (Directed Acyclic Graph)
+   - Figures out run order from dependencies. 
    - Here in raw, models don't depend on anything, and so they are the start of the graph.
-4. compiles SQL
+4. select nodes
+   - the selector -s picks only the models that we want to run. 
+5. compiles SQL
 5. runs SQL
    - make sure the schema exists (in this case it is raw) or creates it. By default it would be called 'main_raw'.
    - since materialized is set to tables, it creates/overwrites physical tables. The following tables are created
       - main_raw.raw_ev_registrations
       - main_raw.raw_ev_charging_stations
 6. create summary and logs
-   - in target/ some files are created (I didn't check out what they are yet). 
+   - in target/ some files are created (I didn't check out what they are yet).
+
+
+No tests were conducted in the raw layer.
+
+
+## Staging
+
+This is where I do light, semantic cleanup so downstream joins/metrics are easy. I use `ref()` to point at the raw tables, normalize text, cast types, and (for this project) **filter to Washington** so both datasets line up.
+
+**stg_ev_registrations.sql**
+```sql
+with src as (
+  select * from {{ ref('raw_ev_registrations') }}
+),
+typed as (
+  select
+    vin_prefix,
+    county,
+    trim(city)                                   as city,
+    upper(trim(state))                           as state,
+    cast(postal_code as varchar)                 as postal_code,
+    try_cast(model_year as int)                  as model_year,
+    make,
+    model,
+    ev_type,
+    cafv_eligibility,
+    try_cast(electric_range as int)              as electric_range,
+    try_cast(base_msrp as double)                as base_msrp,
+    try_cast(legislative_district as int)        as legislative_district,
+    try_cast(dol_vehicle_id as bigint)           as dol_vehicle_id,
+    vehicle_location,
+    electric_utility,
+    cast(census_tract as varchar)                as census_tract
+  from src
+)
+select * from typed
+where state = 'WA'
+
+stg_ev_charging_stations.sql
+```sql
+with src as (
+  select * from {{ ref('raw_ev_charging_stations') }}
+),
+typed as (
+  select
+    station_name,
+    trim(city)                                   as city,
+    upper(trim(state))                           as state,
+    cast(postal_code as varchar)                 as postal_code,
+    try_cast(level1_ports as int)                as level1_ports,
+    try_cast(level2_ports as int)                as level2_ports,
+    try_cast(fast_chargers as int)               as fast_chargers,
+    try_cast(latitude as double)                 as latitude,
+    try_cast(longitude as double)                as longitude,
+    ev_network,
+    connector_types,
+    cast(last_confirmed as date)                 as last_confirmed,
+    cast(open_date as date)                      as open_date,
+    status_code
+  from src
+)
+select * from typed
+where state = 'WA'
+```
+schema.yml
+```yaml
+version: 2
+
+models:
+  - name: stg_ev_registrations
+    description: Cleaned EV registrations (typed + normalized)
+    columns:
+      - name: state
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['WA']   # all rows should be Washington
+
+  - name: stg_ev_charging_stations
+    description: Cleaned Washington EV charging stations (typed + normalized)
+    columns:
+      - name: city
+        tests: [not_null]
+      - name: state
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['WA']
+
+```
+The schema.yml are for tests & docs metadata.
+
+Similar to what we did in raw, we can run
+
+```sh
+dbt run -s path:models/staging
+```
+
+After this we can do our tests (state is WA), and not null values in city and state using the following command. 
+
+```sh
+dbt run -s path:models/staging
+```
+
+In my case, it returned
+```sh
+20:35:36  Found 4 models, 5 data tests, 429 macros
+20:35:36  
+20:35:36  Concurrency: 2 threads (target='dev')
+20:35:36  
+20:35:37  1 of 5 START test accepted_values_stg_ev_charging_stations_state__WA ........... [RUN]
+20:35:37  2 of 5 START test accepted_values_stg_ev_registrations_state__WA ............... [RUN]
+20:35:37  1 of 5 PASS accepted_values_stg_ev_charging_stations_state__WA ................. [PASS in 0.24s]
+20:35:37  3 of 5 START test not_null_stg_ev_charging_stations_city ....................... [RUN]
+20:35:37  2 of 5 PASS accepted_values_stg_ev_registrations_state__WA ..................... [PASS in 0.25s]
+20:35:37  4 of 5 START test not_null_stg_ev_charging_stations_state ...................... [RUN]
+20:35:37  3 of 5 PASS not_null_stg_ev_charging_stations_city ............................. [PASS in 0.06s]
+20:35:37  4 of 5 PASS not_null_stg_ev_charging_stations_state ............................ [PASS in 0.06s]
+20:35:37  5 of 5 START test not_null_stg_ev_registrations_state .......................... [RUN]
+20:35:37  5 of 5 PASS not_null_stg_ev_registrations_state ................................ [PASS in 0.07s]
+20:35:37  
+20:35:37  Finished running 5 data tests in 0 hours 0 minutes and 0.68 seconds (0.68s).
+20:35:37  
+20:35:37  Completed successfully
+20:35:37  
+20:35:37  Done. PASS=5 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=5
+```
