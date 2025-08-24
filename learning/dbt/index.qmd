@@ -229,9 +229,9 @@ No tests were conducted in the raw layer.
 
 ## Staging
 
-This is where I do light, semantic cleanup so downstream joins/metrics are easy. I use `ref()` to point at the raw tables, normalize text, cast types, and (for this project) **filter to Washington** so both datasets line up.
+This is where I do light, semantic cleanup so downstream joins/metrics are easy. I use `ref()` to point at the raw tables, normalize text, cast types, and (for this project) (filter to Washington) so both datasets line up.
 
-**stg_ev_registrations.sql**
+stg_ev_registrations.sql
 ```sql
 with src as (
   select * from {{ ref('raw_ev_registrations') }}
@@ -325,7 +325,7 @@ dbt run -s path:models/staging
 After this we can do our tests (state is WA), and not null values in city and state using the following command. 
 
 ```sh
-dbt run -s path:models/staging
+dbt test -s path:models/staging
 ```
 
 In my case, it returned
