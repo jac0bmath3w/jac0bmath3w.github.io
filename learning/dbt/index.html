@@ -165,6 +165,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="dropdown-item" href="../../learning/dbt/index.html">
  <span class="dropdown-text">DBT</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="../../learning/mlflow/index.html">
+ <span class="dropdown-text">MLFlow</span></a>
+  </li>  
     </ul>
   </li>
   <li class="nav-item">
@@ -450,8 +454,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="staging" class="level2">
 <h2 class="anchored" data-anchor-id="staging">Staging</h2>
-<p>This is where I do light, semantic cleanup so downstream joins/metrics are easy. I use <code>ref()</code> to point at the raw tables, normalize text, cast types, and (for this project) <strong>filter to Washington</strong> so both datasets line up.</p>
-<p><strong>stg_ev_registrations.sql</strong></p>
+<p>This is where I do light, semantic cleanup so downstream joins/metrics are easy. I use <code>ref()</code> to point at the raw tables, normalize text, cast types, and (for this project) (filter to Washington) so both datasets line up.</p>
+<p>stg_ev_registrations.sql</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">with</span> src <span class="kw">as</span> (</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">select</span> <span class="op">*</span> <span class="kw">from</span> {{ <span class="fu">ref</span>(<span class="st">'raw_ev_registrations'</span>) }}</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>),</span>
@@ -533,7 +537,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Similar to what we did in raw, we can run</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dbt</span> run <span class="at">-s</span> path:models/staging</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>After this we can do our tests (state is WA), and not null values in city and state using the following command.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dbt</span> run <span class="at">-s</span> path:models/staging</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dbt</span> test <span class="at">-s</span> path:models/staging</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>In my case, it returned</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ex">20:35:36</span>  Found 4 models, 5 data tests, 429 macros</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="ex">20:35:36</span>  </span>
@@ -1244,9 +1248,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb15-229"><a href="#cb15-229" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-230"><a href="#cb15-230" aria-hidden="true" tabindex="-1"></a><span class="fu">## Staging</span></span>
 <span id="cb15-231"><a href="#cb15-231" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-232"><a href="#cb15-232" aria-hidden="true" tabindex="-1"></a>This is where I do light, semantic cleanup so downstream joins/metrics are easy. I use <span class="in">`ref()`</span> to point at the raw tables, normalize text, cast types, and (for this project) **filter to Washington** so both datasets line up.</span>
+<span id="cb15-232"><a href="#cb15-232" aria-hidden="true" tabindex="-1"></a>This is where I do light, semantic cleanup so downstream joins/metrics are easy. I use <span class="in">`ref()`</span> to point at the raw tables, normalize text, cast types, and (for this project) (filter to Washington) so both datasets line up.</span>
 <span id="cb15-233"><a href="#cb15-233" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-234"><a href="#cb15-234" aria-hidden="true" tabindex="-1"></a>**stg_ev_registrations.sql**</span>
+<span id="cb15-234"><a href="#cb15-234" aria-hidden="true" tabindex="-1"></a>stg_ev_registrations.sql</span>
 <span id="cb15-235"><a href="#cb15-235" aria-hidden="true" tabindex="-1"></a><span class="in">```sql</span></span>
 <span id="cb15-236"><a href="#cb15-236" aria-hidden="true" tabindex="-1"></a><span class="kw">with</span> src <span class="kw">as</span> (</span>
 <span id="cb15-237"><a href="#cb15-237" aria-hidden="true" tabindex="-1"></a>  <span class="kw">select</span> <span class="op">*</span> <span class="kw">from</span> {{ ref(<span class="st">'raw_ev_registrations'</span>) }}</span>
@@ -1340,7 +1344,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb15-325"><a href="#cb15-325" aria-hidden="true" tabindex="-1"></a>After this we can <span class="cf">do</span> our tests (state <span class="kw">is</span> WA), <span class="kw">and</span> <span class="kw">not</span> <span class="kw">null</span> <span class="kw">values</span> <span class="kw">in</span> city <span class="kw">and</span> state <span class="kw">using</span> the following command<span class="ch">.</span> </span>
 <span id="cb15-326"><a href="#cb15-326" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-327"><a href="#cb15-327" aria-hidden="true" tabindex="-1"></a><span class="st">```sh</span></span>
-<span id="cb15-328"><a href="#cb15-328" aria-hidden="true" tabindex="-1"></a><span class="st">dbt run -s path:models/staging</span></span>
+<span id="cb15-328"><a href="#cb15-328" aria-hidden="true" tabindex="-1"></a><span class="st">dbt test -s path:models/staging</span></span>
 <span id="cb15-329"><a href="#cb15-329" aria-hidden="true" tabindex="-1"></a><span class="st">```</span></span>
 <span id="cb15-330"><a href="#cb15-330" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-331"><a href="#cb15-331" aria-hidden="true" tabindex="-1"></a><span class="kw">In</span> my <span class="cf">case</span>, it returned</span>
