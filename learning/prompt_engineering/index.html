@@ -252,6 +252,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#experiment-6.1" id="toc-experiment-6.1" class="nav-link" data-scroll-target="#experiment-6.1">Experiment 6.1</a></li>
   </ul></li>
+  <li><a href="#phase-3---lesson-7-designing-prompt-workflows" id="toc-phase-3---lesson-7-designing-prompt-workflows" class="nav-link" data-scroll-target="#phase-3---lesson-7-designing-prompt-workflows">Phase 3 - Lesson 7: Designing Prompt Workflows</a></li>
+  <li><a href="#phase-3---lesson-8-api-and-programmatic-use" id="toc-phase-3---lesson-8-api-and-programmatic-use" class="nav-link" data-scroll-target="#phase-3---lesson-8-api-and-programmatic-use">Phase 3 - Lesson 8: API and Programmatic Use</a></li>
   <li><a href="#developer-oriented-prompt-engineering-syllabus" id="toc-developer-oriented-prompt-engineering-syllabus" class="nav-link" data-scroll-target="#developer-oriented-prompt-engineering-syllabus">Developer-Oriented Prompt Engineering Syllabus</a>
   <ul class="collapse">
   <li><a href="#phase-1-foundations-prompt-basics" id="toc-phase-1-foundations-prompt-basics" class="nav-link" data-scroll-target="#phase-1-foundations-prompt-basics">Phase 1: Foundations (Prompt Basics)</a></li>
@@ -1012,7 +1014,81 @@ Result:
 <li>“Now produce JSON only, using that reasoning.”</li>
 </ol>
 <p>After prompt (3), we get a structured result with the analysis, reasoning, summary as well as a release note. The release note said “fixed” because the model assumes release notes are retroactive. To avoid that, make the instruction precise (e.g., “write a known issue note” vs “write a release note”).</p>
+<p>Few observations after Lesson 6:</p>
+<ol type="1">
+<li>Single prompts are limited as it may mix details, reasoning and formatting together. Multi-turn prompting can solve this problem</li>
+<li>Multi-turn prompts can divide a task into different components. In the experiment 6.1, it broke down the problem into intake, triage, and outputs.</li>
+<li>We can use such a system for
+<ul>
+<li>engineering support (automate bug resolutions)</li>
+<li>customer support (complaints can flow into structured logs, escalation tickets, and response templates)</li>
+<li>business process (where messy human input need to be structured into clean actionable, and parsable outputs).</li>
+</ul></li>
+</ol>
 </section>
+</section>
+<section id="phase-3---lesson-7-designing-prompt-workflows" class="level1">
+<h1>Phase 3 - Lesson 7: Designing Prompt Workflows</h1>
+<p>The goal of this lesson is to learn to build a complete prompt-driven system design (not just isolated prompts), with clear inputs, steps, fallback logic, and output schema. A prompt workflow is an orcestration of prompts+logic+post processing so that each component does a well defined task.</p>
+<p>Input → Prompt A → (Post-process) → Prompt B → (Post-process) → Final Output.</p>
+<p>The following are components that are typically included in a prompt workflow</p>
+<ol type="1">
+<li>Input capture Accept user text. e.g., bug report or customer message</li>
+<li>Prompt template(s) Structured instructions with placeholders</li>
+<li>Decision logic Choose which prompt to fire and ask clarifying questions</li>
+<li>Post processing Validate, clean and combine prompt outputs</li>
+<li>Final packaging Format for downstream use cases</li>
+<li>Error handling Handle failed completions.</li>
+</ol>
+<p>Prompt workflow is different from multi-turn prompting in the following senses</p>
+<ol type="1">
+<li>designed for automation</li>
+<li>each turn (input -&gt; output) is predefined and modular</li>
+<li>it is a pipeline and not a conversation with a model.</li>
+<li>output can flow into other systems.</li>
+</ol>
+<p>This is an example workflow that we can automate programmatically.</p>
+<ol type="1">
+<li>Input
+<ul>
+<li>Raw transcript text</li>
+</ul></li>
+<li>Prompt
+<ul>
+<li><ol type="A">
+<li>Extraction Prompt You are an executive assistant. From the following transcript, extract structured meeting data.</li>
+</ol></li>
+</ul>
+Return valid JSON with keys:
+<ul>
+<li>date</li>
+<li>attendees</li>
+<li>decisions (list)</li>
+<li>action_items (list of objects with keys: owner, task, deadline)</li>
+</ul>
+Transcript: {meeting_transcript}
+<ul>
+<li><ol start="2" type="A">
+<li>Quality Check
+<ul>
+<li>if any field is missing, flag it as null</li>
+<li>trigger clarification prompt (e.g., no attendees mentioned, please provide list of attendees)</li>
+</ul></li>
+</ol></li>
+<li><ol start="3" type="A">
+<li>Summary Prompt You are a professional summarizer. Summarize the following meeting JSON into 3–5 sentences, highlighting decisions and action items.</li>
+</ol></li>
+</ul>
+JSON: {extracted_json}
+<ul>
+<li><ol start="4" type="A">
+<li>Packaging Produce result in this format { “extracted”: { “date”: “2025-09-25”, “attendees”: [“Alice”, “Bob”, “Carol”, “Dave”], “decisions”: [“Budget set to $50,000 with 60% for digital ads”], “action_items”: [ {“owner”: “Bob”, “task”: “Draft budget proposal”, “deadline”: “2025-09-30”}, {“owner”: “Carol”, “task”: “Coordinate with design team”, “deadline”: null}] }, “summary”: “On Sept 25, Alice, Bob, Carol, and Dave finalized the Q4 budget…” }</li>
+</ol></li>
+</ul></li>
+</ol>
+</section>
+<section id="phase-3---lesson-8-api-and-programmatic-use" class="level1">
+<h1>Phase 3 - Lesson 8: API and Programmatic Use</h1>
 </section>
 <section id="developer-oriented-prompt-engineering-syllabus" class="level1">
 <h1>Developer-Oriented Prompt Engineering Syllabus</h1>
@@ -1032,7 +1108,8 @@ Result:
 <h2 class="anchored" data-anchor-id="phase-2-advanced-prompting-techniques">Phase 2: Advanced Prompting Techniques</h2>
 <p>Few-Shot Prompting</p>
 <p>Using examples to guide the model.</p>
-<p>Hands-on: sentiment classifier with few-shot examples. n Chain-of-Thought Prompting</p>
+<p>Hands-on: sentiment classifier with few-shot examples.</p>
+<p>Chain-of-Thought Prompting</p>
 <p>For reasoning tasks.</p>
 <p>Hands-on: step-by-step math/logic prompts.</p>
 <p>Multi-Turn Workflows</p>
@@ -2286,104 +2363,192 @@ Result:
 <span id="cb20-755"><a href="#cb20-755" aria-hidden="true" tabindex="-1"></a>After prompt (3), we get a structured result with the analysis, reasoning, summary as well as a release note.  The release note said “fixed” because the model assumes release notes are retroactive. To avoid that, make the instruction precise (e.g., “write a known issue note” vs “write a release note”).</span>
 <span id="cb20-756"><a href="#cb20-756" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-757"><a href="#cb20-757" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-758"><a href="#cb20-758" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-758"><a href="#cb20-758" aria-hidden="true" tabindex="-1"></a>Few observations after Lesson 6:</span>
 <span id="cb20-759"><a href="#cb20-759" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-760"><a href="#cb20-760" aria-hidden="true" tabindex="-1"></a><span class="fu"># Developer-Oriented Prompt Engineering Syllabus</span></span>
-<span id="cb20-761"><a href="#cb20-761" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-762"><a href="#cb20-762" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-763"><a href="#cb20-763" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 1: Foundations (Prompt Basics)</span></span>
-<span id="cb20-764"><a href="#cb20-764" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-765"><a href="#cb20-765" aria-hidden="true" tabindex="-1"></a>Prompt Engineering vs. Casual Use</span>
+<span id="cb20-760"><a href="#cb20-760" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Single prompts are limited as it may mix details, reasoning and formatting together. Multi-turn prompting can solve this problem</span>
+<span id="cb20-761"><a href="#cb20-761" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Multi-turn prompts can divide a task into different components. In the experiment 6.1, it broke down the problem into intake, triage, and outputs.</span>
+<span id="cb20-762"><a href="#cb20-762" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>We can use such a system for</span>
+<span id="cb20-763"><a href="#cb20-763" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>engineering support (automate bug resolutions)</span>
+<span id="cb20-764"><a href="#cb20-764" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>customer support (complaints can flow into structured logs, escalation tickets, and response templates)</span>
+<span id="cb20-765"><a href="#cb20-765" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>business process (where messy human input need to be structured into clean actionable, and parsable outputs).</span>
 <span id="cb20-766"><a href="#cb20-766" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-767"><a href="#cb20-767" aria-hidden="true" tabindex="-1"></a>Roles, context, constraints.</span>
+<span id="cb20-767"><a href="#cb20-767" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-768"><a href="#cb20-768" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-769"><a href="#cb20-769" aria-hidden="true" tabindex="-1"></a>Hands-on: casual vs engineered prompts (experimenting in chat).</span>
+<span id="cb20-769"><a href="#cb20-769" aria-hidden="true" tabindex="-1"></a><span class="fu"># Phase 3 - Lesson 7: Designing Prompt Workflows</span></span>
 <span id="cb20-770"><a href="#cb20-770" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-771"><a href="#cb20-771" aria-hidden="true" tabindex="-1"></a>Prompt Templates &amp; Structures</span>
+<span id="cb20-771"><a href="#cb20-771" aria-hidden="true" tabindex="-1"></a>The goal of this lesson is to learn to build a complete prompt-driven system design (not just isolated prompts), with clear inputs, steps, fallback logic, and output schema. A prompt workflow is an orcestration of prompts+logic+post processing so that each component does a well defined task.</span>
 <span id="cb20-772"><a href="#cb20-772" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-773"><a href="#cb20-773" aria-hidden="true" tabindex="-1"></a>Placeholders, parameterization.</span>
+<span id="cb20-773"><a href="#cb20-773" aria-hidden="true" tabindex="-1"></a>Input → Prompt A → (Post-process) → Prompt B → (Post-process) → Final Output.</span>
 <span id="cb20-774"><a href="#cb20-774" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-775"><a href="#cb20-775" aria-hidden="true" tabindex="-1"></a>Hands-on: design a reusable summarization template.</span>
+<span id="cb20-775"><a href="#cb20-775" aria-hidden="true" tabindex="-1"></a>The following are components that are typically included in a prompt workflow</span>
 <span id="cb20-776"><a href="#cb20-776" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-777"><a href="#cb20-777" aria-hidden="true" tabindex="-1"></a>Controlling Output</span>
-<span id="cb20-778"><a href="#cb20-778" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-779"><a href="#cb20-779" aria-hidden="true" tabindex="-1"></a>Formatting, style, tone, length.</span>
-<span id="cb20-780"><a href="#cb20-780" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-781"><a href="#cb20-781" aria-hidden="true" tabindex="-1"></a>Hands-on: generate structured JSON responses for downstream use.</span>
-<span id="cb20-782"><a href="#cb20-782" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-783"><a href="#cb20-783" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 2: Advanced Prompting Techniques</span></span>
-<span id="cb20-784"><a href="#cb20-784" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-785"><a href="#cb20-785" aria-hidden="true" tabindex="-1"></a>Few-Shot Prompting</span>
-<span id="cb20-786"><a href="#cb20-786" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-787"><a href="#cb20-787" aria-hidden="true" tabindex="-1"></a>Using examples to guide the model.</span>
-<span id="cb20-788"><a href="#cb20-788" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-789"><a href="#cb20-789" aria-hidden="true" tabindex="-1"></a>Hands-on: sentiment classifier with few-shot examples.</span>
-<span id="cb20-790"><a href="#cb20-790" aria-hidden="true" tabindex="-1"></a>n</span>
-<span id="cb20-791"><a href="#cb20-791" aria-hidden="true" tabindex="-1"></a>Chain-of-Thought Prompting</span>
-<span id="cb20-792"><a href="#cb20-792" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-793"><a href="#cb20-793" aria-hidden="true" tabindex="-1"></a>For reasoning tasks.</span>
-<span id="cb20-794"><a href="#cb20-794" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-795"><a href="#cb20-795" aria-hidden="true" tabindex="-1"></a>Hands-on: step-by-step math/logic prompts.</span>
+<span id="cb20-777"><a href="#cb20-777" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Input capture</span>
+<span id="cb20-778"><a href="#cb20-778" aria-hidden="true" tabindex="-1"></a>   Accept user text. e.g., bug report or customer message</span>
+<span id="cb20-779"><a href="#cb20-779" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Prompt template(s)</span>
+<span id="cb20-780"><a href="#cb20-780" aria-hidden="true" tabindex="-1"></a>   Structured instructions with placeholders </span>
+<span id="cb20-781"><a href="#cb20-781" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>Decision logic</span>
+<span id="cb20-782"><a href="#cb20-782" aria-hidden="true" tabindex="-1"></a>   Choose which prompt to fire and ask clarifying questions</span>
+<span id="cb20-783"><a href="#cb20-783" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>Post processing</span>
+<span id="cb20-784"><a href="#cb20-784" aria-hidden="true" tabindex="-1"></a>   Validate, clean and combine prompt outputs</span>
+<span id="cb20-785"><a href="#cb20-785" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>Final packaging</span>
+<span id="cb20-786"><a href="#cb20-786" aria-hidden="true" tabindex="-1"></a>   Format for downstream use cases</span>
+<span id="cb20-787"><a href="#cb20-787" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>Error handling</span>
+<span id="cb20-788"><a href="#cb20-788" aria-hidden="true" tabindex="-1"></a>   Handle failed completions.</span>
+<span id="cb20-789"><a href="#cb20-789" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-790"><a href="#cb20-790" aria-hidden="true" tabindex="-1"></a>Prompt workflow is different from multi-turn prompting in the following senses</span>
+<span id="cb20-791"><a href="#cb20-791" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-792"><a href="#cb20-792" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>designed for automation</span>
+<span id="cb20-793"><a href="#cb20-793" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>each turn (input -&gt; output) is predefined and modular</span>
+<span id="cb20-794"><a href="#cb20-794" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>it is a pipeline and not a conversation with a model.</span>
+<span id="cb20-795"><a href="#cb20-795" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>output can flow into other systems.</span>
 <span id="cb20-796"><a href="#cb20-796" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-797"><a href="#cb20-797" aria-hidden="true" tabindex="-1"></a>Multi-Turn Workflows</span>
-<span id="cb20-798"><a href="#cb20-798" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-799"><a href="#cb20-799" aria-hidden="true" tabindex="-1"></a>Breaking tasks into steps across prompts.</span>
-<span id="cb20-800"><a href="#cb20-800" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-801"><a href="#cb20-801" aria-hidden="true" tabindex="-1"></a>Hands-on: design a mini Q&amp;A assistant with follow-up refinement.</span>
-<span id="cb20-802"><a href="#cb20-802" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-803"><a href="#cb20-803" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 3: Workflows &amp; Deployment</span></span>
-<span id="cb20-804"><a href="#cb20-804" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-805"><a href="#cb20-805" aria-hidden="true" tabindex="-1"></a>Designing Prompt Workflows</span>
+<span id="cb20-797"><a href="#cb20-797" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-798"><a href="#cb20-798" aria-hidden="true" tabindex="-1"></a>This is an example workflow that we can automate programmatically.</span>
+<span id="cb20-799"><a href="#cb20-799" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-800"><a href="#cb20-800" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Input</span>
+<span id="cb20-801"><a href="#cb20-801" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>Raw transcript text</span>
+<span id="cb20-802"><a href="#cb20-802" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Prompt</span>
+<span id="cb20-803"><a href="#cb20-803" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>A) Extraction Prompt</span>
+<span id="cb20-804"><a href="#cb20-804" aria-hidden="true" tabindex="-1"></a>    You are an executive assistant. </span>
+<span id="cb20-805"><a href="#cb20-805" aria-hidden="true" tabindex="-1"></a>    From the following transcript, extract structured meeting data.</span>
 <span id="cb20-806"><a href="#cb20-806" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-807"><a href="#cb20-807" aria-hidden="true" tabindex="-1"></a>Input capture → prompt template → response → post-processing.</span>
-<span id="cb20-808"><a href="#cb20-808" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-809"><a href="#cb20-809" aria-hidden="true" tabindex="-1"></a>Hands-on: build a workflow that turns meeting notes into action items.</span>
-<span id="cb20-810"><a href="#cb20-810" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-811"><a href="#cb20-811" aria-hidden="true" tabindex="-1"></a>APIs &amp; Programmatic Use</span>
+<span id="cb20-807"><a href="#cb20-807" aria-hidden="true" tabindex="-1"></a>    Return valid JSON with keys:</span>
+<span id="cb20-808"><a href="#cb20-808" aria-hidden="true" tabindex="-1"></a><span class="ss">      - </span>date</span>
+<span id="cb20-809"><a href="#cb20-809" aria-hidden="true" tabindex="-1"></a><span class="ss">      - </span>attendees</span>
+<span id="cb20-810"><a href="#cb20-810" aria-hidden="true" tabindex="-1"></a><span class="ss">      - </span>decisions (list)</span>
+<span id="cb20-811"><a href="#cb20-811" aria-hidden="true" tabindex="-1"></a><span class="ss">      - </span>action_items (list of objects with keys: owner, task, deadline)</span>
 <span id="cb20-812"><a href="#cb20-812" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-813"><a href="#cb20-813" aria-hidden="true" tabindex="-1"></a>OpenAI API basics, LangChain, LlamaIndex, or direct scripting.</span>
-<span id="cb20-814"><a href="#cb20-814" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-815"><a href="#cb20-815" aria-hidden="true" tabindex="-1"></a>Hands-on: call an API with a prompt template in Python.</span>
-<span id="cb20-816"><a href="#cb20-816" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-817"><a href="#cb20-817" aria-hidden="true" tabindex="-1"></a>Prompt Libraries &amp; Modularity</span>
-<span id="cb20-818"><a href="#cb20-818" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-819"><a href="#cb20-819" aria-hidden="true" tabindex="-1"></a>Organizing reusable prompts.</span>
-<span id="cb20-820"><a href="#cb20-820" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-821"><a href="#cb20-821" aria-hidden="true" tabindex="-1"></a>Hands-on: build a small “prompt toolkit” for text analysis tasks.</span>
+<span id="cb20-813"><a href="#cb20-813" aria-hidden="true" tabindex="-1"></a>   Transcript:</span>
+<span id="cb20-814"><a href="#cb20-814" aria-hidden="true" tabindex="-1"></a>   {meeting_transcript}</span>
+<span id="cb20-815"><a href="#cb20-815" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>B) Quality Check</span>
+<span id="cb20-816"><a href="#cb20-816" aria-hidden="true" tabindex="-1"></a><span class="ss">        - </span>if any field is missing, flag it as null</span>
+<span id="cb20-817"><a href="#cb20-817" aria-hidden="true" tabindex="-1"></a><span class="ss">        - </span>trigger clarification prompt (e.g., no attendees mentioned, please provide list of attendees)</span>
+<span id="cb20-818"><a href="#cb20-818" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>C) Summary Prompt</span>
+<span id="cb20-819"><a href="#cb20-819" aria-hidden="true" tabindex="-1"></a>        You are a professional summarizer. </span>
+<span id="cb20-820"><a href="#cb20-820" aria-hidden="true" tabindex="-1"></a>    Summarize the following meeting JSON into 3–5 sentences, </span>
+<span id="cb20-821"><a href="#cb20-821" aria-hidden="true" tabindex="-1"></a>    highlighting decisions and action items.</span>
 <span id="cb20-822"><a href="#cb20-822" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-823"><a href="#cb20-823" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 4: Evaluations &amp; Integrations</span></span>
-<span id="cb20-824"><a href="#cb20-824" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-825"><a href="#cb20-825" aria-hidden="true" tabindex="-1"></a>Prompt Evaluation</span>
-<span id="cb20-826"><a href="#cb20-826" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-827"><a href="#cb20-827" aria-hidden="true" tabindex="-1"></a>Measuring consistency, accuracy, robustness.</span>
-<span id="cb20-828"><a href="#cb20-828" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-829"><a href="#cb20-829" aria-hidden="true" tabindex="-1"></a>Hands-on: run A/B tests on two prompt versions.</span>
-<span id="cb20-830"><a href="#cb20-830" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-831"><a href="#cb20-831" aria-hidden="true" tabindex="-1"></a>Integration into Systems</span>
-<span id="cb20-832"><a href="#cb20-832" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-833"><a href="#cb20-833" aria-hidden="true" tabindex="-1"></a>Connecting to pipelines, apps, or workflows.</span>
-<span id="cb20-834"><a href="#cb20-834" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-835"><a href="#cb20-835" aria-hidden="true" tabindex="-1"></a>Hands-on: integrate a prompt workflow into a data science pipeline (e.g., automated report generation).</span>
-<span id="cb20-836"><a href="#cb20-836" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-837"><a href="#cb20-837" aria-hidden="true" tabindex="-1"></a>Best Practices &amp; Maintenance</span>
-<span id="cb20-838"><a href="#cb20-838" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-839"><a href="#cb20-839" aria-hidden="true" tabindex="-1"></a>Avoiding pitfalls, documenting prompts, versioning.</span>
+<span id="cb20-823"><a href="#cb20-823" aria-hidden="true" tabindex="-1"></a>    JSON:</span>
+<span id="cb20-824"><a href="#cb20-824" aria-hidden="true" tabindex="-1"></a>    {extracted_json}</span>
+<span id="cb20-825"><a href="#cb20-825" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>D) Packaging</span>
+<span id="cb20-826"><a href="#cb20-826" aria-hidden="true" tabindex="-1"></a>        Produce result in this format</span>
+<span id="cb20-827"><a href="#cb20-827" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb20-828"><a href="#cb20-828" aria-hidden="true" tabindex="-1"></a>      "extracted": {</span>
+<span id="cb20-829"><a href="#cb20-829" aria-hidden="true" tabindex="-1"></a>        "date": "2025-09-25",</span>
+<span id="cb20-830"><a href="#cb20-830" aria-hidden="true" tabindex="-1"></a>        "attendees": <span class="co">[</span><span class="ot">"Alice", "Bob", "Carol", "Dave"</span><span class="co">]</span>,</span>
+<span id="cb20-831"><a href="#cb20-831" aria-hidden="true" tabindex="-1"></a>        "decisions": <span class="co">[</span><span class="ot">"Budget set to $50,000 with 60% for digital ads"</span><span class="co">]</span>,</span>
+<span id="cb20-832"><a href="#cb20-832" aria-hidden="true" tabindex="-1"></a>        "action_items": [</span>
+<span id="cb20-833"><a href="#cb20-833" aria-hidden="true" tabindex="-1"></a>          {"owner": "Bob", "task": "Draft budget proposal", "deadline": "2025-09-30"},</span>
+<span id="cb20-834"><a href="#cb20-834" aria-hidden="true" tabindex="-1"></a>          {"owner": "Carol", "task": "Coordinate with design team", "deadline": null}</span>
+<span id="cb20-835"><a href="#cb20-835" aria-hidden="true" tabindex="-1"></a>        ]</span>
+<span id="cb20-836"><a href="#cb20-836" aria-hidden="true" tabindex="-1"></a>      },</span>
+<span id="cb20-837"><a href="#cb20-837" aria-hidden="true" tabindex="-1"></a>      "summary": "On Sept 25, Alice, Bob, Carol, and Dave finalized the Q4 budget..."</span>
+<span id="cb20-838"><a href="#cb20-838" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb20-839"><a href="#cb20-839" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-840"><a href="#cb20-840" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-841"><a href="#cb20-841" aria-hidden="true" tabindex="-1"></a>Hands-on: write a “prompt spec” for one of your workflows.</span>
+<span id="cb20-841"><a href="#cb20-841" aria-hidden="true" tabindex="-1"></a><span class="fu"># Phase 3 - Lesson 8: API and Programmatic Use</span></span>
 <span id="cb20-842"><a href="#cb20-842" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-843"><a href="#cb20-843" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 5: Capstone</span></span>
+<span id="cb20-843"><a href="#cb20-843" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-844"><a href="#cb20-844" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-845"><a href="#cb20-845" aria-hidden="true" tabindex="-1"></a>Mini Project (Capstone)</span>
+<span id="cb20-845"><a href="#cb20-845" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-846"><a href="#cb20-846" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-847"><a href="#cb20-847" aria-hidden="true" tabindex="-1"></a>Choose one:</span>
-<span id="cb20-848"><a href="#cb20-848" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-849"><a href="#cb20-849" aria-hidden="true" tabindex="-1"></a>A text analysis pipeline (summarization, classification, insight extraction).</span>
+<span id="cb20-847"><a href="#cb20-847" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-848"><a href="#cb20-848" aria-hidden="true" tabindex="-1"></a><span class="fu"># Developer-Oriented Prompt Engineering Syllabus</span></span>
+<span id="cb20-849"><a href="#cb20-849" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-850"><a href="#cb20-850" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-851"><a href="#cb20-851" aria-hidden="true" tabindex="-1"></a>A developer tool (docstring generator, code reviewer, query explainer).</span>
+<span id="cb20-851"><a href="#cb20-851" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 1: Foundations (Prompt Basics)</span></span>
 <span id="cb20-852"><a href="#cb20-852" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-853"><a href="#cb20-853" aria-hidden="true" tabindex="-1"></a>A workflow assistant (turn raw data into polished insights).</span>
+<span id="cb20-853"><a href="#cb20-853" aria-hidden="true" tabindex="-1"></a>Prompt Engineering vs. Casual Use</span>
 <span id="cb20-854"><a href="#cb20-854" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-855"><a href="#cb20-855" aria-hidden="true" tabindex="-1"></a>Deliverable: A working prototype + blog post documenting it.</span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
+<span id="cb20-855"><a href="#cb20-855" aria-hidden="true" tabindex="-1"></a>Roles, context, constraints.</span>
+<span id="cb20-856"><a href="#cb20-856" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-857"><a href="#cb20-857" aria-hidden="true" tabindex="-1"></a>Hands-on: casual vs engineered prompts (experimenting in chat).</span>
+<span id="cb20-858"><a href="#cb20-858" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-859"><a href="#cb20-859" aria-hidden="true" tabindex="-1"></a>Prompt Templates &amp; Structures</span>
+<span id="cb20-860"><a href="#cb20-860" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-861"><a href="#cb20-861" aria-hidden="true" tabindex="-1"></a>Placeholders, parameterization.</span>
+<span id="cb20-862"><a href="#cb20-862" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-863"><a href="#cb20-863" aria-hidden="true" tabindex="-1"></a>Hands-on: design a reusable summarization template.</span>
+<span id="cb20-864"><a href="#cb20-864" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-865"><a href="#cb20-865" aria-hidden="true" tabindex="-1"></a>Controlling Output</span>
+<span id="cb20-866"><a href="#cb20-866" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-867"><a href="#cb20-867" aria-hidden="true" tabindex="-1"></a>Formatting, style, tone, length.</span>
+<span id="cb20-868"><a href="#cb20-868" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-869"><a href="#cb20-869" aria-hidden="true" tabindex="-1"></a>Hands-on: generate structured JSON responses for downstream use.</span>
+<span id="cb20-870"><a href="#cb20-870" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-871"><a href="#cb20-871" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 2: Advanced Prompting Techniques</span></span>
+<span id="cb20-872"><a href="#cb20-872" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-873"><a href="#cb20-873" aria-hidden="true" tabindex="-1"></a>Few-Shot Prompting</span>
+<span id="cb20-874"><a href="#cb20-874" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-875"><a href="#cb20-875" aria-hidden="true" tabindex="-1"></a>Using examples to guide the model.</span>
+<span id="cb20-876"><a href="#cb20-876" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-877"><a href="#cb20-877" aria-hidden="true" tabindex="-1"></a>Hands-on: sentiment classifier with few-shot examples.</span>
+<span id="cb20-878"><a href="#cb20-878" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-879"><a href="#cb20-879" aria-hidden="true" tabindex="-1"></a>Chain-of-Thought Prompting</span>
+<span id="cb20-880"><a href="#cb20-880" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-881"><a href="#cb20-881" aria-hidden="true" tabindex="-1"></a>For reasoning tasks.</span>
+<span id="cb20-882"><a href="#cb20-882" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-883"><a href="#cb20-883" aria-hidden="true" tabindex="-1"></a>Hands-on: step-by-step math/logic prompts.</span>
+<span id="cb20-884"><a href="#cb20-884" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-885"><a href="#cb20-885" aria-hidden="true" tabindex="-1"></a>Multi-Turn Workflows</span>
+<span id="cb20-886"><a href="#cb20-886" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-887"><a href="#cb20-887" aria-hidden="true" tabindex="-1"></a>Breaking tasks into steps across prompts.</span>
+<span id="cb20-888"><a href="#cb20-888" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-889"><a href="#cb20-889" aria-hidden="true" tabindex="-1"></a>Hands-on: design a mini Q&amp;A assistant with follow-up refinement.</span>
+<span id="cb20-890"><a href="#cb20-890" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-891"><a href="#cb20-891" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 3: Workflows &amp; Deployment</span></span>
+<span id="cb20-892"><a href="#cb20-892" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-893"><a href="#cb20-893" aria-hidden="true" tabindex="-1"></a>Designing Prompt Workflows</span>
+<span id="cb20-894"><a href="#cb20-894" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-895"><a href="#cb20-895" aria-hidden="true" tabindex="-1"></a>Input capture → prompt template → response → post-processing.</span>
+<span id="cb20-896"><a href="#cb20-896" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-897"><a href="#cb20-897" aria-hidden="true" tabindex="-1"></a>Hands-on: build a workflow that turns meeting notes into action items.</span>
+<span id="cb20-898"><a href="#cb20-898" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-899"><a href="#cb20-899" aria-hidden="true" tabindex="-1"></a>APIs &amp; Programmatic Use</span>
+<span id="cb20-900"><a href="#cb20-900" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-901"><a href="#cb20-901" aria-hidden="true" tabindex="-1"></a>OpenAI API basics, LangChain, LlamaIndex, or direct scripting.</span>
+<span id="cb20-902"><a href="#cb20-902" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-903"><a href="#cb20-903" aria-hidden="true" tabindex="-1"></a>Hands-on: call an API with a prompt template in Python.</span>
+<span id="cb20-904"><a href="#cb20-904" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-905"><a href="#cb20-905" aria-hidden="true" tabindex="-1"></a>Prompt Libraries &amp; Modularity</span>
+<span id="cb20-906"><a href="#cb20-906" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-907"><a href="#cb20-907" aria-hidden="true" tabindex="-1"></a>Organizing reusable prompts.</span>
+<span id="cb20-908"><a href="#cb20-908" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-909"><a href="#cb20-909" aria-hidden="true" tabindex="-1"></a>Hands-on: build a small “prompt toolkit” for text analysis tasks.</span>
+<span id="cb20-910"><a href="#cb20-910" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-911"><a href="#cb20-911" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 4: Evaluations &amp; Integrations</span></span>
+<span id="cb20-912"><a href="#cb20-912" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-913"><a href="#cb20-913" aria-hidden="true" tabindex="-1"></a>Prompt Evaluation</span>
+<span id="cb20-914"><a href="#cb20-914" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-915"><a href="#cb20-915" aria-hidden="true" tabindex="-1"></a>Measuring consistency, accuracy, robustness.</span>
+<span id="cb20-916"><a href="#cb20-916" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-917"><a href="#cb20-917" aria-hidden="true" tabindex="-1"></a>Hands-on: run A/B tests on two prompt versions.</span>
+<span id="cb20-918"><a href="#cb20-918" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-919"><a href="#cb20-919" aria-hidden="true" tabindex="-1"></a>Integration into Systems</span>
+<span id="cb20-920"><a href="#cb20-920" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-921"><a href="#cb20-921" aria-hidden="true" tabindex="-1"></a>Connecting to pipelines, apps, or workflows.</span>
+<span id="cb20-922"><a href="#cb20-922" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-923"><a href="#cb20-923" aria-hidden="true" tabindex="-1"></a>Hands-on: integrate a prompt workflow into a data science pipeline (e.g., automated report generation).</span>
+<span id="cb20-924"><a href="#cb20-924" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-925"><a href="#cb20-925" aria-hidden="true" tabindex="-1"></a>Best Practices &amp; Maintenance</span>
+<span id="cb20-926"><a href="#cb20-926" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-927"><a href="#cb20-927" aria-hidden="true" tabindex="-1"></a>Avoiding pitfalls, documenting prompts, versioning.</span>
+<span id="cb20-928"><a href="#cb20-928" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-929"><a href="#cb20-929" aria-hidden="true" tabindex="-1"></a>Hands-on: write a “prompt spec” for one of your workflows.</span>
+<span id="cb20-930"><a href="#cb20-930" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-931"><a href="#cb20-931" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 5: Capstone</span></span>
+<span id="cb20-932"><a href="#cb20-932" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-933"><a href="#cb20-933" aria-hidden="true" tabindex="-1"></a>Mini Project (Capstone)</span>
+<span id="cb20-934"><a href="#cb20-934" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-935"><a href="#cb20-935" aria-hidden="true" tabindex="-1"></a>Choose one:</span>
+<span id="cb20-936"><a href="#cb20-936" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-937"><a href="#cb20-937" aria-hidden="true" tabindex="-1"></a>A text analysis pipeline (summarization, classification, insight extraction).</span>
+<span id="cb20-938"><a href="#cb20-938" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-939"><a href="#cb20-939" aria-hidden="true" tabindex="-1"></a>A developer tool (docstring generator, code reviewer, query explainer).</span>
+<span id="cb20-940"><a href="#cb20-940" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-941"><a href="#cb20-941" aria-hidden="true" tabindex="-1"></a>A workflow assistant (turn raw data into polished insights).</span>
+<span id="cb20-942"><a href="#cb20-942" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-943"><a href="#cb20-943" aria-hidden="true" tabindex="-1"></a>Deliverable: A working prototype + blog post documenting it.</span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 
