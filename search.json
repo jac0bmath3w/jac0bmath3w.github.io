@@ -186,7 +186,7 @@
     "href": "learning/prompt_engineering/index.html",
     "title": "Learning Prompt Engineering",
     "section": "",
-    "text": "In this blog I am documenting learning journey of prompt engineering. I use ChatGPT (GPT-5) for this task.\nI initially prompted the chat to create a syllabus for me. I mentioned that I am a developer and comfortable with technical workflows as I prompted the chat to give me the syllabus. The below section lists out my syllabus.\nAs I am learning, I am using\n\none chat thread as my classroom\na second chat as a sandbox to test out prompts\na repo as a storage of good prompts. (https://github.com/jac0bmath3w/prompt-engineering.git)"
+    "text": "In this blog I am documenting my learning journey of prompt engineering. I use ChatGPT (GPT-5) for this task.\nI initially prompted the chat to create a syllabus for me. I mentioned that I am a developer and comfortable with technical workflows as I prompted the chat to give me the syllabus. The below section lists out my syllabus.\nAs I am learning, I am using\n\none chat thread as my classroom\na second chat as a sandbox to test out prompts\na repo as a storage of good prompts. (https://github.com/jac0bmath3w/prompt-engineering.git)"
   },
   {
     "objectID": "learning/prompt_engineering/index.html#phase-1-foundations-prompt-basics",
@@ -222,6 +222,13 @@
     "title": "Learning Prompt Engineering",
     "section": "Phase 5: Capstone",
     "text": "Phase 5: Capstone\nMini Project (Capstone)\nChoose one:\nA text analysis pipeline (summarization, classification, insight extraction).\nA developer tool (docstring generator, code reviewer, query explainer).\nA workflow assistant (turn raw data into polished insights).\nDeliverable: A working prototype + blog post documenting it."
+  },
+  {
+    "objectID": "learning/prompt_engineering/index.html#experiment-1",
+    "href": "learning/prompt_engineering/index.html#experiment-1",
+    "title": "Learning Prompt Engineering",
+    "section": "Experiment 1",
+    "text": "Experiment 1\n\nCasual Prompt\nPrompt: Summarize \"Finding Nemo\" movie for me\nResult:\nHere’s a quick, spoiler-light summary of Finding Nemo:\n\nMarlin, an anxious clownfish, loses his son Nemo when the curious kid is captured by a diver and placed in a dentist’s fish tank in Sydney. Determined to get him back, Marlin crosses the ocean, reluctantly teaming up with Dory, a cheerful blue tang with short-term memory loss. Along the way they survive sharks, jellyfish, and a surfer-dude sea turtle named Crush, learning courage and trust. Meanwhile, Nemo plots escape with the tank gang. Father and son’s parallel journeys push both to grow—Marlin learns to let go and believe in Nemo, and Nemo gains confidence and independence.\n\nThemes: parental love, overprotection vs. resilience, friendship, and facing fears—with lots of humor and heart from Pixar’s vibrant undersea world.\n\n\nEngineered Prompt\nPrompt: You are a film critic. Summarize *Finding Nemo* in 3 sentences, focusing on the main plot. Highlight the emotional themes of family and perseverance. End with a one-line moral lesson.\nResult:\nFinding Nemo follows Marlin, a fearful clownfish father, as he crosses the ocean to rescue his captured son, Nemo, who’s stuck in a Sydney dentist’s fish tank. Along the way, Marlin partners with the forgetful yet steadfast Dory, surviving sharks, jellyfish, and the open sea while Nemo, encouraged by the tank gang, discovers his own courage and ingenuity. Their parallel struggles converge in a reunion that softens Marlin’s overprotectiveness and celebrates Nemo’s growing independence, underscoring how love steels perseverance.\n\nMoral: Trust empowers growth—letting go is sometimes the bravest way to hold on."
   },
   {
     "objectID": "about/index.html",
