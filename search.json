@@ -235,7 +235,14 @@
     "href": "learning/prompt_engineering/index.html#experiment-4.1",
     "title": "Learning Prompt Engineering",
     "section": "Experiment 4.1",
-    "text": "Experiment 4.1\nPrompt: \nYou are a sentiment classifier. Classify the sentiment of a review as Positive, Negative, or Neutral.  \n\nExamples:  \nReview: \"The phone is amazing, battery lasts forever!\"  \nSentiment: Positive  \n\nReview: \"The camera quality is terrible for the price.\"  \nSentiment: Negative  \n\nReview: \"The laptop works fine, nothing special.\"  \nSentiment: Neutral  \n\nNow classify this review:  \nReview: \"The laptop is fast, but the battery dies in 2 hours. Pretty disappointed.\"  \nSentiment:\n\nResult:\nNegativeb"
+    "text": "Experiment 4.1\nPrompt: \nYou are a sentiment classifier. Classify the sentiment of a review as Positive, Negative, or Neutral.  \n\nExamples:  \nReview: \"The phone is amazing, battery lasts forever!\"  \nSentiment: Positive  \n\nReview: \"The camera quality is terrible for the price.\"  \nSentiment: Negative  \n\nReview: \"The laptop works fine, nothing special.\"  \nSentiment: Neutral  \n\nNow classify this review:  \nReview: \"The laptop is fast, but the battery dies in 2 hours. Pretty disappointed.\"  \nSentiment:\n\nResult:\nNegative"
+  },
+  {
+    "objectID": "learning/prompt_engineering/index.html#experiment-5.1",
+    "href": "learning/prompt_engineering/index.html#experiment-5.1",
+    "title": "Learning Prompt Engineering",
+    "section": "Experiment 5.1",
+    "text": "Experiment 5.1\n\nZero-Shot (i.e., no chain of thought)\nPrompt: If a train travels 60 miles per hour for 2.5 hours, how far does it travel?\n\nResult:\n150 miles.\nDistance = speed × time = 60 mph × 2.5 h = 150 miles.\n\n\nChain of Thought\nPrompt: If a train travels 60 miles per hour for 2.5 hours, how far does it travel?\nLet’s solve this step by step.\n\nResult:\n\n1. Identify the formula\nDistance = Speed × Time\n\n2. Plug in the values\nSpeed = 60 miles/hour\nTime = 2.5 hours\n\n3. Multiply carefully\n60 × 2.5 = 60 × (5/2) = (60 ÷ 2) × 5 = 30 × 5 = 150\n\n4. Attach units\n150 miles\n\nAnswer: 150 miles."
   },
   {
     "objectID": "learning/prompt_engineering/index.html#phase-1-foundations-prompt-basics",
