@@ -154,6 +154,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="dropdown-item" href="../../projects/wheel-failure-pred/index.html">
  <span class="dropdown-text">Wheel Failure Prediction</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="../../projects/resume-enhancer-agent/index.html">
+ <span class="dropdown-text">Agentic AI (Resume Enhancer Agent)</span></a>
+  </li>  
     </ul>
   </li>
   <li class="nav-item dropdown ">
@@ -255,13 +259,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#phase-3---lesson-7-designing-prompt-workflows" id="toc-phase-3---lesson-7-designing-prompt-workflows" class="nav-link" data-scroll-target="#phase-3---lesson-7-designing-prompt-workflows">Phase 3 - Lesson 7: Designing Prompt Workflows</a></li>
   <li><a href="#phase-3---lesson-8-api-and-programmatic-use" id="toc-phase-3---lesson-8-api-and-programmatic-use" class="nav-link" data-scroll-target="#phase-3---lesson-8-api-and-programmatic-use">Phase 3 - Lesson 8: API and Programmatic Use</a>
   <ul class="collapse">
+  <li><a href="#srcmodels.py" id="toc-srcmodels.py" class="nav-link" data-scroll-target="#srcmodels.py">src/models.py</a></li>
+  <li><a href="#srcprompts.py" id="toc-srcprompts.py" class="nav-link" data-scroll-target="#srcprompts.py">src/prompts.py</a></li>
   <li><a href="#srcworkflow_meeting.py" id="toc-srcworkflow_meeting.py" class="nav-link" data-scroll-target="#srcworkflow_meeting.py">src/workflow_meeting.py</a>
   <ul class="collapse">
   <li><a href="#run_workflow" id="toc-run_workflow" class="nav-link" data-scroll-target="#run_workflow">run_workflow()</a></li>
   <li><a href="#extract_meeting_json" id="toc-extract_meeting_json" class="nav-link" data-scroll-target="#extract_meeting_json">extract_meeting_json</a></li>
   </ul></li>
-  <li><a href="#srcmodels.py" id="toc-srcmodels.py" class="nav-link" data-scroll-target="#srcmodels.py">src/models.py</a></li>
-  <li><a href="#srcprompts.py" id="toc-srcprompts.py" class="nav-link" data-scroll-target="#srcprompts.py">src/prompts.py</a></li>
   </ul></li>
   <li><a href="#developer-oriented-prompt-engineering-syllabus" id="toc-developer-oriented-prompt-engineering-syllabus" class="nav-link" data-scroll-target="#developer-oriented-prompt-engineering-syllabus">Developer-Oriented Prompt Engineering Syllabus</a>
   <ul class="collapse">
@@ -1115,82 +1119,26 @@ Result:
 │&nbsp;&nbsp; ├── models.py
 │&nbsp;&nbsp; ├── prompts.py
 │&nbsp;&nbsp; ├── workflow_meeting.py</code></pre>
-<section id="srcworkflow_meeting.py" class="level2">
-<h2 class="anchored" data-anchor-id="srcworkflow_meeting.py">src/workflow_meeting.py</h2>
-<section id="run_workflow" class="level3">
-<h3 class="anchored" data-anchor-id="run_workflow">run_workflow()</h3>
-<p>The first function that we use in this src file is run_workflow. It does the following</p>
-<p>It orchestrates the whole pipeline: 1. Choose a model (based on PROVIDER). 2. Extract structured JSON from the transcript. 3. Validate JSON against the Pydantic schema. 4. Clarify (optionally): generate machine-readable questions for missing fields; optionally merge user_answers. 5. Summarize the validated JSON into prose. 6. Package both pieces into a PackagedOutput. 7. Optionally return the clarification questions to the caller.</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run_workflow(transcript: <span class="bu">str</span>, user_answers: <span class="bu">dict</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>, model: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>, return_questions: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>) <span class="op">-&gt;</span> PackagedOutput:</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    provider <span class="op">=</span> os.getenv(<span class="st">"PROVIDER"</span>, <span class="st">"openrouter"</span>).lower()</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> model <span class="kw">is</span> <span class="va">None</span>:</span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>        model <span class="op">=</span> os.getenv(<span class="st">"GEMINI_MODEL"</span>, <span class="st">"gemini-1.5-flash"</span>) <span class="cf">if</span> provider <span class="op">==</span> <span class="st">"gemini"</span> <span class="cf">else</span> get_default_model()</span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step A: Extraction</span></span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    raw <span class="op">=</span> extract_meeting_json(transcript, model)</span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Validate against schema</span></span>
-<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
-<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>        extracted <span class="op">=</span> ExtractedMeeting.model_validate(raw)</span>
-<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> ValidationError <span class="im">as</span> e:</span>
-<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f"Extraction schema validation failed: </span><span class="sc">{</span>e<span class="sc">}</span><span class="ss">"</span>) <span class="im">from</span> e</span>
-<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step B: Check &amp; (optional) clarify</span></span>
-<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># missing = find_missing_fields(extracted.model_dump())</span></span>
-<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>    missing <span class="op">=</span> build_missing_keys(extracted.model_dump())</span>
-<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>    questions <span class="op">=</span> ask_clarifications(extracted.model_dump(), model) <span class="cf">if</span> missing <span class="cf">else</span> [] <span class="co">#missing</span></span>
-<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> user_answers:</span>
-<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>        patched <span class="op">=</span> apply_clarifications(extracted.model_dump(), user_answers)</span>
-<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>        extracted <span class="op">=</span> ExtractedMeeting.model_validate(patched)</span>
-<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step C: Summary</span></span>
-<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a>    summary <span class="op">=</span> make_summary(extracted.model_dump(), model)</span>
-<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step D: Package</span></span>
-<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a>    packaged <span class="op">=</span> PackagedOutput(extracted<span class="op">=</span>extracted, summary<span class="op">=</span>summary)</span>
-<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (packaged, questions) <span class="cf">if</span> return_questions <span class="cf">else</span> packaged</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</section>
-<section id="extract_meeting_json" class="level3">
-<h3 class="anchored" data-anchor-id="extract_meeting_json">extract_meeting_json</h3>
-<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> extract_meeting_json(transcript: <span class="bu">str</span>, model: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">dict</span>:</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    prompt <span class="op">=</span> EXTRACTION_PROMPT.<span class="bu">format</span>(meeting_transcript<span class="op">=</span>transcript)</span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> attempt <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">2</span>):</span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>        text <span class="op">=</span> chat(model, prompt, temperature<span class="op">=</span><span class="fl">0.2</span>)</span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span>:</span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> json.loads(text)</span>
-<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">except</span> json.JSONDecodeError:</span>
-<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>            start <span class="op">=</span> text.find(<span class="st">"{"</span>)</span>
-<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>            end <span class="op">=</span> text.rfind(<span class="st">"}"</span>)</span>
-<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> start <span class="op">!=</span> <span class="op">-</span><span class="dv">1</span> <span class="kw">and</span> end <span class="op">!=</span> <span class="op">-</span><span class="dv">1</span> <span class="kw">and</span> end <span class="op">&gt;</span> start:</span>
-<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>                chunk <span class="op">=</span> text[start:end<span class="op">+</span><span class="dv">1</span>]</span>
-<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>                <span class="cf">try</span>:</span>
-<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">return</span> json.loads(chunk)</span>
-<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>                <span class="cf">except</span> <span class="pp">Exception</span>:</span>
-<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">pass</span></span>
-<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>            <span class="co"># tighten and retry</span></span>
-<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>            prompt <span class="op">=</span> prompt <span class="op">+</span> <span class="st">"</span><span class="ch">\n\n</span><span class="st">IMPORTANT: Return VALID JSON ONLY. No prose, no code fences."</span></span>
-<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"Failed to parse extraction JSON after retries."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</section>
-</section>
+<p>First we will go thru some of the required classes and prompts and later we will see how they are used.</p>
 <section id="srcmodels.py" class="level2">
 <h2 class="anchored" data-anchor-id="srcmodels.py">src/models.py</h2>
-<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> List, Optional</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel, Field, ValidationError</span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ActionItem(BaseModel):</span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    owner: Optional[<span class="bu">str</span>] <span class="op">=</span> <span class="va">None</span></span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    task: <span class="bu">str</span></span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    deadline: Optional[<span class="bu">str</span>] <span class="op">=</span> Field(default<span class="op">=</span><span class="va">None</span>, description<span class="op">=</span><span class="st">"YYYY-MM-DD or null"</span>)</span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ExtractedMeeting(BaseModel):</span>
-<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    date: Optional[<span class="bu">str</span>] <span class="op">=</span> Field(default<span class="op">=</span><span class="va">None</span>, description<span class="op">=</span><span class="st">"YYYY-MM-DD or null"</span>)</span>
-<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>    attendees: List[<span class="bu">str</span>]</span>
-<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>    decisions: List[<span class="bu">str</span>]</span>
-<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>    action_items: List[ActionItem]</span>
-<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PackagedOutput(BaseModel):</span>
-<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>    extracted: ExtractedMeeting</span>
-<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    summary: <span class="bu">str</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> List, Optional</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel, Field, ValidationError</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ActionItem(BaseModel):</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    owner: Optional[<span class="bu">str</span>] <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    task: <span class="bu">str</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    deadline: Optional[<span class="bu">str</span>] <span class="op">=</span> Field(default<span class="op">=</span><span class="va">None</span>, description<span class="op">=</span><span class="st">"YYYY-MM-DD or null"</span>)</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ExtractedMeeting(BaseModel):</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>    date: Optional[<span class="bu">str</span>] <span class="op">=</span> Field(default<span class="op">=</span><span class="va">None</span>, description<span class="op">=</span><span class="st">"YYYY-MM-DD or null"</span>)</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>    attendees: List[<span class="bu">str</span>]</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>    decisions: List[<span class="bu">str</span>]</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    action_items: List[ActionItem]</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PackagedOutput(BaseModel):</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>    extracted: ExtractedMeeting</span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>    summary: <span class="bu">str</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <ul>
 <li>Pydantic (a data validation library; docs.pydantic.dev) lets us define structured schemas and validate model outputs.</li>
 <li>Class ActionItem A single task with an owner, a description, and an optional deadline</li>
@@ -1207,35 +1155,44 @@ Result:
 </section>
 <section id="srcprompts.py" class="level2">
 <h2 class="anchored" data-anchor-id="srcprompts.py">src/prompts.py</h2>
-<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>EXTRACTION_PROMPT <span class="op">=</span> <span class="st">"""You are an executive assistant.</span></span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="st">From the transcript, extract structured meeting data.</span></span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="st">Return VALID JSON ONLY with keys exactly:</span></span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="st">- date (YYYY-MM-DD or null)</span></span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="st">- attendees (array of strings)</span></span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="st">- decisions (array of strings)</span></span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a><span class="st">- action_items (array of objects with keys: owner, task, deadline [YYYY-MM-DD or null])</span></span>
-<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a><span class="st">Rules:</span></span>
-<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a><span class="st">- Do not invent facts. If unknown, use null or [].</span></span>
-<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a><span class="st">- No text outside the JSON.</span></span>
-<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a><span class="st">Transcript:</span></span>
-<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a><span class="sc">{meeting_transcript}</span></span>
-<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
-<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>CLARIFICATION_PROMPT <span class="op">=</span> <span class="st">"""You are a helpful assistant.</span></span>
-<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a><span class="st">The following fields were missing or null: </span><span class="sc">{missing_fields}</span><span class="st">.</span></span>
-<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a><span class="st">Ask at most 3 concise questions to fill ONLY those fields.</span></span>
-<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a><span class="st">Return a numbered list of questions (no other text)."""</span></span>
-<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>SUMMARY_PROMPT <span class="op">=</span> <span class="st">"""You are a professional summarizer.</span></span>
-<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a><span class="st">Using ONLY this JSON, write a 3–5 sentence summary highlighting decisions and action items.</span></span>
-<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a><span class="st">Keep it factual; do not invent.</span></span>
-<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a><span class="st">JSON:</span></span>
-<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a><span class="sc">{extracted_json}</span></span>
-<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>EXTRACTION_PROMPT <span class="op">=</span> <span class="st">"""You are an executive assistant.</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="st">From the transcript, extract structured meeting data.</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="st">Return VALID JSON ONLY with keys exactly:</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="st">- date (YYYY-MM-DD or null)</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="st">- attendees (array of strings)</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="st">- decisions (array of strings)</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="st">- action_items (array of objects with keys: owner, task, deadline [YYYY-MM-DD or null])</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a><span class="st">Rules:</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a><span class="st">- Do not invent facts. If unknown, use null or [].</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a><span class="st">- No text outside the JSON.</span></span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a><span class="st">Transcript:</span></span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a><span class="sc">{meeting_transcript}</span></span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>CLARIFICATION_PROMPT <span class="op">=</span> <span class="st">"""You are a helpful assistant. We extracted meeting data but these fields are missing:</span></span>
+<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a><span class="sc">{missing_fields}</span></span>
+<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a><span class="st">Return a VALID JSON array of clarification questions where each item has:</span></span>
+<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a><span class="st">- key: a machine-readable key (e.g., "date" or "deadline_for_&lt;owner_slug&gt;")</span></span>
+<span id="cb23-23"><a href="#cb23-23" aria-hidden="true" tabindex="-1"></a><span class="st">- question: a concise user-facing question</span></span>
+<span id="cb23-24"><a href="#cb23-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a><span class="st">Rules:</span></span>
+<span id="cb23-26"><a href="#cb23-26" aria-hidden="true" tabindex="-1"></a><span class="st">- For missing meeting date, include one item with key "date".</span></span>
+<span id="cb23-27"><a href="#cb23-27" aria-hidden="true" tabindex="-1"></a><span class="st">- For missing deadlines, include one item per owner with key "deadline_for_&lt;owner_slug&gt;" where owner_slug is the lowercase owner name with spaces replaced by underscores (e.g., "deadline_for_alice_smith").</span></span>
+<span id="cb23-28"><a href="#cb23-28" aria-hidden="true" tabindex="-1"></a><span class="st">- Only include keys for fields that are missing.</span></span>
+<span id="cb23-29"><a href="#cb23-29" aria-hidden="true" tabindex="-1"></a><span class="st">- No text outside the JSON.</span></span>
+<span id="cb23-30"><a href="#cb23-30" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
+<span id="cb23-31"><a href="#cb23-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-32"><a href="#cb23-32" aria-hidden="true" tabindex="-1"></a>SUMMARY_PROMPT <span class="op">=</span> <span class="st">"""You are a professional summarizer.</span></span>
+<span id="cb23-33"><a href="#cb23-33" aria-hidden="true" tabindex="-1"></a><span class="st">Using ONLY this JSON, write a 3–5 sentence summary highlighting decisions and action items.</span></span>
+<span id="cb23-34"><a href="#cb23-34" aria-hidden="true" tabindex="-1"></a><span class="st">Keep it factual; do not invent.</span></span>
+<span id="cb23-35"><a href="#cb23-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-36"><a href="#cb23-36" aria-hidden="true" tabindex="-1"></a><span class="st">JSON:</span></span>
+<span id="cb23-37"><a href="#cb23-37" aria-hidden="true" tabindex="-1"></a><span class="sc">{extracted_json}</span></span>
+<span id="cb23-38"><a href="#cb23-38" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <ul>
 <li>EXTRACTION_PROMPT
 <ul>
@@ -1251,6 +1208,72 @@ Result:
 <li>converts validated JSON into a human readable summary.</li>
 </ul></li>
 </ul>
+</section>
+<section id="srcworkflow_meeting.py" class="level2">
+<h2 class="anchored" data-anchor-id="srcworkflow_meeting.py">src/workflow_meeting.py</h2>
+<section id="run_workflow" class="level3">
+<h3 class="anchored" data-anchor-id="run_workflow">run_workflow()</h3>
+<p>The first function that we use in this src file is run_workflow. It does the following</p>
+<p>It orchestrates the whole pipeline:</p>
+<ol type="1">
+<li>Choose a model (based on PROVIDER).</li>
+<li>Extract structured JSON from the transcript.</li>
+<li>Validate JSON against the Pydantic schema.</li>
+<li>Clarify (optionally): generate machine-readable questions for missing fields; optionally merge user_answers.</li>
+<li>Summarize the validated JSON into prose.</li>
+<li>Package both pieces into a PackagedOutput.</li>
+<li>Optionally return the clarification questions to the caller.</li>
+</ol>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run_workflow(transcript: <span class="bu">str</span>, user_answers: <span class="bu">dict</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>, model: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>, return_questions: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>) <span class="op">-&gt;</span> PackagedOutput:</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    provider <span class="op">=</span> os.getenv(<span class="st">"PROVIDER"</span>, <span class="st">"openrouter"</span>).lower()</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> model <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>        model <span class="op">=</span> os.getenv(<span class="st">"GEMINI_MODEL"</span>, <span class="st">"gemini-1.5-flash"</span>) <span class="cf">if</span> provider <span class="op">==</span> <span class="st">"gemini"</span> <span class="cf">else</span> get_default_model()</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step A: Extraction</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    raw <span class="op">=</span> extract_meeting_json(transcript, model)</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Validate against schema</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>        extracted <span class="op">=</span> ExtractedMeeting.model_validate(raw)</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> ValidationError <span class="im">as</span> e:</span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f"Extraction schema validation failed: </span><span class="sc">{</span>e<span class="sc">}</span><span class="ss">"</span>) <span class="im">from</span> e</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step B: Check &amp; (optional) clarify</span></span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># missing = find_missing_fields(extracted.model_dump())</span></span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    missing <span class="op">=</span> build_missing_keys(extracted.model_dump())</span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>    questions <span class="op">=</span> ask_clarifications(extracted.model_dump(), model) <span class="cf">if</span> missing <span class="cf">else</span> [] <span class="co">#missing</span></span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> user_answers:</span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>        patched <span class="op">=</span> apply_clarifications(extracted.model_dump(), user_answers)</span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>        extracted <span class="op">=</span> ExtractedMeeting.model_validate(patched)</span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step C: Summary</span></span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a>    summary <span class="op">=</span> make_summary(extracted.model_dump(), model)</span>
+<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step D: Package</span></span>
+<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>    packaged <span class="op">=</span> PackagedOutput(extracted<span class="op">=</span>extracted, summary<span class="op">=</span>summary)</span>
+<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (packaged, questions) <span class="cf">if</span> return_questions <span class="cf">else</span> packaged</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="extract_meeting_json" class="level3">
+<h3 class="anchored" data-anchor-id="extract_meeting_json">extract_meeting_json</h3>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> extract_meeting_json(transcript: <span class="bu">str</span>, model: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">dict</span>:</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    prompt <span class="op">=</span> EXTRACTION_PROMPT.<span class="bu">format</span>(meeting_transcript<span class="op">=</span>transcript)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> attempt <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">2</span>):</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>        text <span class="op">=</span> chat(model, prompt, temperature<span class="op">=</span><span class="fl">0.2</span>)</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span>:</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> json.loads(text)</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">except</span> json.JSONDecodeError:</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>            start <span class="op">=</span> text.find(<span class="st">"{"</span>)</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>            end <span class="op">=</span> text.rfind(<span class="st">"}"</span>)</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> start <span class="op">!=</span> <span class="op">-</span><span class="dv">1</span> <span class="kw">and</span> end <span class="op">!=</span> <span class="op">-</span><span class="dv">1</span> <span class="kw">and</span> end <span class="op">&gt;</span> start:</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>                chunk <span class="op">=</span> text[start:end<span class="op">+</span><span class="dv">1</span>]</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>                <span class="cf">try</span>:</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">return</span> json.loads(chunk)</span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>                <span class="cf">except</span> <span class="pp">Exception</span>:</span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">pass</span></span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>            <span class="co"># tighten and retry</span></span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>            prompt <span class="op">=</span> prompt <span class="op">+</span> <span class="st">"</span><span class="ch">\n\n</span><span class="st">IMPORTANT: Return VALID JSON ONLY. No prose, no code fences."</span></span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"Failed to parse extraction JSON after retries."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
 </section>
 </section>
 <section id="developer-oriented-prompt-engineering-syllabus" class="level1">
@@ -2644,252 +2667,266 @@ Result:
 <span id="cb26-873"><a href="#cb26-873" aria-hidden="true" tabindex="-1"></a><span class="in">│&nbsp;&nbsp; ├── workflow_meeting.py</span></span>
 <span id="cb26-874"><a href="#cb26-874" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb26-875"><a href="#cb26-875" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-876"><a href="#cb26-876" aria-hidden="true" tabindex="-1"></a><span class="fu">## src/workflow_meeting.py</span></span>
+<span id="cb26-876"><a href="#cb26-876" aria-hidden="true" tabindex="-1"></a>First we will go thru some of the required classes and prompts and later we will see how they are used. </span>
 <span id="cb26-877"><a href="#cb26-877" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-878"><a href="#cb26-878" aria-hidden="true" tabindex="-1"></a><span class="fu">### run_workflow()</span></span>
-<span id="cb26-879"><a href="#cb26-879" aria-hidden="true" tabindex="-1"></a>The first function that we use in this src file is run_workflow. It does the following</span>
-<span id="cb26-880"><a href="#cb26-880" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-881"><a href="#cb26-881" aria-hidden="true" tabindex="-1"></a>It orchestrates the whole pipeline:</span>
-<span id="cb26-882"><a href="#cb26-882" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Choose a model (based on PROVIDER).</span>
-<span id="cb26-883"><a href="#cb26-883" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Extract structured JSON from the transcript.</span>
-<span id="cb26-884"><a href="#cb26-884" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>Validate JSON against the Pydantic schema.</span>
-<span id="cb26-885"><a href="#cb26-885" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>Clarify (optionally): generate machine-readable questions for missing fields; optionally merge user_answers.</span>
-<span id="cb26-886"><a href="#cb26-886" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>Summarize the validated JSON into prose.</span>
-<span id="cb26-887"><a href="#cb26-887" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>Package both pieces into a PackagedOutput.</span>
-<span id="cb26-888"><a href="#cb26-888" aria-hidden="true" tabindex="-1"></a><span class="ss">7. </span>Optionally return the clarification questions to the caller.</span>
-<span id="cb26-889"><a href="#cb26-889" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-890"><a href="#cb26-890" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-891"><a href="#cb26-891" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
-<span id="cb26-892"><a href="#cb26-892" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run_workflow(transcript: <span class="bu">str</span>, user_answers: <span class="bu">dict</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>, model: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>, return_questions: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>) <span class="op">-&gt;</span> PackagedOutput:</span>
-<span id="cb26-893"><a href="#cb26-893" aria-hidden="true" tabindex="-1"></a>    provider <span class="op">=</span> os.getenv(<span class="st">"PROVIDER"</span>, <span class="st">"openrouter"</span>).lower()</span>
-<span id="cb26-894"><a href="#cb26-894" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> model <span class="kw">is</span> <span class="va">None</span>:</span>
-<span id="cb26-895"><a href="#cb26-895" aria-hidden="true" tabindex="-1"></a>        model <span class="op">=</span> os.getenv(<span class="st">"GEMINI_MODEL"</span>, <span class="st">"gemini-1.5-flash"</span>) <span class="cf">if</span> provider <span class="op">==</span> <span class="st">"gemini"</span> <span class="cf">else</span> get_default_model()</span>
-<span id="cb26-896"><a href="#cb26-896" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-897"><a href="#cb26-897" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step A: Extraction</span></span>
-<span id="cb26-898"><a href="#cb26-898" aria-hidden="true" tabindex="-1"></a>    raw <span class="op">=</span> extract_meeting_json(transcript, model)</span>
-<span id="cb26-899"><a href="#cb26-899" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-900"><a href="#cb26-900" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Validate against schema</span></span>
-<span id="cb26-901"><a href="#cb26-901" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
-<span id="cb26-902"><a href="#cb26-902" aria-hidden="true" tabindex="-1"></a>        extracted <span class="op">=</span> ExtractedMeeting.model_validate(raw)</span>
-<span id="cb26-903"><a href="#cb26-903" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> ValidationError <span class="im">as</span> e:</span>
-<span id="cb26-904"><a href="#cb26-904" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f"Extraction schema validation failed: </span><span class="sc">{</span>e<span class="sc">}</span><span class="ss">"</span>) <span class="im">from</span> e</span>
-<span id="cb26-905"><a href="#cb26-905" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-906"><a href="#cb26-906" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step B: Check &amp; (optional) clarify</span></span>
-<span id="cb26-907"><a href="#cb26-907" aria-hidden="true" tabindex="-1"></a>    <span class="co"># missing = find_missing_fields(extracted.model_dump())</span></span>
-<span id="cb26-908"><a href="#cb26-908" aria-hidden="true" tabindex="-1"></a>    missing <span class="op">=</span> build_missing_keys(extracted.model_dump())</span>
-<span id="cb26-909"><a href="#cb26-909" aria-hidden="true" tabindex="-1"></a>    questions <span class="op">=</span> ask_clarifications(extracted.model_dump(), model) <span class="cf">if</span> missing <span class="cf">else</span> [] <span class="co">#missing</span></span>
-<span id="cb26-910"><a href="#cb26-910" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> user_answers:</span>
-<span id="cb26-911"><a href="#cb26-911" aria-hidden="true" tabindex="-1"></a>        patched <span class="op">=</span> apply_clarifications(extracted.model_dump(), user_answers)</span>
-<span id="cb26-912"><a href="#cb26-912" aria-hidden="true" tabindex="-1"></a>        extracted <span class="op">=</span> ExtractedMeeting.model_validate(patched)</span>
-<span id="cb26-913"><a href="#cb26-913" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-914"><a href="#cb26-914" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step C: Summary</span></span>
-<span id="cb26-915"><a href="#cb26-915" aria-hidden="true" tabindex="-1"></a>    summary <span class="op">=</span> make_summary(extracted.model_dump(), model)</span>
-<span id="cb26-916"><a href="#cb26-916" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-917"><a href="#cb26-917" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step D: Package</span></span>
-<span id="cb26-918"><a href="#cb26-918" aria-hidden="true" tabindex="-1"></a>    packaged <span class="op">=</span> PackagedOutput(extracted<span class="op">=</span>extracted, summary<span class="op">=</span>summary)</span>
-<span id="cb26-919"><a href="#cb26-919" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (packaged, questions) <span class="cf">if</span> return_questions <span class="cf">else</span> packaged</span>
-<span id="cb26-920"><a href="#cb26-920" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-921"><a href="#cb26-921" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb26-922"><a href="#cb26-922" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-923"><a href="#cb26-923" aria-hidden="true" tabindex="-1"></a><span class="fu">### extract_meeting_json</span></span>
-<span id="cb26-924"><a href="#cb26-924" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-925"><a href="#cb26-925" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
-<span id="cb26-926"><a href="#cb26-926" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> extract_meeting_json(transcript: <span class="bu">str</span>, model: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">dict</span>:</span>
-<span id="cb26-927"><a href="#cb26-927" aria-hidden="true" tabindex="-1"></a>    prompt <span class="op">=</span> EXTRACTION_PROMPT.<span class="bu">format</span>(meeting_transcript<span class="op">=</span>transcript)</span>
-<span id="cb26-928"><a href="#cb26-928" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> attempt <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">2</span>):</span>
-<span id="cb26-929"><a href="#cb26-929" aria-hidden="true" tabindex="-1"></a>        text <span class="op">=</span> chat(model, prompt, temperature<span class="op">=</span><span class="fl">0.2</span>)</span>
-<span id="cb26-930"><a href="#cb26-930" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span>:</span>
-<span id="cb26-931"><a href="#cb26-931" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> json.loads(text)</span>
-<span id="cb26-932"><a href="#cb26-932" aria-hidden="true" tabindex="-1"></a>        <span class="cf">except</span> json.JSONDecodeError:</span>
-<span id="cb26-933"><a href="#cb26-933" aria-hidden="true" tabindex="-1"></a>            start <span class="op">=</span> text.find(<span class="st">"{"</span>)</span>
-<span id="cb26-934"><a href="#cb26-934" aria-hidden="true" tabindex="-1"></a>            end <span class="op">=</span> text.rfind(<span class="st">"}"</span>)</span>
-<span id="cb26-935"><a href="#cb26-935" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> start <span class="op">!=</span> <span class="op">-</span><span class="dv">1</span> <span class="kw">and</span> end <span class="op">!=</span> <span class="op">-</span><span class="dv">1</span> <span class="kw">and</span> end <span class="op">&gt;</span> start:</span>
-<span id="cb26-936"><a href="#cb26-936" aria-hidden="true" tabindex="-1"></a>                chunk <span class="op">=</span> text[start:end<span class="op">+</span><span class="dv">1</span>]</span>
-<span id="cb26-937"><a href="#cb26-937" aria-hidden="true" tabindex="-1"></a>                <span class="cf">try</span>:</span>
-<span id="cb26-938"><a href="#cb26-938" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">return</span> json.loads(chunk)</span>
-<span id="cb26-939"><a href="#cb26-939" aria-hidden="true" tabindex="-1"></a>                <span class="cf">except</span> <span class="pp">Exception</span>:</span>
-<span id="cb26-940"><a href="#cb26-940" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">pass</span></span>
-<span id="cb26-941"><a href="#cb26-941" aria-hidden="true" tabindex="-1"></a>            <span class="co"># tighten and retry</span></span>
-<span id="cb26-942"><a href="#cb26-942" aria-hidden="true" tabindex="-1"></a>            prompt <span class="op">=</span> prompt <span class="op">+</span> <span class="st">"</span><span class="ch">\n\n</span><span class="st">IMPORTANT: Return VALID JSON ONLY. No prose, no code fences."</span></span>
-<span id="cb26-943"><a href="#cb26-943" aria-hidden="true" tabindex="-1"></a>    <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"Failed to parse extraction JSON after retries."</span>)</span>
-<span id="cb26-944"><a href="#cb26-944" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-945"><a href="#cb26-945" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb26-946"><a href="#cb26-946" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-878"><a href="#cb26-878" aria-hidden="true" tabindex="-1"></a><span class="fu">## src/models.py</span></span>
+<span id="cb26-879"><a href="#cb26-879" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-880"><a href="#cb26-880" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb26-881"><a href="#cb26-881" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> List, Optional</span>
+<span id="cb26-882"><a href="#cb26-882" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel, Field, ValidationError</span>
+<span id="cb26-883"><a href="#cb26-883" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-884"><a href="#cb26-884" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ActionItem(BaseModel):</span>
+<span id="cb26-885"><a href="#cb26-885" aria-hidden="true" tabindex="-1"></a>    owner: Optional[<span class="bu">str</span>] <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb26-886"><a href="#cb26-886" aria-hidden="true" tabindex="-1"></a>    task: <span class="bu">str</span></span>
+<span id="cb26-887"><a href="#cb26-887" aria-hidden="true" tabindex="-1"></a>    deadline: Optional[<span class="bu">str</span>] <span class="op">=</span> Field(default<span class="op">=</span><span class="va">None</span>, description<span class="op">=</span><span class="st">"YYYY-MM-DD or null"</span>)</span>
+<span id="cb26-888"><a href="#cb26-888" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-889"><a href="#cb26-889" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ExtractedMeeting(BaseModel):</span>
+<span id="cb26-890"><a href="#cb26-890" aria-hidden="true" tabindex="-1"></a>    date: Optional[<span class="bu">str</span>] <span class="op">=</span> Field(default<span class="op">=</span><span class="va">None</span>, description<span class="op">=</span><span class="st">"YYYY-MM-DD or null"</span>)</span>
+<span id="cb26-891"><a href="#cb26-891" aria-hidden="true" tabindex="-1"></a>    attendees: List[<span class="bu">str</span>]</span>
+<span id="cb26-892"><a href="#cb26-892" aria-hidden="true" tabindex="-1"></a>    decisions: List[<span class="bu">str</span>]</span>
+<span id="cb26-893"><a href="#cb26-893" aria-hidden="true" tabindex="-1"></a>    action_items: List[ActionItem]</span>
+<span id="cb26-894"><a href="#cb26-894" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-895"><a href="#cb26-895" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PackagedOutput(BaseModel):</span>
+<span id="cb26-896"><a href="#cb26-896" aria-hidden="true" tabindex="-1"></a>    extracted: ExtractedMeeting</span>
+<span id="cb26-897"><a href="#cb26-897" aria-hidden="true" tabindex="-1"></a>    summary: <span class="bu">str</span></span>
+<span id="cb26-898"><a href="#cb26-898" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-899"><a href="#cb26-899" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb26-900"><a href="#cb26-900" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-901"><a href="#cb26-901" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Pydantic (a data validation library; docs.pydantic.dev) lets us define structured schemas and validate model outputs.</span>
+<span id="cb26-902"><a href="#cb26-902" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Class ActionItem</span>
+<span id="cb26-903"><a href="#cb26-903" aria-hidden="true" tabindex="-1"></a>  A single task with an owner, a description, and an optional deadline</span>
+<span id="cb26-904"><a href="#cb26-904" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Class ExtractedMeeting</span>
+<span id="cb26-905"><a href="#cb26-905" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>The extracted structure we expect as the output of the LLM</span>
+<span id="cb26-906"><a href="#cb26-906" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>If the model returns malformed JSON (e.g., wrong types), Pydantic will raise a ValidationError</span>
+<span id="cb26-907"><a href="#cb26-907" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Class PackagedOutput</span>
+<span id="cb26-908"><a href="#cb26-908" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Final object that the workflow returns. It should be machine readable JSON + human summary.</span>
+<span id="cb26-909"><a href="#cb26-909" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-910"><a href="#cb26-910" aria-hidden="true" tabindex="-1"></a><span class="fu">## src/prompts.py</span></span>
+<span id="cb26-911"><a href="#cb26-911" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-912"><a href="#cb26-912" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb26-913"><a href="#cb26-913" aria-hidden="true" tabindex="-1"></a>EXTRACTION_PROMPT <span class="op">=</span> <span class="st">"""You are an executive assistant.</span></span>
+<span id="cb26-914"><a href="#cb26-914" aria-hidden="true" tabindex="-1"></a><span class="st">From the transcript, extract structured meeting data.</span></span>
+<span id="cb26-915"><a href="#cb26-915" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-916"><a href="#cb26-916" aria-hidden="true" tabindex="-1"></a><span class="st">Return VALID JSON ONLY with keys exactly:</span></span>
+<span id="cb26-917"><a href="#cb26-917" aria-hidden="true" tabindex="-1"></a><span class="st">- date (YYYY-MM-DD or null)</span></span>
+<span id="cb26-918"><a href="#cb26-918" aria-hidden="true" tabindex="-1"></a><span class="st">- attendees (array of strings)</span></span>
+<span id="cb26-919"><a href="#cb26-919" aria-hidden="true" tabindex="-1"></a><span class="st">- decisions (array of strings)</span></span>
+<span id="cb26-920"><a href="#cb26-920" aria-hidden="true" tabindex="-1"></a><span class="st">- action_items (array of objects with keys: owner, task, deadline [YYYY-MM-DD or null])</span></span>
+<span id="cb26-921"><a href="#cb26-921" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-922"><a href="#cb26-922" aria-hidden="true" tabindex="-1"></a><span class="st">Rules:</span></span>
+<span id="cb26-923"><a href="#cb26-923" aria-hidden="true" tabindex="-1"></a><span class="st">- Do not invent facts. If unknown, use null or [].</span></span>
+<span id="cb26-924"><a href="#cb26-924" aria-hidden="true" tabindex="-1"></a><span class="st">- No text outside the JSON.</span></span>
+<span id="cb26-925"><a href="#cb26-925" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-926"><a href="#cb26-926" aria-hidden="true" tabindex="-1"></a><span class="st">Transcript:</span></span>
+<span id="cb26-927"><a href="#cb26-927" aria-hidden="true" tabindex="-1"></a><span class="sc">{meeting_transcript}</span></span>
+<span id="cb26-928"><a href="#cb26-928" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
+<span id="cb26-929"><a href="#cb26-929" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-930"><a href="#cb26-930" aria-hidden="true" tabindex="-1"></a>CLARIFICATION_PROMPT <span class="op">=</span> <span class="st">"""You are a helpful assistant. We extracted meeting data but these fields are missing:</span></span>
+<span id="cb26-931"><a href="#cb26-931" aria-hidden="true" tabindex="-1"></a><span class="sc">{missing_fields}</span></span>
+<span id="cb26-932"><a href="#cb26-932" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-933"><a href="#cb26-933" aria-hidden="true" tabindex="-1"></a><span class="st">Return a VALID JSON array of clarification questions where each item has:</span></span>
+<span id="cb26-934"><a href="#cb26-934" aria-hidden="true" tabindex="-1"></a><span class="st">- key: a machine-readable key (e.g., "date" or "deadline_for_&lt;owner_slug&gt;")</span></span>
+<span id="cb26-935"><a href="#cb26-935" aria-hidden="true" tabindex="-1"></a><span class="st">- question: a concise user-facing question</span></span>
+<span id="cb26-936"><a href="#cb26-936" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-937"><a href="#cb26-937" aria-hidden="true" tabindex="-1"></a><span class="st">Rules:</span></span>
+<span id="cb26-938"><a href="#cb26-938" aria-hidden="true" tabindex="-1"></a><span class="st">- For missing meeting date, include one item with key "date".</span></span>
+<span id="cb26-939"><a href="#cb26-939" aria-hidden="true" tabindex="-1"></a><span class="st">- For missing deadlines, include one item per owner with key "deadline_for_&lt;owner_slug&gt;" where owner_slug is the lowercase owner name with spaces replaced by underscores (e.g., "deadline_for_alice_smith").</span></span>
+<span id="cb26-940"><a href="#cb26-940" aria-hidden="true" tabindex="-1"></a><span class="st">- Only include keys for fields that are missing.</span></span>
+<span id="cb26-941"><a href="#cb26-941" aria-hidden="true" tabindex="-1"></a><span class="st">- No text outside the JSON.</span></span>
+<span id="cb26-942"><a href="#cb26-942" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
+<span id="cb26-943"><a href="#cb26-943" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-944"><a href="#cb26-944" aria-hidden="true" tabindex="-1"></a>SUMMARY_PROMPT <span class="op">=</span> <span class="st">"""You are a professional summarizer.</span></span>
+<span id="cb26-945"><a href="#cb26-945" aria-hidden="true" tabindex="-1"></a><span class="st">Using ONLY this JSON, write a 3–5 sentence summary highlighting decisions and action items.</span></span>
+<span id="cb26-946"><a href="#cb26-946" aria-hidden="true" tabindex="-1"></a><span class="st">Keep it factual; do not invent.</span></span>
 <span id="cb26-947"><a href="#cb26-947" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-948"><a href="#cb26-948" aria-hidden="true" tabindex="-1"></a><span class="fu">## src/models.py</span></span>
-<span id="cb26-949"><a href="#cb26-949" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-950"><a href="#cb26-950" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
-<span id="cb26-951"><a href="#cb26-951" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> List, Optional</span>
-<span id="cb26-952"><a href="#cb26-952" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel, Field, ValidationError</span>
+<span id="cb26-948"><a href="#cb26-948" aria-hidden="true" tabindex="-1"></a><span class="st">JSON:</span></span>
+<span id="cb26-949"><a href="#cb26-949" aria-hidden="true" tabindex="-1"></a><span class="sc">{extracted_json}</span></span>
+<span id="cb26-950"><a href="#cb26-950" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
+<span id="cb26-951"><a href="#cb26-951" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-952"><a href="#cb26-952" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb26-953"><a href="#cb26-953" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-954"><a href="#cb26-954" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ActionItem(BaseModel):</span>
-<span id="cb26-955"><a href="#cb26-955" aria-hidden="true" tabindex="-1"></a>    owner: Optional[<span class="bu">str</span>] <span class="op">=</span> <span class="va">None</span></span>
-<span id="cb26-956"><a href="#cb26-956" aria-hidden="true" tabindex="-1"></a>    task: <span class="bu">str</span></span>
-<span id="cb26-957"><a href="#cb26-957" aria-hidden="true" tabindex="-1"></a>    deadline: Optional[<span class="bu">str</span>] <span class="op">=</span> Field(default<span class="op">=</span><span class="va">None</span>, description<span class="op">=</span><span class="st">"YYYY-MM-DD or null"</span>)</span>
-<span id="cb26-958"><a href="#cb26-958" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-959"><a href="#cb26-959" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ExtractedMeeting(BaseModel):</span>
-<span id="cb26-960"><a href="#cb26-960" aria-hidden="true" tabindex="-1"></a>    date: Optional[<span class="bu">str</span>] <span class="op">=</span> Field(default<span class="op">=</span><span class="va">None</span>, description<span class="op">=</span><span class="st">"YYYY-MM-DD or null"</span>)</span>
-<span id="cb26-961"><a href="#cb26-961" aria-hidden="true" tabindex="-1"></a>    attendees: List[<span class="bu">str</span>]</span>
-<span id="cb26-962"><a href="#cb26-962" aria-hidden="true" tabindex="-1"></a>    decisions: List[<span class="bu">str</span>]</span>
-<span id="cb26-963"><a href="#cb26-963" aria-hidden="true" tabindex="-1"></a>    action_items: List[ActionItem]</span>
+<span id="cb26-954"><a href="#cb26-954" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>EXTRACTION_PROMPT</span>
+<span id="cb26-955"><a href="#cb26-955" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Instructs the model to return VALID JSON only with the keys date, attendees, decisions, and action_items</span>
+<span id="cb26-956"><a href="#cb26-956" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>{meeting_transcript} gets added during runtime.</span>
+<span id="cb26-957"><a href="#cb26-957" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-958"><a href="#cb26-958" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>CLARIFICATION_PROMPT</span>
+<span id="cb26-959"><a href="#cb26-959" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>If we detect missing pieces, we will ask the model to write upto 3 questions.</span>
+<span id="cb26-960"><a href="#cb26-960" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-961"><a href="#cb26-961" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>SUMMARY_PROMPT</span>
+<span id="cb26-962"><a href="#cb26-962" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>converts validated JSON into a human readable summary. </span>
+<span id="cb26-963"><a href="#cb26-963" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb26-964"><a href="#cb26-964" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-965"><a href="#cb26-965" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PackagedOutput(BaseModel):</span>
-<span id="cb26-966"><a href="#cb26-966" aria-hidden="true" tabindex="-1"></a>    extracted: ExtractedMeeting</span>
-<span id="cb26-967"><a href="#cb26-967" aria-hidden="true" tabindex="-1"></a>    summary: <span class="bu">str</span></span>
-<span id="cb26-968"><a href="#cb26-968" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-969"><a href="#cb26-969" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb26-970"><a href="#cb26-970" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-971"><a href="#cb26-971" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Pydantic (a data validation library; docs.pydantic.dev) lets us define structured schemas and validate model outputs.</span>
-<span id="cb26-972"><a href="#cb26-972" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Class ActionItem</span>
-<span id="cb26-973"><a href="#cb26-973" aria-hidden="true" tabindex="-1"></a>  A single task with an owner, a description, and an optional deadline</span>
-<span id="cb26-974"><a href="#cb26-974" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Class ExtractedMeeting</span>
-<span id="cb26-975"><a href="#cb26-975" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>The extracted structure we expect as the output of the LLM</span>
-<span id="cb26-976"><a href="#cb26-976" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>If the model returns malformed JSON (e.g., wrong types), Pydantic will raise a ValidationError</span>
-<span id="cb26-977"><a href="#cb26-977" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Class PackagedOutput</span>
-<span id="cb26-978"><a href="#cb26-978" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Final object that the workflow returns. It should be machine readable JSON + human summary.</span>
+<span id="cb26-965"><a href="#cb26-965" aria-hidden="true" tabindex="-1"></a><span class="fu">## src/workflow_meeting.py</span></span>
+<span id="cb26-966"><a href="#cb26-966" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-967"><a href="#cb26-967" aria-hidden="true" tabindex="-1"></a><span class="fu">### run_workflow()</span></span>
+<span id="cb26-968"><a href="#cb26-968" aria-hidden="true" tabindex="-1"></a>The first function that we use in this src file is run_workflow. It does the following</span>
+<span id="cb26-969"><a href="#cb26-969" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-970"><a href="#cb26-970" aria-hidden="true" tabindex="-1"></a>It orchestrates the whole pipeline:</span>
+<span id="cb26-971"><a href="#cb26-971" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-972"><a href="#cb26-972" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Choose a model (based on PROVIDER).</span>
+<span id="cb26-973"><a href="#cb26-973" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Extract structured JSON from the transcript.</span>
+<span id="cb26-974"><a href="#cb26-974" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>Validate JSON against the Pydantic schema.</span>
+<span id="cb26-975"><a href="#cb26-975" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>Clarify (optionally): generate machine-readable questions for missing fields; optionally merge user_answers.</span>
+<span id="cb26-976"><a href="#cb26-976" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>Summarize the validated JSON into prose.</span>
+<span id="cb26-977"><a href="#cb26-977" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>Package both pieces into a PackagedOutput.</span>
+<span id="cb26-978"><a href="#cb26-978" aria-hidden="true" tabindex="-1"></a><span class="ss">7. </span>Optionally return the clarification questions to the caller.</span>
 <span id="cb26-979"><a href="#cb26-979" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-980"><a href="#cb26-980" aria-hidden="true" tabindex="-1"></a><span class="fu">## src/prompts.py</span></span>
-<span id="cb26-981"><a href="#cb26-981" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-982"><a href="#cb26-982" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
-<span id="cb26-983"><a href="#cb26-983" aria-hidden="true" tabindex="-1"></a>EXTRACTION_PROMPT <span class="op">=</span> <span class="st">"""You are an executive assistant.</span></span>
-<span id="cb26-984"><a href="#cb26-984" aria-hidden="true" tabindex="-1"></a><span class="st">From the transcript, extract structured meeting data.</span></span>
-<span id="cb26-985"><a href="#cb26-985" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-986"><a href="#cb26-986" aria-hidden="true" tabindex="-1"></a><span class="st">Return VALID JSON ONLY with keys exactly:</span></span>
-<span id="cb26-987"><a href="#cb26-987" aria-hidden="true" tabindex="-1"></a><span class="st">- date (YYYY-MM-DD or null)</span></span>
-<span id="cb26-988"><a href="#cb26-988" aria-hidden="true" tabindex="-1"></a><span class="st">- attendees (array of strings)</span></span>
-<span id="cb26-989"><a href="#cb26-989" aria-hidden="true" tabindex="-1"></a><span class="st">- decisions (array of strings)</span></span>
-<span id="cb26-990"><a href="#cb26-990" aria-hidden="true" tabindex="-1"></a><span class="st">- action_items (array of objects with keys: owner, task, deadline [YYYY-MM-DD or null])</span></span>
-<span id="cb26-991"><a href="#cb26-991" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-992"><a href="#cb26-992" aria-hidden="true" tabindex="-1"></a><span class="st">Rules:</span></span>
-<span id="cb26-993"><a href="#cb26-993" aria-hidden="true" tabindex="-1"></a><span class="st">- Do not invent facts. If unknown, use null or [].</span></span>
-<span id="cb26-994"><a href="#cb26-994" aria-hidden="true" tabindex="-1"></a><span class="st">- No text outside the JSON.</span></span>
+<span id="cb26-980"><a href="#cb26-980" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-981"><a href="#cb26-981" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb26-982"><a href="#cb26-982" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run_workflow(transcript: <span class="bu">str</span>, user_answers: <span class="bu">dict</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>, model: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>, return_questions: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>) <span class="op">-&gt;</span> PackagedOutput:</span>
+<span id="cb26-983"><a href="#cb26-983" aria-hidden="true" tabindex="-1"></a>    provider <span class="op">=</span> os.getenv(<span class="st">"PROVIDER"</span>, <span class="st">"openrouter"</span>).lower()</span>
+<span id="cb26-984"><a href="#cb26-984" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> model <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb26-985"><a href="#cb26-985" aria-hidden="true" tabindex="-1"></a>        model <span class="op">=</span> os.getenv(<span class="st">"GEMINI_MODEL"</span>, <span class="st">"gemini-1.5-flash"</span>) <span class="cf">if</span> provider <span class="op">==</span> <span class="st">"gemini"</span> <span class="cf">else</span> get_default_model()</span>
+<span id="cb26-986"><a href="#cb26-986" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-987"><a href="#cb26-987" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step A: Extraction</span></span>
+<span id="cb26-988"><a href="#cb26-988" aria-hidden="true" tabindex="-1"></a>    raw <span class="op">=</span> extract_meeting_json(transcript, model)</span>
+<span id="cb26-989"><a href="#cb26-989" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-990"><a href="#cb26-990" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Validate against schema</span></span>
+<span id="cb26-991"><a href="#cb26-991" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb26-992"><a href="#cb26-992" aria-hidden="true" tabindex="-1"></a>        extracted <span class="op">=</span> ExtractedMeeting.model_validate(raw)</span>
+<span id="cb26-993"><a href="#cb26-993" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> ValidationError <span class="im">as</span> e:</span>
+<span id="cb26-994"><a href="#cb26-994" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f"Extraction schema validation failed: </span><span class="sc">{</span>e<span class="sc">}</span><span class="ss">"</span>) <span class="im">from</span> e</span>
 <span id="cb26-995"><a href="#cb26-995" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-996"><a href="#cb26-996" aria-hidden="true" tabindex="-1"></a><span class="st">Transcript:</span></span>
-<span id="cb26-997"><a href="#cb26-997" aria-hidden="true" tabindex="-1"></a><span class="sc">{meeting_transcript}</span></span>
-<span id="cb26-998"><a href="#cb26-998" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
-<span id="cb26-999"><a href="#cb26-999" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1000"><a href="#cb26-1000" aria-hidden="true" tabindex="-1"></a>CLARIFICATION_PROMPT <span class="op">=</span> <span class="st">"""You are a helpful assistant.</span></span>
-<span id="cb26-1001"><a href="#cb26-1001" aria-hidden="true" tabindex="-1"></a><span class="st">The following fields were missing or null: </span><span class="sc">{missing_fields}</span><span class="st">.</span></span>
-<span id="cb26-1002"><a href="#cb26-1002" aria-hidden="true" tabindex="-1"></a><span class="st">Ask at most 3 concise questions to fill ONLY those fields.</span></span>
-<span id="cb26-1003"><a href="#cb26-1003" aria-hidden="true" tabindex="-1"></a><span class="st">Return a numbered list of questions (no other text)."""</span></span>
-<span id="cb26-1004"><a href="#cb26-1004" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1005"><a href="#cb26-1005" aria-hidden="true" tabindex="-1"></a>SUMMARY_PROMPT <span class="op">=</span> <span class="st">"""You are a professional summarizer.</span></span>
-<span id="cb26-1006"><a href="#cb26-1006" aria-hidden="true" tabindex="-1"></a><span class="st">Using ONLY this JSON, write a 3–5 sentence summary highlighting decisions and action items.</span></span>
-<span id="cb26-1007"><a href="#cb26-1007" aria-hidden="true" tabindex="-1"></a><span class="st">Keep it factual; do not invent.</span></span>
-<span id="cb26-1008"><a href="#cb26-1008" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1009"><a href="#cb26-1009" aria-hidden="true" tabindex="-1"></a><span class="st">JSON:</span></span>
-<span id="cb26-1010"><a href="#cb26-1010" aria-hidden="true" tabindex="-1"></a><span class="sc">{extracted_json}</span></span>
-<span id="cb26-1011"><a href="#cb26-1011" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
+<span id="cb26-996"><a href="#cb26-996" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step B: Check &amp; (optional) clarify</span></span>
+<span id="cb26-997"><a href="#cb26-997" aria-hidden="true" tabindex="-1"></a>    <span class="co"># missing = find_missing_fields(extracted.model_dump())</span></span>
+<span id="cb26-998"><a href="#cb26-998" aria-hidden="true" tabindex="-1"></a>    missing <span class="op">=</span> build_missing_keys(extracted.model_dump())</span>
+<span id="cb26-999"><a href="#cb26-999" aria-hidden="true" tabindex="-1"></a>    questions <span class="op">=</span> ask_clarifications(extracted.model_dump(), model) <span class="cf">if</span> missing <span class="cf">else</span> [] <span class="co">#missing</span></span>
+<span id="cb26-1000"><a href="#cb26-1000" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> user_answers:</span>
+<span id="cb26-1001"><a href="#cb26-1001" aria-hidden="true" tabindex="-1"></a>        patched <span class="op">=</span> apply_clarifications(extracted.model_dump(), user_answers)</span>
+<span id="cb26-1002"><a href="#cb26-1002" aria-hidden="true" tabindex="-1"></a>        extracted <span class="op">=</span> ExtractedMeeting.model_validate(patched)</span>
+<span id="cb26-1003"><a href="#cb26-1003" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-1004"><a href="#cb26-1004" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step C: Summary</span></span>
+<span id="cb26-1005"><a href="#cb26-1005" aria-hidden="true" tabindex="-1"></a>    summary <span class="op">=</span> make_summary(extracted.model_dump(), model)</span>
+<span id="cb26-1006"><a href="#cb26-1006" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-1007"><a href="#cb26-1007" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Step D: Package</span></span>
+<span id="cb26-1008"><a href="#cb26-1008" aria-hidden="true" tabindex="-1"></a>    packaged <span class="op">=</span> PackagedOutput(extracted<span class="op">=</span>extracted, summary<span class="op">=</span>summary)</span>
+<span id="cb26-1009"><a href="#cb26-1009" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (packaged, questions) <span class="cf">if</span> return_questions <span class="cf">else</span> packaged</span>
+<span id="cb26-1010"><a href="#cb26-1010" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-1011"><a href="#cb26-1011" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb26-1012"><a href="#cb26-1012" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1013"><a href="#cb26-1013" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb26-1013"><a href="#cb26-1013" aria-hidden="true" tabindex="-1"></a><span class="fu">### extract_meeting_json</span></span>
 <span id="cb26-1014"><a href="#cb26-1014" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1015"><a href="#cb26-1015" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>EXTRACTION_PROMPT</span>
-<span id="cb26-1016"><a href="#cb26-1016" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>Instructs the model to return VALID JSON only with the keys date, attendees, decisions, and action_items</span>
-<span id="cb26-1017"><a href="#cb26-1017" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>{meeting_transcript} gets added during runtime.</span>
-<span id="cb26-1018"><a href="#cb26-1018" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1019"><a href="#cb26-1019" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>CLARIFICATION_PROMPT</span>
-<span id="cb26-1020"><a href="#cb26-1020" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>If we detect missing pieces, we will ask the model to write upto 3 questions.</span>
-<span id="cb26-1021"><a href="#cb26-1021" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1022"><a href="#cb26-1022" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>SUMMARY_PROMPT</span>
-<span id="cb26-1023"><a href="#cb26-1023" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>converts validated JSON into a human readable summary. </span>
-<span id="cb26-1024"><a href="#cb26-1024" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1025"><a href="#cb26-1025" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1026"><a href="#cb26-1026" aria-hidden="true" tabindex="-1"></a><span class="fu"># Developer-Oriented Prompt Engineering Syllabus</span></span>
-<span id="cb26-1027"><a href="#cb26-1027" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1028"><a href="#cb26-1028" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1029"><a href="#cb26-1029" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 1: Foundations (Prompt Basics)</span></span>
-<span id="cb26-1030"><a href="#cb26-1030" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1031"><a href="#cb26-1031" aria-hidden="true" tabindex="-1"></a>Prompt Engineering vs. Casual Use</span>
-<span id="cb26-1032"><a href="#cb26-1032" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1033"><a href="#cb26-1033" aria-hidden="true" tabindex="-1"></a>Roles, context, constraints.</span>
+<span id="cb26-1015"><a href="#cb26-1015" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb26-1016"><a href="#cb26-1016" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> extract_meeting_json(transcript: <span class="bu">str</span>, model: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">dict</span>:</span>
+<span id="cb26-1017"><a href="#cb26-1017" aria-hidden="true" tabindex="-1"></a>    prompt <span class="op">=</span> EXTRACTION_PROMPT.<span class="bu">format</span>(meeting_transcript<span class="op">=</span>transcript)</span>
+<span id="cb26-1018"><a href="#cb26-1018" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> attempt <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">2</span>):</span>
+<span id="cb26-1019"><a href="#cb26-1019" aria-hidden="true" tabindex="-1"></a>        text <span class="op">=</span> chat(model, prompt, temperature<span class="op">=</span><span class="fl">0.2</span>)</span>
+<span id="cb26-1020"><a href="#cb26-1020" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span>:</span>
+<span id="cb26-1021"><a href="#cb26-1021" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> json.loads(text)</span>
+<span id="cb26-1022"><a href="#cb26-1022" aria-hidden="true" tabindex="-1"></a>        <span class="cf">except</span> json.JSONDecodeError:</span>
+<span id="cb26-1023"><a href="#cb26-1023" aria-hidden="true" tabindex="-1"></a>            start <span class="op">=</span> text.find(<span class="st">"{"</span>)</span>
+<span id="cb26-1024"><a href="#cb26-1024" aria-hidden="true" tabindex="-1"></a>            end <span class="op">=</span> text.rfind(<span class="st">"}"</span>)</span>
+<span id="cb26-1025"><a href="#cb26-1025" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> start <span class="op">!=</span> <span class="op">-</span><span class="dv">1</span> <span class="kw">and</span> end <span class="op">!=</span> <span class="op">-</span><span class="dv">1</span> <span class="kw">and</span> end <span class="op">&gt;</span> start:</span>
+<span id="cb26-1026"><a href="#cb26-1026" aria-hidden="true" tabindex="-1"></a>                chunk <span class="op">=</span> text[start:end<span class="op">+</span><span class="dv">1</span>]</span>
+<span id="cb26-1027"><a href="#cb26-1027" aria-hidden="true" tabindex="-1"></a>                <span class="cf">try</span>:</span>
+<span id="cb26-1028"><a href="#cb26-1028" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">return</span> json.loads(chunk)</span>
+<span id="cb26-1029"><a href="#cb26-1029" aria-hidden="true" tabindex="-1"></a>                <span class="cf">except</span> <span class="pp">Exception</span>:</span>
+<span id="cb26-1030"><a href="#cb26-1030" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">pass</span></span>
+<span id="cb26-1031"><a href="#cb26-1031" aria-hidden="true" tabindex="-1"></a>            <span class="co"># tighten and retry</span></span>
+<span id="cb26-1032"><a href="#cb26-1032" aria-hidden="true" tabindex="-1"></a>            prompt <span class="op">=</span> prompt <span class="op">+</span> <span class="st">"</span><span class="ch">\n\n</span><span class="st">IMPORTANT: Return VALID JSON ONLY. No prose, no code fences."</span></span>
+<span id="cb26-1033"><a href="#cb26-1033" aria-hidden="true" tabindex="-1"></a>    <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">"Failed to parse extraction JSON after retries."</span>)</span>
 <span id="cb26-1034"><a href="#cb26-1034" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1035"><a href="#cb26-1035" aria-hidden="true" tabindex="-1"></a>Hands-on: casual vs engineered prompts (experimenting in chat).</span>
+<span id="cb26-1035"><a href="#cb26-1035" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb26-1036"><a href="#cb26-1036" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1037"><a href="#cb26-1037" aria-hidden="true" tabindex="-1"></a>Prompt Templates &amp; Structures</span>
+<span id="cb26-1037"><a href="#cb26-1037" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb26-1038"><a href="#cb26-1038" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1039"><a href="#cb26-1039" aria-hidden="true" tabindex="-1"></a>Placeholders, parameterization.</span>
-<span id="cb26-1040"><a href="#cb26-1040" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1041"><a href="#cb26-1041" aria-hidden="true" tabindex="-1"></a>Hands-on: design a reusable summarization template.</span>
+<span id="cb26-1039"><a href="#cb26-1039" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-1040"><a href="#cb26-1040" aria-hidden="true" tabindex="-1"></a><span class="fu"># Developer-Oriented Prompt Engineering Syllabus</span></span>
+<span id="cb26-1041"><a href="#cb26-1041" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb26-1042"><a href="#cb26-1042" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1043"><a href="#cb26-1043" aria-hidden="true" tabindex="-1"></a>Controlling Output</span>
+<span id="cb26-1043"><a href="#cb26-1043" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 1: Foundations (Prompt Basics)</span></span>
 <span id="cb26-1044"><a href="#cb26-1044" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1045"><a href="#cb26-1045" aria-hidden="true" tabindex="-1"></a>Formatting, style, tone, length.</span>
+<span id="cb26-1045"><a href="#cb26-1045" aria-hidden="true" tabindex="-1"></a>Prompt Engineering vs. Casual Use</span>
 <span id="cb26-1046"><a href="#cb26-1046" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1047"><a href="#cb26-1047" aria-hidden="true" tabindex="-1"></a>Hands-on: generate structured JSON responses for downstream use.</span>
+<span id="cb26-1047"><a href="#cb26-1047" aria-hidden="true" tabindex="-1"></a>Roles, context, constraints.</span>
 <span id="cb26-1048"><a href="#cb26-1048" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1049"><a href="#cb26-1049" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 2: Advanced Prompting Techniques</span></span>
+<span id="cb26-1049"><a href="#cb26-1049" aria-hidden="true" tabindex="-1"></a>Hands-on: casual vs engineered prompts (experimenting in chat).</span>
 <span id="cb26-1050"><a href="#cb26-1050" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1051"><a href="#cb26-1051" aria-hidden="true" tabindex="-1"></a>Few-Shot Prompting</span>
+<span id="cb26-1051"><a href="#cb26-1051" aria-hidden="true" tabindex="-1"></a>Prompt Templates &amp; Structures</span>
 <span id="cb26-1052"><a href="#cb26-1052" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1053"><a href="#cb26-1053" aria-hidden="true" tabindex="-1"></a>Using examples to guide the model.</span>
+<span id="cb26-1053"><a href="#cb26-1053" aria-hidden="true" tabindex="-1"></a>Placeholders, parameterization.</span>
 <span id="cb26-1054"><a href="#cb26-1054" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1055"><a href="#cb26-1055" aria-hidden="true" tabindex="-1"></a>Hands-on: sentiment classifier with few-shot examples.</span>
+<span id="cb26-1055"><a href="#cb26-1055" aria-hidden="true" tabindex="-1"></a>Hands-on: design a reusable summarization template.</span>
 <span id="cb26-1056"><a href="#cb26-1056" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1057"><a href="#cb26-1057" aria-hidden="true" tabindex="-1"></a>Chain-of-Thought Prompting</span>
+<span id="cb26-1057"><a href="#cb26-1057" aria-hidden="true" tabindex="-1"></a>Controlling Output</span>
 <span id="cb26-1058"><a href="#cb26-1058" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1059"><a href="#cb26-1059" aria-hidden="true" tabindex="-1"></a>For reasoning tasks.</span>
+<span id="cb26-1059"><a href="#cb26-1059" aria-hidden="true" tabindex="-1"></a>Formatting, style, tone, length.</span>
 <span id="cb26-1060"><a href="#cb26-1060" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1061"><a href="#cb26-1061" aria-hidden="true" tabindex="-1"></a>Hands-on: step-by-step math/logic prompts.</span>
+<span id="cb26-1061"><a href="#cb26-1061" aria-hidden="true" tabindex="-1"></a>Hands-on: generate structured JSON responses for downstream use.</span>
 <span id="cb26-1062"><a href="#cb26-1062" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1063"><a href="#cb26-1063" aria-hidden="true" tabindex="-1"></a>Multi-Turn Workflows</span>
+<span id="cb26-1063"><a href="#cb26-1063" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 2: Advanced Prompting Techniques</span></span>
 <span id="cb26-1064"><a href="#cb26-1064" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1065"><a href="#cb26-1065" aria-hidden="true" tabindex="-1"></a>Breaking tasks into steps across prompts.</span>
+<span id="cb26-1065"><a href="#cb26-1065" aria-hidden="true" tabindex="-1"></a>Few-Shot Prompting</span>
 <span id="cb26-1066"><a href="#cb26-1066" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1067"><a href="#cb26-1067" aria-hidden="true" tabindex="-1"></a>Hands-on: design a mini Q&amp;A assistant with follow-up refinement.</span>
+<span id="cb26-1067"><a href="#cb26-1067" aria-hidden="true" tabindex="-1"></a>Using examples to guide the model.</span>
 <span id="cb26-1068"><a href="#cb26-1068" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1069"><a href="#cb26-1069" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 3: Workflows &amp; Deployment</span></span>
+<span id="cb26-1069"><a href="#cb26-1069" aria-hidden="true" tabindex="-1"></a>Hands-on: sentiment classifier with few-shot examples.</span>
 <span id="cb26-1070"><a href="#cb26-1070" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1071"><a href="#cb26-1071" aria-hidden="true" tabindex="-1"></a>Designing Prompt Workflows</span>
+<span id="cb26-1071"><a href="#cb26-1071" aria-hidden="true" tabindex="-1"></a>Chain-of-Thought Prompting</span>
 <span id="cb26-1072"><a href="#cb26-1072" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1073"><a href="#cb26-1073" aria-hidden="true" tabindex="-1"></a>Input capture → prompt template → response → post-processing.</span>
+<span id="cb26-1073"><a href="#cb26-1073" aria-hidden="true" tabindex="-1"></a>For reasoning tasks.</span>
 <span id="cb26-1074"><a href="#cb26-1074" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1075"><a href="#cb26-1075" aria-hidden="true" tabindex="-1"></a>Hands-on: build a workflow that turns meeting notes into action items.</span>
+<span id="cb26-1075"><a href="#cb26-1075" aria-hidden="true" tabindex="-1"></a>Hands-on: step-by-step math/logic prompts.</span>
 <span id="cb26-1076"><a href="#cb26-1076" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1077"><a href="#cb26-1077" aria-hidden="true" tabindex="-1"></a>APIs &amp; Programmatic Use</span>
+<span id="cb26-1077"><a href="#cb26-1077" aria-hidden="true" tabindex="-1"></a>Multi-Turn Workflows</span>
 <span id="cb26-1078"><a href="#cb26-1078" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1079"><a href="#cb26-1079" aria-hidden="true" tabindex="-1"></a>OpenAI API basics, LangChain, LlamaIndex, or direct scripting.</span>
+<span id="cb26-1079"><a href="#cb26-1079" aria-hidden="true" tabindex="-1"></a>Breaking tasks into steps across prompts.</span>
 <span id="cb26-1080"><a href="#cb26-1080" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1081"><a href="#cb26-1081" aria-hidden="true" tabindex="-1"></a>Hands-on: call an API with a prompt template in Python.</span>
+<span id="cb26-1081"><a href="#cb26-1081" aria-hidden="true" tabindex="-1"></a>Hands-on: design a mini Q&amp;A assistant with follow-up refinement.</span>
 <span id="cb26-1082"><a href="#cb26-1082" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1083"><a href="#cb26-1083" aria-hidden="true" tabindex="-1"></a>Prompt Libraries &amp; Modularity</span>
+<span id="cb26-1083"><a href="#cb26-1083" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 3: Workflows &amp; Deployment</span></span>
 <span id="cb26-1084"><a href="#cb26-1084" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1085"><a href="#cb26-1085" aria-hidden="true" tabindex="-1"></a>Organizing reusable prompts.</span>
+<span id="cb26-1085"><a href="#cb26-1085" aria-hidden="true" tabindex="-1"></a>Designing Prompt Workflows</span>
 <span id="cb26-1086"><a href="#cb26-1086" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1087"><a href="#cb26-1087" aria-hidden="true" tabindex="-1"></a>Hands-on: build a small “prompt toolkit” for text analysis tasks.</span>
+<span id="cb26-1087"><a href="#cb26-1087" aria-hidden="true" tabindex="-1"></a>Input capture → prompt template → response → post-processing.</span>
 <span id="cb26-1088"><a href="#cb26-1088" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1089"><a href="#cb26-1089" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 4: Evaluations &amp; Integrations</span></span>
+<span id="cb26-1089"><a href="#cb26-1089" aria-hidden="true" tabindex="-1"></a>Hands-on: build a workflow that turns meeting notes into action items.</span>
 <span id="cb26-1090"><a href="#cb26-1090" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1091"><a href="#cb26-1091" aria-hidden="true" tabindex="-1"></a>Prompt Evaluation</span>
+<span id="cb26-1091"><a href="#cb26-1091" aria-hidden="true" tabindex="-1"></a>APIs &amp; Programmatic Use</span>
 <span id="cb26-1092"><a href="#cb26-1092" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1093"><a href="#cb26-1093" aria-hidden="true" tabindex="-1"></a>Measuring consistency, accuracy, robustness.</span>
+<span id="cb26-1093"><a href="#cb26-1093" aria-hidden="true" tabindex="-1"></a>OpenAI API basics, LangChain, LlamaIndex, or direct scripting.</span>
 <span id="cb26-1094"><a href="#cb26-1094" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1095"><a href="#cb26-1095" aria-hidden="true" tabindex="-1"></a>Hands-on: run A/B tests on two prompt versions.</span>
+<span id="cb26-1095"><a href="#cb26-1095" aria-hidden="true" tabindex="-1"></a>Hands-on: call an API with a prompt template in Python.</span>
 <span id="cb26-1096"><a href="#cb26-1096" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1097"><a href="#cb26-1097" aria-hidden="true" tabindex="-1"></a>Integration into Systems</span>
+<span id="cb26-1097"><a href="#cb26-1097" aria-hidden="true" tabindex="-1"></a>Prompt Libraries &amp; Modularity</span>
 <span id="cb26-1098"><a href="#cb26-1098" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1099"><a href="#cb26-1099" aria-hidden="true" tabindex="-1"></a>Connecting to pipelines, apps, or workflows.</span>
+<span id="cb26-1099"><a href="#cb26-1099" aria-hidden="true" tabindex="-1"></a>Organizing reusable prompts.</span>
 <span id="cb26-1100"><a href="#cb26-1100" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1101"><a href="#cb26-1101" aria-hidden="true" tabindex="-1"></a>Hands-on: integrate a prompt workflow into a data science pipeline (e.g., automated report generation).</span>
+<span id="cb26-1101"><a href="#cb26-1101" aria-hidden="true" tabindex="-1"></a>Hands-on: build a small “prompt toolkit” for text analysis tasks.</span>
 <span id="cb26-1102"><a href="#cb26-1102" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1103"><a href="#cb26-1103" aria-hidden="true" tabindex="-1"></a>Best Practices &amp; Maintenance</span>
+<span id="cb26-1103"><a href="#cb26-1103" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 4: Evaluations &amp; Integrations</span></span>
 <span id="cb26-1104"><a href="#cb26-1104" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1105"><a href="#cb26-1105" aria-hidden="true" tabindex="-1"></a>Avoiding pitfalls, documenting prompts, versioning.</span>
+<span id="cb26-1105"><a href="#cb26-1105" aria-hidden="true" tabindex="-1"></a>Prompt Evaluation</span>
 <span id="cb26-1106"><a href="#cb26-1106" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1107"><a href="#cb26-1107" aria-hidden="true" tabindex="-1"></a>Hands-on: write a “prompt spec” for one of your workflows.</span>
+<span id="cb26-1107"><a href="#cb26-1107" aria-hidden="true" tabindex="-1"></a>Measuring consistency, accuracy, robustness.</span>
 <span id="cb26-1108"><a href="#cb26-1108" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1109"><a href="#cb26-1109" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 5: Capstone</span></span>
+<span id="cb26-1109"><a href="#cb26-1109" aria-hidden="true" tabindex="-1"></a>Hands-on: run A/B tests on two prompt versions.</span>
 <span id="cb26-1110"><a href="#cb26-1110" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1111"><a href="#cb26-1111" aria-hidden="true" tabindex="-1"></a>Mini Project (Capstone)</span>
+<span id="cb26-1111"><a href="#cb26-1111" aria-hidden="true" tabindex="-1"></a>Integration into Systems</span>
 <span id="cb26-1112"><a href="#cb26-1112" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1113"><a href="#cb26-1113" aria-hidden="true" tabindex="-1"></a>Choose one:</span>
+<span id="cb26-1113"><a href="#cb26-1113" aria-hidden="true" tabindex="-1"></a>Connecting to pipelines, apps, or workflows.</span>
 <span id="cb26-1114"><a href="#cb26-1114" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1115"><a href="#cb26-1115" aria-hidden="true" tabindex="-1"></a>A text analysis pipeline (summarization, classification, insight extraction).</span>
+<span id="cb26-1115"><a href="#cb26-1115" aria-hidden="true" tabindex="-1"></a>Hands-on: integrate a prompt workflow into a data science pipeline (e.g., automated report generation).</span>
 <span id="cb26-1116"><a href="#cb26-1116" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1117"><a href="#cb26-1117" aria-hidden="true" tabindex="-1"></a>A developer tool (docstring generator, code reviewer, query explainer).</span>
+<span id="cb26-1117"><a href="#cb26-1117" aria-hidden="true" tabindex="-1"></a>Best Practices &amp; Maintenance</span>
 <span id="cb26-1118"><a href="#cb26-1118" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1119"><a href="#cb26-1119" aria-hidden="true" tabindex="-1"></a>A workflow assistant (turn raw data into polished insights).</span>
+<span id="cb26-1119"><a href="#cb26-1119" aria-hidden="true" tabindex="-1"></a>Avoiding pitfalls, documenting prompts, versioning.</span>
 <span id="cb26-1120"><a href="#cb26-1120" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-1121"><a href="#cb26-1121" aria-hidden="true" tabindex="-1"></a>Deliverable: A working prototype + blog post documenting it.</span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
+<span id="cb26-1121"><a href="#cb26-1121" aria-hidden="true" tabindex="-1"></a>Hands-on: write a “prompt spec” for one of your workflows.</span>
+<span id="cb26-1122"><a href="#cb26-1122" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-1123"><a href="#cb26-1123" aria-hidden="true" tabindex="-1"></a><span class="fu">## Phase 5: Capstone</span></span>
+<span id="cb26-1124"><a href="#cb26-1124" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-1125"><a href="#cb26-1125" aria-hidden="true" tabindex="-1"></a>Mini Project (Capstone)</span>
+<span id="cb26-1126"><a href="#cb26-1126" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-1127"><a href="#cb26-1127" aria-hidden="true" tabindex="-1"></a>Choose one:</span>
+<span id="cb26-1128"><a href="#cb26-1128" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-1129"><a href="#cb26-1129" aria-hidden="true" tabindex="-1"></a>A text analysis pipeline (summarization, classification, insight extraction).</span>
+<span id="cb26-1130"><a href="#cb26-1130" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-1131"><a href="#cb26-1131" aria-hidden="true" tabindex="-1"></a>A developer tool (docstring generator, code reviewer, query explainer).</span>
+<span id="cb26-1132"><a href="#cb26-1132" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-1133"><a href="#cb26-1133" aria-hidden="true" tabindex="-1"></a>A workflow assistant (turn raw data into polished insights).</span>
+<span id="cb26-1134"><a href="#cb26-1134" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-1135"><a href="#cb26-1135" aria-hidden="true" tabindex="-1"></a>Deliverable: A working prototype + blog post documenting it.</span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 
