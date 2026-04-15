@@ -7,24 +7,6 @@ website:
   repo-url: "https://github.com/jac0bmath3w/jac0bmath3w.github.io"
   navbar:
     left:
-<<<<<<< Updated upstream
-        - text: Home
-          href: index.qmd
-        - text: Probability
-          menu:
-            - text: Dice Game
-              href: posts/dice-game/index.qmd
-            - text: Coin Toss Pattern
-              href: posts/coin-toss-patterns/index.qmd
-        - text: Projects
-          menu:
-            - text: Wheel Failure Prediction
-              href: projects/wheel-failure-pred/index.qmd
-        - text: Learning
-          menu:
-            - text: DBT
-              href: learning/dbt/index.qmd	      
-=======
       - text: Home
         href: index.qmd
       - text: Probability
@@ -53,7 +35,7 @@ website:
             href: learning/prompt_engineering/index.qmd
       - text: About
         href: about/index.qmd
->>>>>>> Stashed changes
+
 
 format:
   html:
