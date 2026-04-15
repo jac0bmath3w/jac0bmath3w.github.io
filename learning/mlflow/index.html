@@ -76,7 +76,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../site_libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-c1fac2584b48ed01fb6e278e36375074.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-be4033561c6ef7bc4239523ca57164bc.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -104,6 +104,198 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
+<style>html{ scroll-behavior: smooth; }</style>
+<style>
+  :root {
+    --rs-accent: #0f4c81;
+    --rs-accent-soft: #eaf3fb;
+    --rs-border: #d9e4ef;
+    --rs-ink: #1f2937;
+    --rs-muted: #5f6b7a;
+    --rs-code-bg: #0b1220;
+    --rs-warm: #fff8ea;
+    --rs-warm-border: #f3d28b;
+  }
+
+  body {
+    text-rendering: optimizeLegibility;
+  }
+
+  .quarto-title-block .quarto-title-banner {
+    background:
+      linear-gradient(135deg, rgba(15,76,129,.95), rgba(31,111,235,.78)),
+      radial-gradient(circle at top right, rgba(255,255,255,.22), transparent 32%);
+    padding-top: 3.25rem;
+    padding-bottom: 3rem;
+    border-bottom: 1px solid rgba(255,255,255,.12);
+  }
+
+  .quarto-title-block .title {
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    max-width: 12ch;
+  }
+
+  .quarto-title-meta {
+    font-size: .95rem;
+  }
+
+  main.content {
+    max-width: 900px;
+  }
+
+  .content p,
+  .content li {
+    color: var(--rs-ink);
+    font-size: 1.04rem;
+    line-height: 1.8;
+  }
+
+  .content p {
+    margin-bottom: 1rem;
+  }
+
+  .content h1,
+  .content h2,
+  .content h3,
+  .content h4 {
+    color: #10273f;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+  }
+
+  .content h1 {
+    margin-top: 2.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: .45rem;
+    border-bottom: 2px solid var(--rs-border);
+  }
+
+  .content h2 {
+    margin-top: 2.35rem;
+    margin-bottom: .75rem;
+  }
+
+  .content h3 {
+    margin-top: 1.75rem;
+  }
+
+  .content a {
+    color: var(--rs-accent);
+    text-decoration-thickness: .08em;
+    text-underline-offset: .14em;
+  }
+
+  .content ul,
+  .content ol {
+    padding-left: 1.35rem;
+  }
+
+  .content li + li {
+    margin-top: .35rem;
+  }
+
+  pre,
+  div.sourceCode {
+    border-radius: 18px;
+    border: 1px solid #172033;
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.16);
+  }
+
+  pre code,
+  div.sourceCode code {
+    font-size: .92rem;
+  }
+
+  code:not(pre code) {
+    background: var(--rs-accent-soft);
+    color: #17476d;
+    border-radius: .45rem;
+    padding: .14rem .38rem;
+  }
+
+  .cell {
+    margin-top: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 1.5rem 0 2rem;
+    overflow: hidden;
+    border: 1px solid var(--rs-border);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  }
+
+  thead th {
+    background: #f4f8fc;
+    color: #17324d;
+    font-weight: 700;
+    border-bottom: 1px solid var(--rs-border);
+  }
+
+  th, td {
+    padding: .9rem .95rem;
+    vertical-align: top;
+  }
+
+  tbody tr:nth-child(even) {
+    background: #fbfdff;
+  }
+
+  blockquote {
+    border-left: 4px solid var(--rs-accent);
+    background: #f7fbff;
+    border-radius: 0 14px 14px 0;
+    padding: .9rem 1rem;
+    color: var(--rs-muted);
+  }
+
+  hr {
+    border-top: 1px solid var(--rs-border);
+    opacity: 1;
+  }
+
+  .sidebar nav[role="doc-toc"] {
+    border-left: 1px solid var(--rs-border);
+    padding-left: 1rem;
+  }
+
+  .sidebar nav[role="doc-toc"] .active {
+    color: var(--rs-accent) !important;
+    font-weight: 700;
+  }
+
+  span[style*="color: red"] {
+    display: inline-block;
+    background: var(--rs-warm);
+    color: #8a5a00 !important;
+    border: 1px solid var(--rs-warm-border);
+    border-radius: 999px;
+    padding: .12rem .5rem;
+    font-weight: 700;
+    margin-right: .35rem;
+  }
+
+  img,
+  .quarto-figure,
+  .figure {
+    border-radius: 18px;
+  }
+
+  @media (max-width: 991px) {
+    .quarto-title-block .title {
+      max-width: none;
+    }
+
+    main.content {
+      max-width: 100%;
+    }
+  }
+</style>
 
 
 <link rel="stylesheet" href="../../styles.css">
@@ -112,7 +304,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <body class="nav-fixed quarto-light">
 
 <div id="quarto-search-results"></div>
-  <header id="quarto-header" class="headroom fixed-top">
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
@@ -197,7 +389,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <div class="quarto-title-block"><div><h1 class="title">Learning MLFlow</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
+                                <div class="quarto-categories">
+                <div class="quarto-category">MLFlow</div>
+                <div class="quarto-category">dbt</div>
+                <div class="quarto-category">data</div>
+                <div class="quarto-category">data_engineering</div>
+                <div class="quarto-category">data_science</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Jacob Mathew </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">August 23, 2025</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
@@ -218,44 +445,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </nav>
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content">
-
-<header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<div class="quarto-title-block"><div><h1 class="title">Learning MLFlow</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
-  <div class="quarto-categories">
-    <div class="quarto-category">MLFlow</div>
-    <div class="quarto-category">dbt</div>
-    <div class="quarto-category">data</div>
-    <div class="quarto-category">data_engineering</div>
-    <div class="quarto-category">data_science</div>
-  </div>
-  </div>
+<main class="content quarto-banner-title-block" id="quarto-document-content">
 
 
 
-<div class="quarto-title-meta">
-
-    <div>
-    <div class="quarto-title-meta-heading">Author</div>
-    <div class="quarto-title-meta-contents">
-             <p>Jacob Mathew </p>
-          </div>
-  </div>
-    
-    <div>
-    <div class="quarto-title-meta-heading">Published</div>
-    <div class="quarto-title-meta-contents">
-      <p class="date">August 23, 2025</p>
-    </div>
-  </div>
-  
-    
-  </div>
-  
-
-
-</header>
 
 
 <section id="introduction" class="level1">
@@ -565,6 +758,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           if (link.dataset.originalHref !== undefined) {
             link.href = link.dataset.originalHref;
           }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
         }
       }
     function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
@@ -885,187 +1083,391 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="an">categories:</span><span class="co"> [MLFlow, dbt, data, data_engineering, data_science]</span></span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span></span>
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co">    code-fold: true</span></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="fu"># Introduction</span></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>Detect and visualize days with degraded network QoE for Chicago using a simple, explainable rule on tail latency (p95) and loss, and track experiments with MLflow.</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="fu"># Data</span></span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>Data Source: The data is obtained from https://console.cloud.google.com/bigquery?project=measurement-lab</span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="fu">## Data Description:</span></span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>date — the day the tests happened.</span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>rtt_p50_ms — median (“typical”) round-trip time in milliseconds that day. Lower is better.</span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>rtt_p95_ms — 95th-percentile (the “tail”) latency. This captures the bad spikes a gamer actually feels.</span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>avg_loss — average packet loss rate (0–1). Even small increases hurt interactive apps.</span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>tests — how many NDT download tests were included for that day (sample size).</span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>So, we have a daily QoE proxy: typical latency, tail latency, loss, and volume.</span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>The following BigQuery is used to extract 6 months of data from Chicago, USA</span>
-<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a><span class="in">```sql</span></span>
-<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span></span>
-<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>  <span class="dt">date</span>,</span>
-<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>  APPROX_QUANTILES(a<span class="ch">.</span>MinRTT, <span class="dv">100</span>)[SAFE_ORDINAL(<span class="dv">50</span>)] <span class="kw">AS</span> rtt_p50_ms,</span>
-<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>  APPROX_QUANTILES(a<span class="ch">.</span>MinRTT, <span class="dv">100</span>)[SAFE_ORDINAL(<span class="dv">95</span>)] <span class="kw">AS</span> rtt_p95_ms,</span>
-<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">AVG</span>(a<span class="ch">.</span>LossRate) <span class="kw">AS</span> avg_loss,</span>
-<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">AS</span> tests</span>
-<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> <span class="st">`measurement-lab.ndt.unified_downloads`</span></span>
-<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> <span class="dt">date</span> <span class="kw">BETWEEN</span> <span class="fu">DATE_SUB</span>(<span class="kw">CURRENT_DATE</span>(), <span class="kw">INTERVAL</span> <span class="dv">180</span> DAY) <span class="kw">AND</span> <span class="kw">CURRENT_DATE</span>()</span>
-<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>  <span class="kw">AND</span> client<span class="ch">.</span>Geo<span class="ch">.</span>city <span class="op">=</span> <span class="st">"Chicago"</span></span>
-<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>  <span class="kw">AND</span> client<span class="ch">.</span>Geo<span class="ch">.</span>countryCode <span class="op">=</span> <span class="st">"US"</span></span>
-<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a><span class="kw">GROUP</span> <span class="kw">BY</span> <span class="dt">date</span></span>
-<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> <span class="dt">date</span>;</span>
-<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a><span class="fu"># Methodology</span></span>
-<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>I plotted the daily 95th percentile latency. This data is available for 6 months. The plot is shown below.</span>
-<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>!<span class="co">[</span><span class="ot">Daily Latency (95th percentile) in Chicago, IL</span><span class="co">]</span>(images/Chicago – Daily p95 Latency (NDT downloads).png)</span>
-<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>I then did the following steps to identify anomalies based on a simple logic (greater than a factor of the median absolute deviation). While doing this, I also added a parameter to ignore days with small samples (used MIN_TESTS = 5000). </span>
-<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Compute a rolling baseline of rtt_p95_ms (e.g., 7-day rolling median).</span>
-<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Compute a robust deviation using MAD (median absolute deviation).</span>
-<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Flag an anomaly when</span>
-<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a>  today_p95 &gt; baseline + k * 1.4826 * MAD (start with k=3).</span>
-<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a>  (For normal data, MAD ≈ 0.67449·σ, so σ ≈ 1.4826·MAD (1/0.67449))</span>
-<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a>Here we get</span>
-<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>baseline tracks the “normal” tail latency.</span>
-<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>threshold is a moving “too high” line (baseline + robust spread).</span>
-<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>red dots (anomalies) = days when players likely felt worse QoE.</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co">    theme: flatly</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-depth: 3</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-location: right</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co">    code-fold: true</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co">    code-copy: true</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co">    code-overflow: wrap</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="co">    smooth-scroll: true</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="co">    anchor-sections: true</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="co">    link-external-newwindow: true</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="co">    title-block-banner: true</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="co">    page-layout: article</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="co">    include-in-header:</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="co">      text: |</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="co">        &lt;style&gt;</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="co">          :root {</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="co">            --rs-accent: #0f4c81;</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="co">            --rs-accent-soft: #eaf3fb;</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="co">            --rs-border: #d9e4ef;</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a><span class="co">            --rs-ink: #1f2937;</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a><span class="co">            --rs-muted: #5f6b7a;</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a><span class="co">            --rs-code-bg: #0b1220;</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a><span class="co">            --rs-warm: #fff8ea;</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a><span class="co">            --rs-warm-border: #f3d28b;</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a><span class="co">          body {</span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a><span class="co">            text-rendering: optimizeLegibility;</span></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a><span class="co">          .quarto-title-block .quarto-title-banner {</span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a><span class="co">            background:</span></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a><span class="co">              linear-gradient(135deg, rgba(15,76,129,.95), rgba(31,111,235,.78)),</span></span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a><span class="co">              radial-gradient(circle at top right, rgba(255,255,255,.22), transparent 32%);</span></span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a><span class="co">            padding-top: 3.25rem;</span></span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a><span class="co">            padding-bottom: 3rem;</span></span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a><span class="co">            border-bottom: 1px solid rgba(255,255,255,.12);</span></span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a><span class="co">          .quarto-title-block .title {</span></span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a><span class="co">            font-weight: 800;</span></span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a><span class="co">            letter-spacing: -0.03em;</span></span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a><span class="co">            max-width: 12ch;</span></span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a><span class="co">          .quarto-title-meta {</span></span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a><span class="co">            font-size: .95rem;</span></span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a><span class="co">          main.content {</span></span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a><span class="co">            max-width: 900px;</span></span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a><span class="co">          .content p,</span></span>
+<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a><span class="co">          .content li {</span></span>
+<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a><span class="co">            color: var(--rs-ink);</span></span>
+<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a><span class="co">            font-size: 1.04rem;</span></span>
+<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a><span class="co">            line-height: 1.8;</span></span>
+<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
 <span id="cb5-68"><a href="#cb5-68" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a><span class="al">![Detected Anomalies](images/Chicago – Daily p95 Latency with Anomaly Flags.png)</span></span>
-<span id="cb5-70"><a href="#cb5-70" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-71"><a href="#cb5-71" aria-hidden="true" tabindex="-1"></a>We see 20 anomalies were detected. I did a grid search using WINDOW in <span class="co">[</span><span class="ot">7, 14, 28</span><span class="co">]</span> and K in <span class="co">[</span><span class="ot">3, 3.5, 4, 5</span><span class="co">]</span>. I logged each image created and the .csv file of anomalies using mlflow. This is the code snipped used</span>
+<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a><span class="co">          .content p {</span></span>
+<span id="cb5-70"><a href="#cb5-70" aria-hidden="true" tabindex="-1"></a><span class="co">            margin-bottom: 1rem;</span></span>
+<span id="cb5-71"><a href="#cb5-71" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
 <span id="cb5-72"><a href="#cb5-72" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-73"><a href="#cb5-73" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
-<span id="cb5-74"><a href="#cb5-74" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mlflow</span>
-<span id="cb5-75"><a href="#cb5-75" aria-hidden="true" tabindex="-1"></a>mlflow.set_tracking_uri(<span class="ss">f'file://</span><span class="sc">{</span>home_path<span class="sc">}</span><span class="ss">mlruns'</span>)</span>
-<span id="cb5-76"><a href="#cb5-76" aria-hidden="true" tabindex="-1"></a>mlflow.set_experiment(<span class="st">"qoe_chicago"</span>)  <span class="co"># auto-creates if not present</span></span>
-<span id="cb5-77"><a href="#cb5-77" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-78"><a href="#cb5-78" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> WINDOW <span class="kw">in</span> [<span class="dv">7</span>, <span class="dv">14</span>, <span class="dv">28</span>]:</span>
-<span id="cb5-79"><a href="#cb5-79" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> K <span class="kw">in</span> [<span class="dv">3</span>, <span class="fl">3.5</span>, <span class="dv">4</span>, <span class="dv">5</span>]:</span>
-<span id="cb5-80"><a href="#cb5-80" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-81"><a href="#cb5-81" aria-hidden="true" tabindex="-1"></a>        df <span class="op">=</span> df_copy.copy()</span>
-<span id="cb5-82"><a href="#cb5-82" aria-hidden="true" tabindex="-1"></a>        s <span class="op">=</span> df.loc[df[<span class="st">"eligible"</span>], <span class="st">"rtt_p95_ms"</span>]</span>
-<span id="cb5-83"><a href="#cb5-83" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-84"><a href="#cb5-84" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Rolling median baseline</span></span>
-<span id="cb5-85"><a href="#cb5-85" aria-hidden="true" tabindex="-1"></a>        baseline <span class="op">=</span> s.rolling(WINDOW, min_periods<span class="op">=</span>WINDOW).median()</span>
-<span id="cb5-86"><a href="#cb5-86" aria-hidden="true" tabindex="-1"></a>        mad_series <span class="op">=</span> s.rolling(WINDOW, min_periods<span class="op">=</span>WINDOW).<span class="bu">apply</span>(mad, raw<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb5-87"><a href="#cb5-87" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Threshold = baseline + K * 1.4826 * MAD</span></span>
-<span id="cb5-88"><a href="#cb5-88" aria-hidden="true" tabindex="-1"></a>        threshold <span class="op">=</span> baseline <span class="op">+</span> K <span class="op">*</span> <span class="fl">1.4826</span> <span class="op">*</span> mad_series</span>
-<span id="cb5-89"><a href="#cb5-89" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-90"><a href="#cb5-90" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Bring series back onto full index</span></span>
-<span id="cb5-91"><a href="#cb5-91" aria-hidden="true" tabindex="-1"></a>        df[<span class="st">"baseline"</span>]  <span class="op">=</span> baseline.reindex(df.index)</span>
-<span id="cb5-92"><a href="#cb5-92" aria-hidden="true" tabindex="-1"></a>        df[<span class="st">"threshold"</span>] <span class="op">=</span> threshold.reindex(df.index)</span>
+<span id="cb5-73"><a href="#cb5-73" aria-hidden="true" tabindex="-1"></a><span class="co">          .content h1,</span></span>
+<span id="cb5-74"><a href="#cb5-74" aria-hidden="true" tabindex="-1"></a><span class="co">          .content h2,</span></span>
+<span id="cb5-75"><a href="#cb5-75" aria-hidden="true" tabindex="-1"></a><span class="co">          .content h3,</span></span>
+<span id="cb5-76"><a href="#cb5-76" aria-hidden="true" tabindex="-1"></a><span class="co">          .content h4 {</span></span>
+<span id="cb5-77"><a href="#cb5-77" aria-hidden="true" tabindex="-1"></a><span class="co">            color: #10273f;</span></span>
+<span id="cb5-78"><a href="#cb5-78" aria-hidden="true" tabindex="-1"></a><span class="co">            font-weight: 750;</span></span>
+<span id="cb5-79"><a href="#cb5-79" aria-hidden="true" tabindex="-1"></a><span class="co">            letter-spacing: -0.02em;</span></span>
+<span id="cb5-80"><a href="#cb5-80" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-81"><a href="#cb5-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-82"><a href="#cb5-82" aria-hidden="true" tabindex="-1"></a><span class="co">          .content h1 {</span></span>
+<span id="cb5-83"><a href="#cb5-83" aria-hidden="true" tabindex="-1"></a><span class="co">            margin-top: 2.75rem;</span></span>
+<span id="cb5-84"><a href="#cb5-84" aria-hidden="true" tabindex="-1"></a><span class="co">            margin-bottom: 1rem;</span></span>
+<span id="cb5-85"><a href="#cb5-85" aria-hidden="true" tabindex="-1"></a><span class="co">            padding-bottom: .45rem;</span></span>
+<span id="cb5-86"><a href="#cb5-86" aria-hidden="true" tabindex="-1"></a><span class="co">            border-bottom: 2px solid var(--rs-border);</span></span>
+<span id="cb5-87"><a href="#cb5-87" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-88"><a href="#cb5-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-89"><a href="#cb5-89" aria-hidden="true" tabindex="-1"></a><span class="co">          .content h2 {</span></span>
+<span id="cb5-90"><a href="#cb5-90" aria-hidden="true" tabindex="-1"></a><span class="co">            margin-top: 2.35rem;</span></span>
+<span id="cb5-91"><a href="#cb5-91" aria-hidden="true" tabindex="-1"></a><span class="co">            margin-bottom: .75rem;</span></span>
+<span id="cb5-92"><a href="#cb5-92" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
 <span id="cb5-93"><a href="#cb5-93" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-94"><a href="#cb5-94" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Anomaly rule</span></span>
-<span id="cb5-95"><a href="#cb5-95" aria-hidden="true" tabindex="-1"></a>        df[<span class="st">"anomaly"</span>] <span class="op">=</span> (df[<span class="st">"rtt_p95_ms"</span>] <span class="op">&gt;</span> df[<span class="st">"threshold"</span>]) <span class="op">&amp;</span> df[<span class="st">"eligible"</span>]</span>
-<span id="cb5-96"><a href="#cb5-96" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-97"><a href="#cb5-97" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb5-98"><a href="#cb5-98" aria-hidden="true" tabindex="-1"></a>        num_eligible <span class="op">=</span> <span class="bu">int</span>(df[<span class="st">"eligible"</span>].<span class="bu">sum</span>())</span>
-<span id="cb5-99"><a href="#cb5-99" aria-hidden="true" tabindex="-1"></a>        num_anoms <span class="op">=</span> <span class="bu">int</span>(df[<span class="st">"anomaly"</span>].<span class="bu">sum</span>())</span>
-<span id="cb5-100"><a href="#cb5-100" aria-hidden="true" tabindex="-1"></a>        anomaly_rate <span class="op">=</span> num_anoms <span class="op">/</span> <span class="bu">max</span>(<span class="dv">1</span>, num_eligible)</span>
-<span id="cb5-101"><a href="#cb5-101" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-102"><a href="#cb5-102" aria-hidden="true" tabindex="-1"></a>        fig, ax <span class="op">=</span> plt.subplots()</span>
-<span id="cb5-103"><a href="#cb5-103" aria-hidden="true" tabindex="-1"></a>        ax.plot(df[<span class="st">"date"</span>], df[<span class="st">"rtt_p95_ms"</span>], label<span class="op">=</span><span class="st">"p95 RTT (ms)"</span>)</span>
-<span id="cb5-104"><a href="#cb5-104" aria-hidden="true" tabindex="-1"></a>        ax.plot(df[<span class="st">"date"</span>], df[<span class="st">"baseline"</span>], label<span class="op">=</span><span class="ss">f"</span><span class="sc">{</span>WINDOW<span class="sc">}</span><span class="ss">d rolling median"</span>)</span>
-<span id="cb5-105"><a href="#cb5-105" aria-hidden="true" tabindex="-1"></a>        ax.plot(df[<span class="st">"date"</span>], df[<span class="st">"threshold"</span>], <span class="st">"--"</span>, label<span class="op">=</span><span class="st">"threshold"</span>)</span>
-<span id="cb5-106"><a href="#cb5-106" aria-hidden="true" tabindex="-1"></a>        a <span class="op">=</span> df[<span class="st">"anomaly"</span>]</span>
-<span id="cb5-107"><a href="#cb5-107" aria-hidden="true" tabindex="-1"></a>        ax.scatter(df.loc[a, <span class="st">"date"</span>], df.loc[a, <span class="st">"rtt_p95_ms"</span>], label<span class="op">=</span><span class="st">"anomaly"</span>)</span>
-<span id="cb5-108"><a href="#cb5-108" aria-hidden="true" tabindex="-1"></a>        ax.set_title(<span class="ss">f"Chicago – Daily p95 Latency with Anomaly Flags</span><span class="ch">\n</span><span class="ss"> with K = </span><span class="sc">{</span>K<span class="sc">}</span><span class="ss"> and WINDOW = </span><span class="sc">{</span>WINDOW<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb5-109"><a href="#cb5-109" aria-hidden="true" tabindex="-1"></a>        ax.set_xlabel(<span class="st">"Date"</span>)</span>
-<span id="cb5-110"><a href="#cb5-110" aria-hidden="true" tabindex="-1"></a>        ax.set_ylabel(<span class="st">"Latency (ms)"</span>)</span>
-<span id="cb5-111"><a href="#cb5-111" aria-hidden="true" tabindex="-1"></a>        ax.legend()</span>
+<span id="cb5-94"><a href="#cb5-94" aria-hidden="true" tabindex="-1"></a><span class="co">          .content h3 {</span></span>
+<span id="cb5-95"><a href="#cb5-95" aria-hidden="true" tabindex="-1"></a><span class="co">            margin-top: 1.75rem;</span></span>
+<span id="cb5-96"><a href="#cb5-96" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-97"><a href="#cb5-97" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-98"><a href="#cb5-98" aria-hidden="true" tabindex="-1"></a><span class="co">          .content a {</span></span>
+<span id="cb5-99"><a href="#cb5-99" aria-hidden="true" tabindex="-1"></a><span class="co">            color: var(--rs-accent);</span></span>
+<span id="cb5-100"><a href="#cb5-100" aria-hidden="true" tabindex="-1"></a><span class="co">            text-decoration-thickness: .08em;</span></span>
+<span id="cb5-101"><a href="#cb5-101" aria-hidden="true" tabindex="-1"></a><span class="co">            text-underline-offset: .14em;</span></span>
+<span id="cb5-102"><a href="#cb5-102" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-103"><a href="#cb5-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-104"><a href="#cb5-104" aria-hidden="true" tabindex="-1"></a><span class="co">          .content ul,</span></span>
+<span id="cb5-105"><a href="#cb5-105" aria-hidden="true" tabindex="-1"></a><span class="co">          .content ol {</span></span>
+<span id="cb5-106"><a href="#cb5-106" aria-hidden="true" tabindex="-1"></a><span class="co">            padding-left: 1.35rem;</span></span>
+<span id="cb5-107"><a href="#cb5-107" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-108"><a href="#cb5-108" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-109"><a href="#cb5-109" aria-hidden="true" tabindex="-1"></a><span class="co">          .content li + li {</span></span>
+<span id="cb5-110"><a href="#cb5-110" aria-hidden="true" tabindex="-1"></a><span class="co">            margin-top: .35rem;</span></span>
+<span id="cb5-111"><a href="#cb5-111" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
 <span id="cb5-112"><a href="#cb5-112" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-113"><a href="#cb5-113" aria-hidden="true" tabindex="-1"></a>        fig_path <span class="op">=</span> os.path.join(fig_save_path, <span class="ss">f"anomalies_w</span><span class="sc">{</span>WINDOW<span class="sc">}</span><span class="ss">_k</span><span class="sc">{</span>K<span class="sc">}</span><span class="ss">.png"</span>)</span>
-<span id="cb5-114"><a href="#cb5-114" aria-hidden="true" tabindex="-1"></a>        fig.savefig(fig_path, dpi<span class="op">=</span><span class="dv">150</span>)</span>
-<span id="cb5-115"><a href="#cb5-115" aria-hidden="true" tabindex="-1"></a>        plt.savefig(fig_path, dpi<span class="op">=</span><span class="dv">150</span>)  <span class="co"># save the figure you just plotted</span></span>
-<span id="cb5-116"><a href="#cb5-116" aria-hidden="true" tabindex="-1"></a>        plt.close()</span>
-<span id="cb5-117"><a href="#cb5-117" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-118"><a href="#cb5-118" aria-hidden="true" tabindex="-1"></a>        anom_csv <span class="op">=</span> <span class="ss">f"anomaly_days_w</span><span class="sc">{</span>WINDOW<span class="sc">}</span><span class="ss">_k</span><span class="sc">{</span>K<span class="sc">}</span><span class="ss">.csv"</span></span>
-<span id="cb5-119"><a href="#cb5-119" aria-hidden="true" tabindex="-1"></a>        df.loc[df[<span class="st">"anomaly"</span>], [<span class="st">"date"</span>,<span class="st">"rtt_p95_ms"</span>,<span class="st">"avg_loss"</span>,<span class="st">"tests"</span>]].to_csv(os.path.join(home_path, <span class="st">"data"</span>, anom_csv), index<span class="op">=</span><span class="va">False</span>)</span>
-<span id="cb5-120"><a href="#cb5-120" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-121"><a href="#cb5-121" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-122"><a href="#cb5-122" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-123"><a href="#cb5-123" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> mlflow.start_run():</span>
-<span id="cb5-124"><a href="#cb5-124" aria-hidden="true" tabindex="-1"></a>            mlflow.log_param(<span class="st">"WINDOW"</span>, WINDOW)</span>
-<span id="cb5-125"><a href="#cb5-125" aria-hidden="true" tabindex="-1"></a>            mlflow.log_param(<span class="st">"K"</span>, K)</span>
-<span id="cb5-126"><a href="#cb5-126" aria-hidden="true" tabindex="-1"></a>            mlflow.log_param(<span class="st">"MIN_TESTS"</span>, MIN_TESTS)</span>
-<span id="cb5-127"><a href="#cb5-127" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-128"><a href="#cb5-128" aria-hidden="true" tabindex="-1"></a>            mlflow.log_metric(<span class="st">"num_eligible_days"</span>, num_eligible)</span>
-<span id="cb5-129"><a href="#cb5-129" aria-hidden="true" tabindex="-1"></a>            mlflow.log_metric(<span class="st">"num_anomalies"</span>, num_anoms)</span>
-<span id="cb5-130"><a href="#cb5-130" aria-hidden="true" tabindex="-1"></a>            mlflow.log_metric(<span class="st">"anomaly_rate"</span>, anomaly_rate)</span>
+<span id="cb5-113"><a href="#cb5-113" aria-hidden="true" tabindex="-1"></a><span class="co">          pre,</span></span>
+<span id="cb5-114"><a href="#cb5-114" aria-hidden="true" tabindex="-1"></a><span class="co">          div.sourceCode {</span></span>
+<span id="cb5-115"><a href="#cb5-115" aria-hidden="true" tabindex="-1"></a><span class="co">            border-radius: 18px;</span></span>
+<span id="cb5-116"><a href="#cb5-116" aria-hidden="true" tabindex="-1"></a><span class="co">            border: 1px solid #172033;</span></span>
+<span id="cb5-117"><a href="#cb5-117" aria-hidden="true" tabindex="-1"></a><span class="co">            box-shadow: 0 14px 36px rgba(15, 23, 42, 0.16);</span></span>
+<span id="cb5-118"><a href="#cb5-118" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-119"><a href="#cb5-119" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-120"><a href="#cb5-120" aria-hidden="true" tabindex="-1"></a><span class="co">          pre code,</span></span>
+<span id="cb5-121"><a href="#cb5-121" aria-hidden="true" tabindex="-1"></a><span class="co">          div.sourceCode code {</span></span>
+<span id="cb5-122"><a href="#cb5-122" aria-hidden="true" tabindex="-1"></a><span class="co">            font-size: .92rem;</span></span>
+<span id="cb5-123"><a href="#cb5-123" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-124"><a href="#cb5-124" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-125"><a href="#cb5-125" aria-hidden="true" tabindex="-1"></a><span class="co">          code:not(pre code) {</span></span>
+<span id="cb5-126"><a href="#cb5-126" aria-hidden="true" tabindex="-1"></a><span class="co">            background: var(--rs-accent-soft);</span></span>
+<span id="cb5-127"><a href="#cb5-127" aria-hidden="true" tabindex="-1"></a><span class="co">            color: #17476d;</span></span>
+<span id="cb5-128"><a href="#cb5-128" aria-hidden="true" tabindex="-1"></a><span class="co">            border-radius: .45rem;</span></span>
+<span id="cb5-129"><a href="#cb5-129" aria-hidden="true" tabindex="-1"></a><span class="co">            padding: .14rem .38rem;</span></span>
+<span id="cb5-130"><a href="#cb5-130" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
 <span id="cb5-131"><a href="#cb5-131" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-132"><a href="#cb5-132" aria-hidden="true" tabindex="-1"></a>            mlflow.log_artifact(os.path.join(home_path, <span class="st">"data"</span>, anom_csv))</span>
-<span id="cb5-133"><a href="#cb5-133" aria-hidden="true" tabindex="-1"></a>            mlflow.log_artifact(fig_path)</span>
-<span id="cb5-134"><a href="#cb5-134" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-135"><a href="#cb5-135" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"MLflow logged: K=</span><span class="sc">{</span>K<span class="sc">}</span><span class="ss">, WINDOW=</span><span class="sc">{</span>WINDOW<span class="sc">}</span><span class="ss">, anomalies=</span><span class="sc">{</span>num_anoms<span class="sc">}</span><span class="ss"> (</span><span class="sc">{</span>anomaly_rate<span class="sc">:.1%}</span><span class="ss">)"</span>)</span>
+<span id="cb5-132"><a href="#cb5-132" aria-hidden="true" tabindex="-1"></a><span class="co">          .cell {</span></span>
+<span id="cb5-133"><a href="#cb5-133" aria-hidden="true" tabindex="-1"></a><span class="co">            margin-top: 1.2rem;</span></span>
+<span id="cb5-134"><a href="#cb5-134" aria-hidden="true" tabindex="-1"></a><span class="co">            margin-bottom: 1.5rem;</span></span>
+<span id="cb5-135"><a href="#cb5-135" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
 <span id="cb5-136"><a href="#cb5-136" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-137"><a href="#cb5-137" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb5-138"><a href="#cb5-138" aria-hidden="true" tabindex="-1"></a>For the data used, I obtained. </span>
-<span id="cb5-139"><a href="#cb5-139" aria-hidden="true" tabindex="-1"></a><span class="in">```sh</span></span>
-<span id="cb5-140"><a href="#cb5-140" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=3.5, WINDOW=7, anomalies=19 <span class="er">(</span><span class="ex">10.6%</span><span class="kw">)</span></span>
-<span id="cb5-141"><a href="#cb5-141" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=4, WINDOW=7, anomalies=19 <span class="er">(</span><span class="ex">10.6%</span><span class="kw">)</span></span>
-<span id="cb5-142"><a href="#cb5-142" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=5, WINDOW=7, anomalies=17 <span class="er">(</span><span class="ex">9.4%</span><span class="kw">)</span></span>
-<span id="cb5-143"><a href="#cb5-143" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=3, WINDOW=14, anomalies=15 <span class="er">(</span><span class="ex">8.3%</span><span class="kw">)</span></span>
-<span id="cb5-144"><a href="#cb5-144" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=3.5, WINDOW=14, anomalies=10 <span class="er">(</span><span class="ex">5.6%</span><span class="kw">)</span></span>
-<span id="cb5-145"><a href="#cb5-145" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=4, WINDOW=14, anomalies=8 <span class="er">(</span><span class="ex">4.4%</span><span class="kw">)</span></span>
-<span id="cb5-146"><a href="#cb5-146" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=5, WINDOW=14, anomalies=7 <span class="er">(</span><span class="ex">3.9%</span><span class="kw">)</span></span>
-<span id="cb5-147"><a href="#cb5-147" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=3, WINDOW=28, anomalies=13 <span class="er">(</span><span class="ex">7.2%</span><span class="kw">)</span></span>
-<span id="cb5-148"><a href="#cb5-148" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=3.5, WINDOW=28, anomalies=11 <span class="er">(</span><span class="ex">6.1%</span><span class="kw">)</span></span>
-<span id="cb5-149"><a href="#cb5-149" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=4, WINDOW=28, anomalies=9 <span class="er">(</span><span class="ex">5.0%</span><span class="kw">)</span></span>
-<span id="cb5-150"><a href="#cb5-150" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=5, WINDOW=28, anomalies=6 <span class="er">(</span><span class="ex">3.3%</span><span class="kw">)</span></span>
-<span id="cb5-151"><a href="#cb5-151" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb5-152"><a href="#cb5-152" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-153"><a href="#cb5-153" aria-hidden="true" tabindex="-1"></a><span class="fu"># Why use MLFlow</span></span>
+<span id="cb5-137"><a href="#cb5-137" aria-hidden="true" tabindex="-1"></a><span class="co">          table {</span></span>
+<span id="cb5-138"><a href="#cb5-138" aria-hidden="true" tabindex="-1"></a><span class="co">            width: 100%;</span></span>
+<span id="cb5-139"><a href="#cb5-139" aria-hidden="true" tabindex="-1"></a><span class="co">            border-collapse: separate;</span></span>
+<span id="cb5-140"><a href="#cb5-140" aria-hidden="true" tabindex="-1"></a><span class="co">            border-spacing: 0;</span></span>
+<span id="cb5-141"><a href="#cb5-141" aria-hidden="true" tabindex="-1"></a><span class="co">            margin: 1.5rem 0 2rem;</span></span>
+<span id="cb5-142"><a href="#cb5-142" aria-hidden="true" tabindex="-1"></a><span class="co">            overflow: hidden;</span></span>
+<span id="cb5-143"><a href="#cb5-143" aria-hidden="true" tabindex="-1"></a><span class="co">            border: 1px solid var(--rs-border);</span></span>
+<span id="cb5-144"><a href="#cb5-144" aria-hidden="true" tabindex="-1"></a><span class="co">            border-radius: 16px;</span></span>
+<span id="cb5-145"><a href="#cb5-145" aria-hidden="true" tabindex="-1"></a><span class="co">            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);</span></span>
+<span id="cb5-146"><a href="#cb5-146" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-147"><a href="#cb5-147" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-148"><a href="#cb5-148" aria-hidden="true" tabindex="-1"></a><span class="co">          thead th {</span></span>
+<span id="cb5-149"><a href="#cb5-149" aria-hidden="true" tabindex="-1"></a><span class="co">            background: #f4f8fc;</span></span>
+<span id="cb5-150"><a href="#cb5-150" aria-hidden="true" tabindex="-1"></a><span class="co">            color: #17324d;</span></span>
+<span id="cb5-151"><a href="#cb5-151" aria-hidden="true" tabindex="-1"></a><span class="co">            font-weight: 700;</span></span>
+<span id="cb5-152"><a href="#cb5-152" aria-hidden="true" tabindex="-1"></a><span class="co">            border-bottom: 1px solid var(--rs-border);</span></span>
+<span id="cb5-153"><a href="#cb5-153" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
 <span id="cb5-154"><a href="#cb5-154" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-155"><a href="#cb5-155" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-156"><a href="#cb5-156" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Structured experiment tracking: You logged WINDOW, K, MIN_TESTS and could compare runs side-by-side. With a text logger, you’d be grepping files.</span>
-<span id="cb5-157"><a href="#cb5-157" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Metrics + artifacts together: Each run stores metrics (anomaly_count/rate) and artifacts (CSV + PNG). A logger won’t manage files for you or present them in a UI.</span>
-<span id="cb5-158"><a href="#cb5-158" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Reproducibility &amp; lineage: The “run” captures exactly which params produced a chart/table.=</span>
-<span id="cb5-159"><a href="#cb5-159" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>UI for decision-making: You literally chose 14/5 by comparing runs in the UI.</span>
-<span id="cb5-160"><a href="#cb5-160" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-161"><a href="#cb5-161" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-162"><a href="#cb5-162" aria-hidden="true" tabindex="-1"></a><span class="fu"># MLFlow UI</span></span>
+<span id="cb5-155"><a href="#cb5-155" aria-hidden="true" tabindex="-1"></a><span class="co">          th, td {</span></span>
+<span id="cb5-156"><a href="#cb5-156" aria-hidden="true" tabindex="-1"></a><span class="co">            padding: .9rem .95rem;</span></span>
+<span id="cb5-157"><a href="#cb5-157" aria-hidden="true" tabindex="-1"></a><span class="co">            vertical-align: top;</span></span>
+<span id="cb5-158"><a href="#cb5-158" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-159"><a href="#cb5-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-160"><a href="#cb5-160" aria-hidden="true" tabindex="-1"></a><span class="co">          tbody tr:nth-child(even) {</span></span>
+<span id="cb5-161"><a href="#cb5-161" aria-hidden="true" tabindex="-1"></a><span class="co">            background: #fbfdff;</span></span>
+<span id="cb5-162"><a href="#cb5-162" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
 <span id="cb5-163"><a href="#cb5-163" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-164"><a href="#cb5-164" aria-hidden="true" tabindex="-1"></a>Here we can access the MLFlow UI using the following command. </span>
-<span id="cb5-165"><a href="#cb5-165" aria-hidden="true" tabindex="-1"></a><span class="in">```sh</span></span>
-<span id="cb5-166"><a href="#cb5-166" aria-hidden="true" tabindex="-1"></a><span class="ex">mlflow</span> ui <span class="at">--backend-store-uri</span> ./mlruns</span>
-<span id="cb5-167"><a href="#cb5-167" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb5-168"><a href="#cb5-168" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-169"><a href="#cb5-169" aria-hidden="true" tabindex="-1"></a>The following image shows a screenshot of the MLFlow UI. Each row represents another iteration of the experiment. </span>
-<span id="cb5-170"><a href="#cb5-170" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-171"><a href="#cb5-171" aria-hidden="true" tabindex="-1"></a><span class="al">![MLFlow UI](images/MLFlowUI.png)</span></span>
-<span id="cb5-172"><a href="#cb5-172" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-173"><a href="#cb5-173" aria-hidden="true" tabindex="-1"></a>Below screenshot shows what I see when I click on one of the iterations</span>
-<span id="cb5-174"><a href="#cb5-174" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-175"><a href="#cb5-175" aria-hidden="true" tabindex="-1"></a><span class="al">![Sample Iteration](images/ExampleIteration.png)</span>.</span>
+<span id="cb5-164"><a href="#cb5-164" aria-hidden="true" tabindex="-1"></a><span class="co">          blockquote {</span></span>
+<span id="cb5-165"><a href="#cb5-165" aria-hidden="true" tabindex="-1"></a><span class="co">            border-left: 4px solid var(--rs-accent);</span></span>
+<span id="cb5-166"><a href="#cb5-166" aria-hidden="true" tabindex="-1"></a><span class="co">            background: #f7fbff;</span></span>
+<span id="cb5-167"><a href="#cb5-167" aria-hidden="true" tabindex="-1"></a><span class="co">            border-radius: 0 14px 14px 0;</span></span>
+<span id="cb5-168"><a href="#cb5-168" aria-hidden="true" tabindex="-1"></a><span class="co">            padding: .9rem 1rem;</span></span>
+<span id="cb5-169"><a href="#cb5-169" aria-hidden="true" tabindex="-1"></a><span class="co">            color: var(--rs-muted);</span></span>
+<span id="cb5-170"><a href="#cb5-170" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-171"><a href="#cb5-171" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-172"><a href="#cb5-172" aria-hidden="true" tabindex="-1"></a><span class="co">          hr {</span></span>
+<span id="cb5-173"><a href="#cb5-173" aria-hidden="true" tabindex="-1"></a><span class="co">            border-top: 1px solid var(--rs-border);</span></span>
+<span id="cb5-174"><a href="#cb5-174" aria-hidden="true" tabindex="-1"></a><span class="co">            opacity: 1;</span></span>
+<span id="cb5-175"><a href="#cb5-175" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
 <span id="cb5-176"><a href="#cb5-176" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-177"><a href="#cb5-177" aria-hidden="true" tabindex="-1"></a>I can see the model metrics (which I included using mlflow.log_metric(), as well as artifacts (the files created for each experiment). </span>
-<span id="cb5-178"><a href="#cb5-178" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-179"><a href="#cb5-179" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-180"><a href="#cb5-180" aria-hidden="true" tabindex="-1"></a><span class="fu"># Models </span></span>
+<span id="cb5-177"><a href="#cb5-177" aria-hidden="true" tabindex="-1"></a><span class="co">          .sidebar nav[role="doc-toc"] {</span></span>
+<span id="cb5-178"><a href="#cb5-178" aria-hidden="true" tabindex="-1"></a><span class="co">            border-left: 1px solid var(--rs-border);</span></span>
+<span id="cb5-179"><a href="#cb5-179" aria-hidden="true" tabindex="-1"></a><span class="co">            padding-left: 1rem;</span></span>
+<span id="cb5-180"><a href="#cb5-180" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
 <span id="cb5-181"><a href="#cb5-181" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-182"><a href="#cb5-182" aria-hidden="true" tabindex="-1"></a>Models are central place to register, version, and manage models you log from runs (mlflow.<span class="dt">&lt;</span><span class="kw">flavor</span><span class="dt">&gt;</span>.log_model(...)).</span>
-<span id="cb5-183"><a href="#cb5-183" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-184"><a href="#cb5-184" aria-hidden="true" tabindex="-1"></a>TO BE CONTINUED. </span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
+<span id="cb5-182"><a href="#cb5-182" aria-hidden="true" tabindex="-1"></a><span class="co">          .sidebar nav[role="doc-toc"] .active {</span></span>
+<span id="cb5-183"><a href="#cb5-183" aria-hidden="true" tabindex="-1"></a><span class="co">            color: var(--rs-accent) !important;</span></span>
+<span id="cb5-184"><a href="#cb5-184" aria-hidden="true" tabindex="-1"></a><span class="co">            font-weight: 700;</span></span>
+<span id="cb5-185"><a href="#cb5-185" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-186"><a href="#cb5-186" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-187"><a href="#cb5-187" aria-hidden="true" tabindex="-1"></a><span class="co">          span[style*="color: red"] {</span></span>
+<span id="cb5-188"><a href="#cb5-188" aria-hidden="true" tabindex="-1"></a><span class="co">            display: inline-block;</span></span>
+<span id="cb5-189"><a href="#cb5-189" aria-hidden="true" tabindex="-1"></a><span class="co">            background: var(--rs-warm);</span></span>
+<span id="cb5-190"><a href="#cb5-190" aria-hidden="true" tabindex="-1"></a><span class="co">            color: #8a5a00 !important;</span></span>
+<span id="cb5-191"><a href="#cb5-191" aria-hidden="true" tabindex="-1"></a><span class="co">            border: 1px solid var(--rs-warm-border);</span></span>
+<span id="cb5-192"><a href="#cb5-192" aria-hidden="true" tabindex="-1"></a><span class="co">            border-radius: 999px;</span></span>
+<span id="cb5-193"><a href="#cb5-193" aria-hidden="true" tabindex="-1"></a><span class="co">            padding: .12rem .5rem;</span></span>
+<span id="cb5-194"><a href="#cb5-194" aria-hidden="true" tabindex="-1"></a><span class="co">            font-weight: 700;</span></span>
+<span id="cb5-195"><a href="#cb5-195" aria-hidden="true" tabindex="-1"></a><span class="co">            margin-right: .35rem;</span></span>
+<span id="cb5-196"><a href="#cb5-196" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-197"><a href="#cb5-197" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-198"><a href="#cb5-198" aria-hidden="true" tabindex="-1"></a><span class="co">          img,</span></span>
+<span id="cb5-199"><a href="#cb5-199" aria-hidden="true" tabindex="-1"></a><span class="co">          .quarto-figure,</span></span>
+<span id="cb5-200"><a href="#cb5-200" aria-hidden="true" tabindex="-1"></a><span class="co">          .figure {</span></span>
+<span id="cb5-201"><a href="#cb5-201" aria-hidden="true" tabindex="-1"></a><span class="co">            border-radius: 18px;</span></span>
+<span id="cb5-202"><a href="#cb5-202" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-203"><a href="#cb5-203" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-204"><a href="#cb5-204" aria-hidden="true" tabindex="-1"></a><span class="co">          @media (max-width: 991px) {</span></span>
+<span id="cb5-205"><a href="#cb5-205" aria-hidden="true" tabindex="-1"></a><span class="co">            .quarto-title-block .title {</span></span>
+<span id="cb5-206"><a href="#cb5-206" aria-hidden="true" tabindex="-1"></a><span class="co">              max-width: none;</span></span>
+<span id="cb5-207"><a href="#cb5-207" aria-hidden="true" tabindex="-1"></a><span class="co">            }</span></span>
+<span id="cb5-208"><a href="#cb5-208" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-209"><a href="#cb5-209" aria-hidden="true" tabindex="-1"></a><span class="co">            main.content {</span></span>
+<span id="cb5-210"><a href="#cb5-210" aria-hidden="true" tabindex="-1"></a><span class="co">              max-width: 100%;</span></span>
+<span id="cb5-211"><a href="#cb5-211" aria-hidden="true" tabindex="-1"></a><span class="co">            }</span></span>
+<span id="cb5-212"><a href="#cb5-212" aria-hidden="true" tabindex="-1"></a><span class="co">          }</span></span>
+<span id="cb5-213"><a href="#cb5-213" aria-hidden="true" tabindex="-1"></a><span class="co">        &lt;/style&gt;</span></span>
+<span id="cb5-214"><a href="#cb5-214" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb5-215"><a href="#cb5-215" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-216"><a href="#cb5-216" aria-hidden="true" tabindex="-1"></a><span class="fu"># Introduction</span></span>
+<span id="cb5-217"><a href="#cb5-217" aria-hidden="true" tabindex="-1"></a>Detect and visualize days with degraded network QoE for Chicago using a simple, explainable rule on tail latency (p95) and loss, and track experiments with MLflow.</span>
+<span id="cb5-218"><a href="#cb5-218" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-219"><a href="#cb5-219" aria-hidden="true" tabindex="-1"></a><span class="fu"># Data</span></span>
+<span id="cb5-220"><a href="#cb5-220" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-221"><a href="#cb5-221" aria-hidden="true" tabindex="-1"></a>Data Source: The data is obtained from https://console.cloud.google.com/bigquery?project=measurement-lab</span>
+<span id="cb5-222"><a href="#cb5-222" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-223"><a href="#cb5-223" aria-hidden="true" tabindex="-1"></a><span class="fu">## Data Description:</span></span>
+<span id="cb5-224"><a href="#cb5-224" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-225"><a href="#cb5-225" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>date — the day the tests happened.</span>
+<span id="cb5-226"><a href="#cb5-226" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>rtt_p50_ms — median (“typical”) round-trip time in milliseconds that day. Lower is better.</span>
+<span id="cb5-227"><a href="#cb5-227" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>rtt_p95_ms — 95th-percentile (the “tail”) latency. This captures the bad spikes a gamer actually feels.</span>
+<span id="cb5-228"><a href="#cb5-228" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>avg_loss — average packet loss rate (0–1). Even small increases hurt interactive apps.</span>
+<span id="cb5-229"><a href="#cb5-229" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>tests — how many NDT download tests were included for that day (sample size).</span>
+<span id="cb5-230"><a href="#cb5-230" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-231"><a href="#cb5-231" aria-hidden="true" tabindex="-1"></a>So, we have a daily QoE proxy: typical latency, tail latency, loss, and volume.</span>
+<span id="cb5-232"><a href="#cb5-232" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-233"><a href="#cb5-233" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-234"><a href="#cb5-234" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-235"><a href="#cb5-235" aria-hidden="true" tabindex="-1"></a>The following BigQuery is used to extract 6 months of data from Chicago, USA</span>
+<span id="cb5-236"><a href="#cb5-236" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-237"><a href="#cb5-237" aria-hidden="true" tabindex="-1"></a><span class="in">```sql</span></span>
+<span id="cb5-238"><a href="#cb5-238" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span></span>
+<span id="cb5-239"><a href="#cb5-239" aria-hidden="true" tabindex="-1"></a>  <span class="dt">date</span>,</span>
+<span id="cb5-240"><a href="#cb5-240" aria-hidden="true" tabindex="-1"></a>  APPROX_QUANTILES(a<span class="ch">.</span>MinRTT, <span class="dv">100</span>)[SAFE_ORDINAL(<span class="dv">50</span>)] <span class="kw">AS</span> rtt_p50_ms,</span>
+<span id="cb5-241"><a href="#cb5-241" aria-hidden="true" tabindex="-1"></a>  APPROX_QUANTILES(a<span class="ch">.</span>MinRTT, <span class="dv">100</span>)[SAFE_ORDINAL(<span class="dv">95</span>)] <span class="kw">AS</span> rtt_p95_ms,</span>
+<span id="cb5-242"><a href="#cb5-242" aria-hidden="true" tabindex="-1"></a>  <span class="fu">AVG</span>(a<span class="ch">.</span>LossRate) <span class="kw">AS</span> avg_loss,</span>
+<span id="cb5-243"><a href="#cb5-243" aria-hidden="true" tabindex="-1"></a>  <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">AS</span> tests</span>
+<span id="cb5-244"><a href="#cb5-244" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> <span class="st">`measurement-lab.ndt.unified_downloads`</span></span>
+<span id="cb5-245"><a href="#cb5-245" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> <span class="dt">date</span> <span class="kw">BETWEEN</span> <span class="fu">DATE_SUB</span>(<span class="kw">CURRENT_DATE</span>(), <span class="kw">INTERVAL</span> <span class="dv">180</span> DAY) <span class="kw">AND</span> <span class="kw">CURRENT_DATE</span>()</span>
+<span id="cb5-246"><a href="#cb5-246" aria-hidden="true" tabindex="-1"></a>  <span class="kw">AND</span> client<span class="ch">.</span>Geo<span class="ch">.</span>city <span class="op">=</span> <span class="st">"Chicago"</span></span>
+<span id="cb5-247"><a href="#cb5-247" aria-hidden="true" tabindex="-1"></a>  <span class="kw">AND</span> client<span class="ch">.</span>Geo<span class="ch">.</span>countryCode <span class="op">=</span> <span class="st">"US"</span></span>
+<span id="cb5-248"><a href="#cb5-248" aria-hidden="true" tabindex="-1"></a><span class="kw">GROUP</span> <span class="kw">BY</span> <span class="dt">date</span></span>
+<span id="cb5-249"><a href="#cb5-249" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> <span class="dt">date</span>;</span>
+<span id="cb5-250"><a href="#cb5-250" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb5-251"><a href="#cb5-251" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-252"><a href="#cb5-252" aria-hidden="true" tabindex="-1"></a><span class="fu"># Methodology</span></span>
+<span id="cb5-253"><a href="#cb5-253" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-254"><a href="#cb5-254" aria-hidden="true" tabindex="-1"></a>I plotted the daily 95th percentile latency. This data is available for 6 months. The plot is shown below.</span>
+<span id="cb5-255"><a href="#cb5-255" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-256"><a href="#cb5-256" aria-hidden="true" tabindex="-1"></a>!<span class="co">[</span><span class="ot">Daily Latency (95th percentile) in Chicago, IL</span><span class="co">]</span>(images/Chicago – Daily p95 Latency (NDT downloads).png)</span>
+<span id="cb5-257"><a href="#cb5-257" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-258"><a href="#cb5-258" aria-hidden="true" tabindex="-1"></a>I then did the following steps to identify anomalies based on a simple logic (greater than a factor of the median absolute deviation). While doing this, I also added a parameter to ignore days with small samples (used MIN_TESTS = 5000). </span>
+<span id="cb5-259"><a href="#cb5-259" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-260"><a href="#cb5-260" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Compute a rolling baseline of rtt_p95_ms (e.g., 7-day rolling median).</span>
+<span id="cb5-261"><a href="#cb5-261" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Compute a robust deviation using MAD (median absolute deviation).</span>
+<span id="cb5-262"><a href="#cb5-262" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Flag an anomaly when</span>
+<span id="cb5-263"><a href="#cb5-263" aria-hidden="true" tabindex="-1"></a>  today_p95 &gt; baseline + k * 1.4826 * MAD (start with k=3).</span>
+<span id="cb5-264"><a href="#cb5-264" aria-hidden="true" tabindex="-1"></a>  (For normal data, MAD ≈ 0.67449·σ, so σ ≈ 1.4826·MAD (1/0.67449))</span>
+<span id="cb5-265"><a href="#cb5-265" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-266"><a href="#cb5-266" aria-hidden="true" tabindex="-1"></a>Here we get</span>
+<span id="cb5-267"><a href="#cb5-267" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-268"><a href="#cb5-268" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>baseline tracks the “normal” tail latency.</span>
+<span id="cb5-269"><a href="#cb5-269" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>threshold is a moving “too high” line (baseline + robust spread).</span>
+<span id="cb5-270"><a href="#cb5-270" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>red dots (anomalies) = days when players likely felt worse QoE.</span>
+<span id="cb5-271"><a href="#cb5-271" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-272"><a href="#cb5-272" aria-hidden="true" tabindex="-1"></a><span class="al">![Detected Anomalies](images/Chicago – Daily p95 Latency with Anomaly Flags.png)</span></span>
+<span id="cb5-273"><a href="#cb5-273" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-274"><a href="#cb5-274" aria-hidden="true" tabindex="-1"></a>We see 20 anomalies were detected. I did a grid search using WINDOW in <span class="co">[</span><span class="ot">7, 14, 28</span><span class="co">]</span> and K in <span class="co">[</span><span class="ot">3, 3.5, 4, 5</span><span class="co">]</span>. I logged each image created and the .csv file of anomalies using mlflow. This is the code snipped used</span>
+<span id="cb5-275"><a href="#cb5-275" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-276"><a href="#cb5-276" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb5-277"><a href="#cb5-277" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mlflow</span>
+<span id="cb5-278"><a href="#cb5-278" aria-hidden="true" tabindex="-1"></a>mlflow.set_tracking_uri(<span class="ss">f'file://</span><span class="sc">{</span>home_path<span class="sc">}</span><span class="ss">mlruns'</span>)</span>
+<span id="cb5-279"><a href="#cb5-279" aria-hidden="true" tabindex="-1"></a>mlflow.set_experiment(<span class="st">"qoe_chicago"</span>)  <span class="co"># auto-creates if not present</span></span>
+<span id="cb5-280"><a href="#cb5-280" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-281"><a href="#cb5-281" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> WINDOW <span class="kw">in</span> [<span class="dv">7</span>, <span class="dv">14</span>, <span class="dv">28</span>]:</span>
+<span id="cb5-282"><a href="#cb5-282" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> K <span class="kw">in</span> [<span class="dv">3</span>, <span class="fl">3.5</span>, <span class="dv">4</span>, <span class="dv">5</span>]:</span>
+<span id="cb5-283"><a href="#cb5-283" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-284"><a href="#cb5-284" aria-hidden="true" tabindex="-1"></a>        df <span class="op">=</span> df_copy.copy()</span>
+<span id="cb5-285"><a href="#cb5-285" aria-hidden="true" tabindex="-1"></a>        s <span class="op">=</span> df.loc[df[<span class="st">"eligible"</span>], <span class="st">"rtt_p95_ms"</span>]</span>
+<span id="cb5-286"><a href="#cb5-286" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-287"><a href="#cb5-287" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Rolling median baseline</span></span>
+<span id="cb5-288"><a href="#cb5-288" aria-hidden="true" tabindex="-1"></a>        baseline <span class="op">=</span> s.rolling(WINDOW, min_periods<span class="op">=</span>WINDOW).median()</span>
+<span id="cb5-289"><a href="#cb5-289" aria-hidden="true" tabindex="-1"></a>        mad_series <span class="op">=</span> s.rolling(WINDOW, min_periods<span class="op">=</span>WINDOW).<span class="bu">apply</span>(mad, raw<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb5-290"><a href="#cb5-290" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Threshold = baseline + K * 1.4826 * MAD</span></span>
+<span id="cb5-291"><a href="#cb5-291" aria-hidden="true" tabindex="-1"></a>        threshold <span class="op">=</span> baseline <span class="op">+</span> K <span class="op">*</span> <span class="fl">1.4826</span> <span class="op">*</span> mad_series</span>
+<span id="cb5-292"><a href="#cb5-292" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-293"><a href="#cb5-293" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Bring series back onto full index</span></span>
+<span id="cb5-294"><a href="#cb5-294" aria-hidden="true" tabindex="-1"></a>        df[<span class="st">"baseline"</span>]  <span class="op">=</span> baseline.reindex(df.index)</span>
+<span id="cb5-295"><a href="#cb5-295" aria-hidden="true" tabindex="-1"></a>        df[<span class="st">"threshold"</span>] <span class="op">=</span> threshold.reindex(df.index)</span>
+<span id="cb5-296"><a href="#cb5-296" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-297"><a href="#cb5-297" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Anomaly rule</span></span>
+<span id="cb5-298"><a href="#cb5-298" aria-hidden="true" tabindex="-1"></a>        df[<span class="st">"anomaly"</span>] <span class="op">=</span> (df[<span class="st">"rtt_p95_ms"</span>] <span class="op">&gt;</span> df[<span class="st">"threshold"</span>]) <span class="op">&amp;</span> df[<span class="st">"eligible"</span>]</span>
+<span id="cb5-299"><a href="#cb5-299" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-300"><a href="#cb5-300" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb5-301"><a href="#cb5-301" aria-hidden="true" tabindex="-1"></a>        num_eligible <span class="op">=</span> <span class="bu">int</span>(df[<span class="st">"eligible"</span>].<span class="bu">sum</span>())</span>
+<span id="cb5-302"><a href="#cb5-302" aria-hidden="true" tabindex="-1"></a>        num_anoms <span class="op">=</span> <span class="bu">int</span>(df[<span class="st">"anomaly"</span>].<span class="bu">sum</span>())</span>
+<span id="cb5-303"><a href="#cb5-303" aria-hidden="true" tabindex="-1"></a>        anomaly_rate <span class="op">=</span> num_anoms <span class="op">/</span> <span class="bu">max</span>(<span class="dv">1</span>, num_eligible)</span>
+<span id="cb5-304"><a href="#cb5-304" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-305"><a href="#cb5-305" aria-hidden="true" tabindex="-1"></a>        fig, ax <span class="op">=</span> plt.subplots()</span>
+<span id="cb5-306"><a href="#cb5-306" aria-hidden="true" tabindex="-1"></a>        ax.plot(df[<span class="st">"date"</span>], df[<span class="st">"rtt_p95_ms"</span>], label<span class="op">=</span><span class="st">"p95 RTT (ms)"</span>)</span>
+<span id="cb5-307"><a href="#cb5-307" aria-hidden="true" tabindex="-1"></a>        ax.plot(df[<span class="st">"date"</span>], df[<span class="st">"baseline"</span>], label<span class="op">=</span><span class="ss">f"</span><span class="sc">{</span>WINDOW<span class="sc">}</span><span class="ss">d rolling median"</span>)</span>
+<span id="cb5-308"><a href="#cb5-308" aria-hidden="true" tabindex="-1"></a>        ax.plot(df[<span class="st">"date"</span>], df[<span class="st">"threshold"</span>], <span class="st">"--"</span>, label<span class="op">=</span><span class="st">"threshold"</span>)</span>
+<span id="cb5-309"><a href="#cb5-309" aria-hidden="true" tabindex="-1"></a>        a <span class="op">=</span> df[<span class="st">"anomaly"</span>]</span>
+<span id="cb5-310"><a href="#cb5-310" aria-hidden="true" tabindex="-1"></a>        ax.scatter(df.loc[a, <span class="st">"date"</span>], df.loc[a, <span class="st">"rtt_p95_ms"</span>], label<span class="op">=</span><span class="st">"anomaly"</span>)</span>
+<span id="cb5-311"><a href="#cb5-311" aria-hidden="true" tabindex="-1"></a>        ax.set_title(<span class="ss">f"Chicago – Daily p95 Latency with Anomaly Flags</span><span class="ch">\n</span><span class="ss"> with K = </span><span class="sc">{</span>K<span class="sc">}</span><span class="ss"> and WINDOW = </span><span class="sc">{</span>WINDOW<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-312"><a href="#cb5-312" aria-hidden="true" tabindex="-1"></a>        ax.set_xlabel(<span class="st">"Date"</span>)</span>
+<span id="cb5-313"><a href="#cb5-313" aria-hidden="true" tabindex="-1"></a>        ax.set_ylabel(<span class="st">"Latency (ms)"</span>)</span>
+<span id="cb5-314"><a href="#cb5-314" aria-hidden="true" tabindex="-1"></a>        ax.legend()</span>
+<span id="cb5-315"><a href="#cb5-315" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-316"><a href="#cb5-316" aria-hidden="true" tabindex="-1"></a>        fig_path <span class="op">=</span> os.path.join(fig_save_path, <span class="ss">f"anomalies_w</span><span class="sc">{</span>WINDOW<span class="sc">}</span><span class="ss">_k</span><span class="sc">{</span>K<span class="sc">}</span><span class="ss">.png"</span>)</span>
+<span id="cb5-317"><a href="#cb5-317" aria-hidden="true" tabindex="-1"></a>        fig.savefig(fig_path, dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb5-318"><a href="#cb5-318" aria-hidden="true" tabindex="-1"></a>        plt.savefig(fig_path, dpi<span class="op">=</span><span class="dv">150</span>)  <span class="co"># save the figure you just plotted</span></span>
+<span id="cb5-319"><a href="#cb5-319" aria-hidden="true" tabindex="-1"></a>        plt.close()</span>
+<span id="cb5-320"><a href="#cb5-320" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-321"><a href="#cb5-321" aria-hidden="true" tabindex="-1"></a>        anom_csv <span class="op">=</span> <span class="ss">f"anomaly_days_w</span><span class="sc">{</span>WINDOW<span class="sc">}</span><span class="ss">_k</span><span class="sc">{</span>K<span class="sc">}</span><span class="ss">.csv"</span></span>
+<span id="cb5-322"><a href="#cb5-322" aria-hidden="true" tabindex="-1"></a>        df.loc[df[<span class="st">"anomaly"</span>], [<span class="st">"date"</span>,<span class="st">"rtt_p95_ms"</span>,<span class="st">"avg_loss"</span>,<span class="st">"tests"</span>]].to_csv(os.path.join(home_path, <span class="st">"data"</span>, anom_csv), index<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb5-323"><a href="#cb5-323" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-324"><a href="#cb5-324" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-325"><a href="#cb5-325" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-326"><a href="#cb5-326" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> mlflow.start_run():</span>
+<span id="cb5-327"><a href="#cb5-327" aria-hidden="true" tabindex="-1"></a>            mlflow.log_param(<span class="st">"WINDOW"</span>, WINDOW)</span>
+<span id="cb5-328"><a href="#cb5-328" aria-hidden="true" tabindex="-1"></a>            mlflow.log_param(<span class="st">"K"</span>, K)</span>
+<span id="cb5-329"><a href="#cb5-329" aria-hidden="true" tabindex="-1"></a>            mlflow.log_param(<span class="st">"MIN_TESTS"</span>, MIN_TESTS)</span>
+<span id="cb5-330"><a href="#cb5-330" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-331"><a href="#cb5-331" aria-hidden="true" tabindex="-1"></a>            mlflow.log_metric(<span class="st">"num_eligible_days"</span>, num_eligible)</span>
+<span id="cb5-332"><a href="#cb5-332" aria-hidden="true" tabindex="-1"></a>            mlflow.log_metric(<span class="st">"num_anomalies"</span>, num_anoms)</span>
+<span id="cb5-333"><a href="#cb5-333" aria-hidden="true" tabindex="-1"></a>            mlflow.log_metric(<span class="st">"anomaly_rate"</span>, anomaly_rate)</span>
+<span id="cb5-334"><a href="#cb5-334" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-335"><a href="#cb5-335" aria-hidden="true" tabindex="-1"></a>            mlflow.log_artifact(os.path.join(home_path, <span class="st">"data"</span>, anom_csv))</span>
+<span id="cb5-336"><a href="#cb5-336" aria-hidden="true" tabindex="-1"></a>            mlflow.log_artifact(fig_path)</span>
+<span id="cb5-337"><a href="#cb5-337" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-338"><a href="#cb5-338" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"MLflow logged: K=</span><span class="sc">{</span>K<span class="sc">}</span><span class="ss">, WINDOW=</span><span class="sc">{</span>WINDOW<span class="sc">}</span><span class="ss">, anomalies=</span><span class="sc">{</span>num_anoms<span class="sc">}</span><span class="ss"> (</span><span class="sc">{</span>anomaly_rate<span class="sc">:.1%}</span><span class="ss">)"</span>)</span>
+<span id="cb5-339"><a href="#cb5-339" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-340"><a href="#cb5-340" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb5-341"><a href="#cb5-341" aria-hidden="true" tabindex="-1"></a>For the data used, I obtained. </span>
+<span id="cb5-342"><a href="#cb5-342" aria-hidden="true" tabindex="-1"></a><span class="in">```sh</span></span>
+<span id="cb5-343"><a href="#cb5-343" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=3.5, WINDOW=7, anomalies=19 <span class="er">(</span><span class="ex">10.6%</span><span class="kw">)</span></span>
+<span id="cb5-344"><a href="#cb5-344" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=4, WINDOW=7, anomalies=19 <span class="er">(</span><span class="ex">10.6%</span><span class="kw">)</span></span>
+<span id="cb5-345"><a href="#cb5-345" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=5, WINDOW=7, anomalies=17 <span class="er">(</span><span class="ex">9.4%</span><span class="kw">)</span></span>
+<span id="cb5-346"><a href="#cb5-346" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=3, WINDOW=14, anomalies=15 <span class="er">(</span><span class="ex">8.3%</span><span class="kw">)</span></span>
+<span id="cb5-347"><a href="#cb5-347" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=3.5, WINDOW=14, anomalies=10 <span class="er">(</span><span class="ex">5.6%</span><span class="kw">)</span></span>
+<span id="cb5-348"><a href="#cb5-348" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=4, WINDOW=14, anomalies=8 <span class="er">(</span><span class="ex">4.4%</span><span class="kw">)</span></span>
+<span id="cb5-349"><a href="#cb5-349" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=5, WINDOW=14, anomalies=7 <span class="er">(</span><span class="ex">3.9%</span><span class="kw">)</span></span>
+<span id="cb5-350"><a href="#cb5-350" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=3, WINDOW=28, anomalies=13 <span class="er">(</span><span class="ex">7.2%</span><span class="kw">)</span></span>
+<span id="cb5-351"><a href="#cb5-351" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=3.5, WINDOW=28, anomalies=11 <span class="er">(</span><span class="ex">6.1%</span><span class="kw">)</span></span>
+<span id="cb5-352"><a href="#cb5-352" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=4, WINDOW=28, anomalies=9 <span class="er">(</span><span class="ex">5.0%</span><span class="kw">)</span></span>
+<span id="cb5-353"><a href="#cb5-353" aria-hidden="true" tabindex="-1"></a><span class="ex">MLflow</span> logged: K=5, WINDOW=28, anomalies=6 <span class="er">(</span><span class="ex">3.3%</span><span class="kw">)</span></span>
+<span id="cb5-354"><a href="#cb5-354" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb5-355"><a href="#cb5-355" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-356"><a href="#cb5-356" aria-hidden="true" tabindex="-1"></a><span class="fu"># Why use MLFlow</span></span>
+<span id="cb5-357"><a href="#cb5-357" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-358"><a href="#cb5-358" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-359"><a href="#cb5-359" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Structured experiment tracking: You logged WINDOW, K, MIN_TESTS and could compare runs side-by-side. With a text logger, you’d be grepping files.</span>
+<span id="cb5-360"><a href="#cb5-360" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Metrics + artifacts together: Each run stores metrics (anomaly_count/rate) and artifacts (CSV + PNG). A logger won’t manage files for you or present them in a UI.</span>
+<span id="cb5-361"><a href="#cb5-361" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Reproducibility &amp; lineage: The “run” captures exactly which params produced a chart/table.=</span>
+<span id="cb5-362"><a href="#cb5-362" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>UI for decision-making: You literally chose 14/5 by comparing runs in the UI.</span>
+<span id="cb5-363"><a href="#cb5-363" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-364"><a href="#cb5-364" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-365"><a href="#cb5-365" aria-hidden="true" tabindex="-1"></a><span class="fu"># MLFlow UI</span></span>
+<span id="cb5-366"><a href="#cb5-366" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-367"><a href="#cb5-367" aria-hidden="true" tabindex="-1"></a>Here we can access the MLFlow UI using the following command. </span>
+<span id="cb5-368"><a href="#cb5-368" aria-hidden="true" tabindex="-1"></a><span class="in">```sh</span></span>
+<span id="cb5-369"><a href="#cb5-369" aria-hidden="true" tabindex="-1"></a><span class="ex">mlflow</span> ui <span class="at">--backend-store-uri</span> ./mlruns</span>
+<span id="cb5-370"><a href="#cb5-370" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb5-371"><a href="#cb5-371" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-372"><a href="#cb5-372" aria-hidden="true" tabindex="-1"></a>The following image shows a screenshot of the MLFlow UI. Each row represents another iteration of the experiment. </span>
+<span id="cb5-373"><a href="#cb5-373" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-374"><a href="#cb5-374" aria-hidden="true" tabindex="-1"></a><span class="al">![MLFlow UI](images/MLFlowUI.png)</span></span>
+<span id="cb5-375"><a href="#cb5-375" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-376"><a href="#cb5-376" aria-hidden="true" tabindex="-1"></a>Below screenshot shows what I see when I click on one of the iterations</span>
+<span id="cb5-377"><a href="#cb5-377" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-378"><a href="#cb5-378" aria-hidden="true" tabindex="-1"></a><span class="al">![Sample Iteration](images/ExampleIteration.png)</span>.</span>
+<span id="cb5-379"><a href="#cb5-379" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-380"><a href="#cb5-380" aria-hidden="true" tabindex="-1"></a>I can see the model metrics (which I included using mlflow.log_metric(), as well as artifacts (the files created for each experiment). </span>
+<span id="cb5-381"><a href="#cb5-381" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-382"><a href="#cb5-382" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-383"><a href="#cb5-383" aria-hidden="true" tabindex="-1"></a><span class="fu"># Models </span></span>
+<span id="cb5-384"><a href="#cb5-384" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-385"><a href="#cb5-385" aria-hidden="true" tabindex="-1"></a>Models are central place to register, version, and manage models you log from runs (mlflow.<span class="dt">&lt;</span><span class="kw">flavor</span><span class="dt">&gt;</span>.log_model(...)).</span>
+<span id="cb5-386"><a href="#cb5-386" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-387"><a href="#cb5-387" aria-hidden="true" tabindex="-1"></a>TO BE CONTINUED. </span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 
 
 
 
+<script src="../../site_libs/quarto-html/zenscroll-min.js"></script>
 </body></html>
