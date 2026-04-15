@@ -11,3 +11,7 @@ _site/
 *.csv
 *.png
 *.keras
+
+# Bkup files
+*-*.qmd
+*_*.qmd

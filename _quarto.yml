@@ -1,5 +1,8 @@
 project:
   type: website
+  render:
+    - "*.qmd"
+    -"!index-.qmd"
 
 website:
   title: "Jacob Mathew's Blog"
