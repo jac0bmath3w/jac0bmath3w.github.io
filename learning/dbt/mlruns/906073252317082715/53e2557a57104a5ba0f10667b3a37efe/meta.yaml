@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/53e2557a57104a5ba0f10667b3a37efe/artifacts
+end_time: 1755997525916
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: 53e2557a57104a5ba0f10667b3a37efe
+run_name: able-sheep-469
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997525678
+status: 3
+tags: []
+user_id: jacob

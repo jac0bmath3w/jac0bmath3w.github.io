@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/b57b4f84fefb463788e1d06ded971a8e/artifacts
+end_time: 1755999214687
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: b57b4f84fefb463788e1d06ded971a8e
+run_name: sincere-ox-827
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755999214572
+status: 3
+tags: []
+user_id: jacob

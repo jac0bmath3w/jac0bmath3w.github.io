@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/c01614436a6e4a1790730dcef1463039/artifacts
+end_time: 1755997363180
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: c01614436a6e4a1790730dcef1463039
+run_name: industrious-fowl-732
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997363112
+status: 3
+tags: []
+user_id: jacob

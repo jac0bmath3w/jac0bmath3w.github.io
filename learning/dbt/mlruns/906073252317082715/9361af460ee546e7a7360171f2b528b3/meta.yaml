@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/9361af460ee546e7a7360171f2b528b3/artifacts
+end_time: 1755996941606
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: 9361af460ee546e7a7360171f2b528b3
+run_name: upbeat-stag-28
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755996941559
+status: 3
+tags: []
+user_id: jacob

@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/5d6a3f0a7ff7487bb37646d64b02b394/artifacts
+end_time: 1755997315724
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: 5d6a3f0a7ff7487bb37646d64b02b394
+run_name: thoughtful-wasp-631
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997315602
+status: 3
+tags: []
+user_id: jacob

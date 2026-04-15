@@ -1,0 +1,1043 @@
+---
+title: "Building a Rail Safety AI Engine"
+author: "Jacob Mathew"
+date: Fri Apr  3 18:12:24 CDT 2026
+categories: [AI, LLM, transformers, python, torch]
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-tools: true
+---
+
+
+# Project Roadmap
+
+8-Week LLM Project Roadmap (Provided by Gemini Pro)
+
+### Goal
+Build a "Rail" RAG system that bridges the gap between raw federal regulations and field-level maintenance queries.
+
+<!--
+
+### Phase 1: Foundation & Architecture (Weeks 1-2)
+
+Goal: Move from "using an API" to understanding the math and structure of LLMs.
+
+#### Week 1: Transformers & Embeddings
+
+Day 01: Initialize GitHub Repo. Download the 5 FRA Safety PDFs.
+
+- Create structure: /data/raw/, /notebooks/, /src/.
+- Upload the 5 FRA Safety PDFs to data/raw/.
+- Create a requirements.txt with core libraries (transformers, torch, langchain).
+
+Day 02: High-Level Architecture. Read the "Attention is All You Need" paper (focus on the "Encoder/Decoder" diagram).
+
+Day 03: Self-Attention Deep Dive. Study the math: $Attention(Q, K, V)$. Write a short explanation of why "Weighting" matters.
+
+Day 04: Tokenizer Study. Experiment with Hugging Face's AutoTokenizer. See how specialized terms like "Trespass Prevention" are tokenized.
+
+Day 05: Embeddings. Use sentence-transformers to generate vectors for 10 sentences from the Hazardous Material Manual. Visualize similarity.
+
+#### Week 2: Vector Databases & Chunking
+
+Day 06: Chunking Strategy. Write a Python script to split your PDFs into 250-token chunks. Explain "Overlap" (10-15%) for context preservation.
+
+Day 07: Vector DB Setup. Set up a local Qdrant or ChromaDB instance (or use Pinecone Serverless).
+
+Day 08: Indexing. Upload your 5 PDFs into the Vector DB. This is your "Long-term memory."
+
+Day 09: The Retrieval Loop. Write a query script. If you ask "How to handle a Hazmat leak?" does it return the right page?
+
+Day 10: Metadata Filtering. Learn how to tag chunks by PDF source (e.g., source: "Hazmat Manual 2025") to filter results.
+
+### Phase 2: RAG & Advanced Prompting (Weeks 3-4)
+
+Goal: Build the reasoning engine and handle safety edge cases.
+
+#### Week 3: Prompt Engineering & CoT
+
+Day 11: System Prompting. Create a "Safety Officer" persona. Force the model to cite the specific Chapter/Section.
+
+Day 12: Chain-of-Thought (CoT). Implement a "Reasoning Step." The model must first identify the hazard, then the regulation, then the solution.
+
+Day 13: Few-Shot Prompting. Provide the model with 3 examples of "Perfect Answers" to improve its output consistency.
+
+Day 14: Self-Correction. Add a prompt step where the model checks its own answer against the retrieved text for "hallucinations."
+
+Day 15: Blog Post #1. Write about "Building the Knowledge Base." Focus on why safety data requires high-precision retrieval.
+
+#### Week 4: Evaluation 
+
+Day 16: Introduction to RAGAS. Install the library. Understand "Faithfulness" (Is the answer in the text?) and "Relevance."
+
+Day 17: Synthetic Dataset. Generate 20 questions based on your 5 PDFs to use as an evaluation benchmark.
+
+Day 18: Running Evaluations. Run your first "Eval." Document your score (e.g., 0.75).
+
+Day 19: Optimization Iteration. Change a chunking parameter or prompt. Re-run the eval. Did the score improve?
+
+Day 20: Documentation. Add an /evals folder to your repo with these results. This proves data-driven DS skill.
+
+### Phase 3: Fine-Tuning & GPU Optimization (Weeks 5-6)
+
+Goal: The "Hard Tech" skills. Running models efficiently on hardware.
+
+#### Week 5: GPU Optimization
+
+Day 21: Quantization Basics. Use bitsandbytes to load a Llama-3 model in 4-bit on Google Colab.
+
+Day 22: VRAM Profiling. Use nvidia-smi or Python scripts to measure memory usage before and after quantization.
+
+Day 23: Flash Attention 2. Research and enable Flash Attention to speed up inference for long safety documents.
+
+Day 24: KV-Caching. Learn how the model "remembers" previous words in a conversation to speed up the chat experience.
+
+Day 25: Blog Post #2. Write about "Efficiency at Scale." Explain how one could save money by using quantized models.
+
+#### Week 6: Fine-Tuning (LoRA/QLoRA)
+
+Day 26: Preparing Fine-Tuning Data. Format 50 pairs of Question/Answers from your manuals into a JSONL file.
+
+Day 27: QLoRA Setup. Set up a training script using the peft library.
+
+Day 28: The Training Run. Start a fine-tuning job on a small model (e.g., Llama 3.2 1B or 3B) in Colab.
+
+Day 29: Validation. Compare the "Base Model" vs. "Fine-tuned Model." Does the fine-tuned one sound more like a Rail engineer?
+
+Day 30: Model Merging. Learn how to merge your LoRA weights back into the main model.
+
+### Phase 4: Deployment & Final Polish (Weeks 7-8)
+
+Goal: Show you can build a production-ready interface.
+
+#### Week 7: The Prototype
+
+Day 31-33: Build a simple UI using Streamlit. Allow users to "Upload" a manual and ask questions.
+
+Day 34-35: Implement Tracing. Use LangSmith or Phoenix to "see" inside the RAG loop during a live chat.
+
+#### Week 8: The Staff Level Portfolio
+
+Day 36-38: Final Blog Post summarizing the entire journey. Include your RAGAS scores and GPU benchmarks.
+
+Day 39: Cleanup GitHub Repo. Ensure the requirements.txt and README are perfect.
+
+Day 40: Re-apply. Update your resume with these specific keywords: RAG Evaluation, QLoRA Fine-tuning, 4-bit Quantization, Vector DB Architecture.
+
+-->
+
+# Phase 0: Data and Basic Theory
+## Data
+
+I've downloaded 5 publicly available FRA PDF's to use as training data.
+
+1. HRGC handbook (2019)
+2. Hazardous Material Compliance Manual (2025)
+3. Signal & Train Control All Chapters (2012)
+4. HRGC & Trespass Prevention: Compliance, Procedures & Program Manual (2019)
+5. Track Structures CM (2026) Vol III Ch1: Railroad Workplace Safety General
+
+
+## Git Repo
+
+Any code I wrote is available publicly here : [https://github.com/jac0bmath3w/rail-safety-ai](https://github.com/jac0bmath3w/rail-safety-ai). Please note that any code snippets in this blog may not be up to date. 
+
+
+## Summary of the Paper
+
+This is my understanding of the transformers, attention, and what happens inside it. I read the model Architecture (Section 3 of Attention is All You Need paper avaialble [here](https://arxiv.org/abs/1706.03762), referred to as 'the paper' going forward in this blog) and viewed the videos by 3Blue1Brown & Andrej Karpathy to nail in my understanding of it.
+
+Videos by 3Blue1Brown
+
+- [Transformers, the tech behind LLMs | Deep Learning Chapter 5](https://www.youtube.com/watch?v=wjZofJX0v4M)
+- [Attention in transformers, step-by-step | Deep Learning Chapter 6](https://www.youtube.com/watch?v=eMlx5fFNoYc)
+- [How might LLMs store facts | Deep Learning Chapter 7](https://www.youtube.com/watch?v=9-Jl0dxWQs8)
+
+
+Video by Andrej Karpathy
+- [Let's build GPT: from scratch, in code, spelled out.](https://www.youtube.com/watch?v=kCc8FmEb1nY)
+
+The transformer has an encoder part as well as a decoder part. But in this project, I'm only interested in the decoder part of the transformer. The steps involved are as follows:
+
+1) We embed the tokens (text being read is broken into tokens). A token could be a word, a part of a word, a special character, etc. Embedding a token means representing a token in a huge dimension. (Say, 512 as given in the paper. It could be more).
+2) We add a position component for each token. Otherwise the model doesn't know what token appears where in the string.
+3) Attention Block \
+  - 3.1 Each token has a query and key vector ($Q$ and $K$ respectively) that is obtained by multiplying the $W_q$ and $W_k$ respectively with the embedding.
+  - 3.2 We take the dot product of the $Q$ and $K$ vectors to get a score. If the key of token 1 aligns with the query of token 2, that means the embedding of token 1 "attends" to the embedding of token 2. This results in a large value for the score, essentially meaning token 1 "has something to say about" token 2.
+  - 3.3 We divide this by the square root of the dimension of the embedding to prevent the dot product from growing too large.
+  - 3.4 We mask the score of future words by setting the value to $-\infty$. This is done so the model doesn't "see the answer." For example, in the string "I read the paper and it was interesting," once we reach "I read the paper," we don't want the model to see the next word. (Note: Masking is not done in an encoder). We use $-\infty$ because the softmax function will then turn that value into $0$.
+  - 3.5 We apply the softmax function to get the probabilities.
+  - 3.6 We calculate the value vector by multiplying the embedding with $W_v$ (Value weight matrix).
+  - 3.7 We calculate the weighted sum of the value vector with the score.
+  - 3.8 This is repeated 6 times (according to the original paper), or $n_{layer}$ times sequentially.
+4) All the elements in the attention block is repeated in parallel in different heads. We use n_heads parameter to determine how many heads we want. All the results from the n_heads heads is concatenated into one vector. This is multiplied by a final weight matrix to fuse them into a single d_k dimensional vector. 
+5) Add & Norm Layer \
+  - 5.1 This result is added to the original embedding to get the modified embedding. This is called the 'add layer' or the 'residual connection'
+  - 5.2 To keep the activations within a consistent range, we add a norm layer. It could be RMSNorm
+6) We have a MLP at the next level where each of the embedding vectors is paralelly processed.
+7) We add another Add & Norm layer as described before
+8) We add a last linear layer
+9) Softmax to get the probability
+
+Note: Since I am not talking about the encoder here, I skipped the cross attention part.
+
+## Other items
+
+### Temperature
+This is a parameter you divide the logits by before the softmax in the attention block.
+$$
+\text{Softmax with Temperature} = \frac{e^{\frac{x_i}{T}}}{\Sigma_{n=0}^{N-1}e^\frac{{x_n}}{T}}
+$$
+
+- Low Temp (0.1): Makes the highest probability even higher (very focused).
+- High Temp (1.0+): Flattens the distribution (more random/creative).
+
+For FRA manuals, you’ll want a low temperature because you want facts, not "creative" safety rules.
+
+# Phase 1: Building the ingestion engine, embeddings and vector stores.
+
+The latest version of the code would be available at [https://github.com/jac0bmath3w/rail-safety-ai/blob/main/src/ingest.py](https://github.com/jac0bmath3w/rail-safety-ai/blob/main/src/ingest.py)
+
+## Ingestion
+
+I create a Class called RailDocumentProcessor. I initialize the class using the splitter tool so that the RecursiveCharacterTextSplitter is just called once when an object of the class is initialized (and not for every document). This tool uses parameters chunk_size = 1000, and chunk_overlap = 150. I used chunk_size of 1000 to not lose context of a specific railway rule. Also use an overlap to ensure that any 'bridge' between chunks is not lost. Also note: 'len' is a built in python function that calculates the length of an object.  Say we were using tokens, we would update 'len' with 'tokenizer.len'. 
+
+Why use RecursiveCharacterTextSplitter as opposed to CharacterTextSplitter? RecursiveCharacterTextSplitter splits text intelligently by natural boundaries (paragraphs, sentences ,spaces) to keep semantic context intact. CharacterTextSplitter splits simply by a fixed character count, which often breaks words and ruins context. 
+
+We use a chunk_size instead of processing the entire document due to context window. LLMs have a limit on how many tokens it can see. The higher the context, the number of parameters that a model has to learn explodes.
+
+
+This class has the process_directory() method. This goes thru each .pdf file in the directory, extracts texts using the pypdf directory, and then creates chunks and creates chunk using the splitter tool. At the same time it saves metadata for each of the chunk including the source (i.e. the filename), the page number, and the length of character for that chunk. 
+
+```python
+import pypdf
+import os
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+class RailDocumentProcessor:
+    def __init__(self, chunk_size=1000, chunk_overlap=150):
+        self.splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            length_function=len
+        )
+
+    def process_directory(self, directory_path):
+        """Processes all PDFs and returns a tuple: (list_of_chunks, list_of_metadatas)."""
+        all_chunks = []
+        all_metadatas = []
+
+        if not os.path.exists(directory_path):
+            print(f"Error: Directory {directory_path} not found.")
+            return [], []
+
+        for filename in os.listdir(directory_path):
+            if filename.endswith(".pdf"):
+                print(f"Processing: {filename}")
+                path = os.path.join(directory_path, filename)
+                
+                try:
+                    reader = pypdf.PdfReader(path)
+                    for i, page in enumerate(reader.pages):
+                        page_text = page.extract_text()
+                        if not page_text:
+                            continue
+                        
+                        # Create chunks for this specific page
+                        page_chunks = self.splitter.split_text(page_text)
+                        
+                        for chunk in page_chunks:
+                            all_chunks.append(chunk)
+                            # Enhanced metadata for citations and filtering
+                            all_metadatas.append({
+                                "source": filename,
+                                "page": i + 1,
+                                "char_count": len(chunk)
+                            })
+                except Exception as e:
+                    print(f"Could not process {filename}: {e}")
+                        
+        return all_chunks, all_metadatas
+```
+
+For the 5 PDFs, this extracted 2633 chunks. This was surprising to me to see 'only' ~3000 chunks. But $$\text{Total Characters} \approx \text{Chunks} \times \text{Chunk Size}$$  which gives $$3,000 \times 1,000 = 3,000,000 \text{ characters}$$ Even though the 5 PDF files were approximately 25MB, only about 2MB of it is useful text data.
+
+## Embedding
+
+The chunks obtained at the end of the ingestion is sent to the embedder. This is available at [https://github.com/jac0bmath3w/rail-safety-ai/blob/main/src/embed.py](https://github.com/jac0bmath3w/rail-safety-ai/blob/main/src/embed.py)
+
+```python
+from sentence_transformers import SentenceTransformer
+import torch
+
+class RailEmbedder:
+    def __init__(self, model_name='BAAI/bge-base-en-v1.5'):
+        # Check if GPU is available
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        print(f"Initializing Embedder on: {self.device}")
+        
+        self.model = SentenceTransformer(model_name, device=self.device)
+
+    def generate_embeddings(self, text_chunks):
+        embeddings = self.model.encode(text_chunks, show_progress_bar=True, convert_to_tensor=False)
+        return embeddings
+```
+
+For this purpose, I defined a class called RailEmbedder and initialized with the sentence transformers model called 'BAAI/bge-base-en-v1.5'. This is available at [https://huggingface.co/BAAI/bge-base-en-v1.5](https://huggingface.co/BAAI/bge-base-en-v1.5). Other options for the sentence transformer model available include: all-mpnet-base-v2, all-MiniLM-L6-v2 (people on the internet say this is dated and not to use it). 
+
+This class has a method called generate_embeddings(), which takes as argument the text_chunks. This creates an embedding for each chunk in dimensions. A matrix of size 2633x768 (768 is the dimension of the sentence transform model BAAI/bge-base-en-v1.5) is obtaned as a return value of generate_embedding. If GPU is available, it uses that else it uses CPU (much slower). Earlier, I mentioned that each token has a vector embedding. Each token is approximately 4 characters ([source](https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them)). So why do we have 2633 vectors at the end of generate_embeddings instead of 2633 (chunks) X 250 (1000 chunk_size / 4 charaacter  per token) X 768? This is because of pooling. What happens during model.encode is
+
+1. Tokenizes the chunk into $N$ tokens.
+2. Generates $N$ vectors (one for every token).
+3. Collapses those $N$ vectors into one single vector that represents the average meaning of the whole chunk.
+
+What does convert_to_tensor argument in model.encode() do?\
+
+- convert_to_tensor=True: \
+  The model returns a PyTorch Tensor. If you are using a GPU, this tensor remains in the VRAM (Video RAM). This is extremely fast if you are immediately passing that data into another neural network layer (like for training).\
+- convert_to_tensor=False: \
+  The model returns a NumPy array. This data is moved from the GPU back to the System RAM (CPU memory). Vector databases (chromadb is used for this project) expects the data in standard format (NumPy). For storage (which is the next step), I want it to be false.
+
+[TODO: ]{style="color: red;"}Add a filter to the RailDocumentProcessor class: “If a chunk is less than 100 characters or contains more than 50% periods/dots (like a TOC), discard it.”\
+[TODO: ]{style="color: red;"}Add a list of already processed files to ensure this can scale if more PDFs are added.
+
+## Vector Store
+
+This class acts as the "Librarian" of the system, and handles storage, indexing and retrieval. The embeddings generated by RailEmbedder are stored in the disk using this class. I use chromadb library to store these vectors. I created a class RailVectorVault for this purpose available at [https://github.com/jac0bmath3w/rail-safety-ai/blob/main/src/vector_store.py](https://github.com/jac0bmath3w/rail-safety-ai/blob/main/src/vector_store.py). I pass the embedder_instance of class RailEmbedder and create a collection. 
+
+```python
+import chromadb
+
+class RailVectorVault:
+    def __init__(self, embedder_instance, db_path="./vector_db", collection_name = "rail_safety"):
+        # We pass the embedder IN. This is called 'Dependency Injection'.
+        self.embedder = embedder_instance 
+        self.client = chromadb.PersistentClient(path=db_path)
+        self.collection = self.client.get_or_create_collection(name=collection_name)
+
+    def add_documents(self, chunks, metadatas):
+        # The Vault asks the Embedder to do its job
+        vectors = self.embedder.generate_embeddings(chunks)
+        ids = [f"id_{i}" for i in range(len(chunks))]
+        
+        self.collection.add(
+            documents=chunks,
+            embeddings=vectors.tolist(),
+            metadatas=metadatas,
+            ids=ids
+        )
+	
+    def query(self, question, n_results=3):
+        """
+        Performs a semantic search.
+        1. Embeds the question using the injected embedder.
+        2. Queries ChromaDB for the closest matches.
+        """
+        # Embed the query string
+        query_vector = self.embedder.generate_embeddings([question])
+        
+        # Search the collection
+        results = self.collection.query(
+            query_embeddings=query_vector.tolist(),
+            n_results=n_results
+        )
+        return results	
+```
+
+The method add_documents() takes the chunks, embeddings, and the metadata and stores it in drive. The method query 1. Turns the question into a vector. 2. Finds the $n_results$ most similar chunks. 3. Returns a dictionary containing the text and the metadata.
+
+
+# Phase 2: RAG Pipeline
+
+## The Reasoning Engine
+
+I defined the class RailSafetyEngine which serves as the reasoning brain of the RAG system. When you query the vector database, it returns n_results number of text that closely match the embeddings that we stored in the database. Think of it as the librarian returning the relevant books that you need to answer the query. Then the brain processes them to return the answer to the question. I use the following imports from the transformers library
+
+1. AutoModelForCausalLM
+   - A class that loads the correct model architecture based on the model that you pass (example llama or gemma)
+2. AutoTokenizer
+   - Handles the translation between human text and numerical values that are fed to a machine. 
+3. pipeline
+   - Wrapper for the tokenization, model execution, and decoding into one function call. 
+4. BitsAndByesConfig
+   - This helps to compress the model so that it fits in the T4 GPU memory (used in colab).
+
+
+When this class is initialzed, the device is mapped (cpu or gpu), the quantization is set up (bnb_config), loads the model (using scaled dot product attention implementation, shortened as sdpa), and creates the pipeline. 'sdpa' and 4-bit quantization are the "Optimization Duo" that allows a model meant for a $20,000 server to run on a free Google Colab instance.
+
+```python
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline, BitsAndBytesConfig
+import torch
+
+class RailSafetyEngine:
+    def __init__(self, model_id="unsloth/Llama-3.2-3B-Instruct"):
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.tokenizer = AutoTokenizer.from_pretrained(model_id)
+        
+        # Ensure a padding token exists
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+        
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.bfloat16
+        )
+        
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            quantization_config=bnb_config,
+            device_map="auto",
+            attn_implementation="sdpa"
+        )
+        
+        self.pipe = pipeline(
+            "text-generation",
+            model=self.model,
+            tokenizer=self.tokenizer,
+            max_new_tokens=512,
+            temperature=0.1, 
+            device_map="auto"
+        )
+
+    def generate_answer(self, question, context_chunks):
+        if not context_chunks:
+            return "No relevant safety manual excerpts were found."
+
+        context_text = "\n\n".join(context_chunks)
+        
+        # 1. Structure the data as a standard list of messages
+        messages = [
+            {
+                "role": "system", 
+                "content": "You are a Senior FRA Safety Consultant. Use ONLY the provided context. Cite Page numbers."
+            },
+            {
+                "role": "user", 
+                "content": f"CONTEXT:\n{context_text}\n\nQUESTION: {question}"
+            }
+        ]
+        
+        # 2. Use the model-agnostic chat template
+        # tokenize=False returns a string; add_generation_prompt=True adds the 'assistant' header
+        prompt = self.tokenizer.apply_chat_template(
+            messages, 
+            tokenize=False, 
+            add_generation_prompt=True
+        )
+        
+        # 3. Generate
+        outputs = self.pipe(
+            prompt, 
+            do_sample=True,
+            eos_token_id=self.tokenizer.eos_token_id,
+            pad_token_id=self.tokenizer.pad_token_id
+        )
+        
+        # 4. Extract the response
+        # Most tokenizers allow you to split by the prompt itself to get just the new text
+        return outputs[0]["generated_text"][len(prompt):].strip()
+```
+
+This class has the generate_answer() method, which takes the question, and the text returned (by the librarian), and returns the answer. Some prompt engineering is involved to make the prompt as specific as possible for the model but at the same time, it is a general wrapper for several questions. The table below shows some iterations that I went thru to get to my current result.
+
+| Phase | Problem Encountered |  Solution | Result |
+|-------|---------------------|-----------|--------|
+|01: The "Dumb" Retriever | The AI kept talking about removing bridges when I asked about creating new crossings. | Metadata Awareness: We moved from flat text to structured chunks that know their File and Page. | Better citations, but still missing key technical data. |
+| 02: The "Blind" Brain | The AI missed the specific numbers on Page 140 (AADT, speeds) because the search didn't find that page. | Increasing $n_{result}$ (Retrieval Depth): I bumped $n_{result}$ from 3 to 15 to ensure the "Librarian" checked more "shelves." | The model finally "saw" the specific thresholds in the manual. |
+|03: The "Memory Leak" | The GPU RAM kept climbing to 12GB+ and hanging for 10 minutes. | Quantization & Cache Clearing: We used 4-bit BitsAndBytes and added torch.cuda.empty_cache() to "reset" the brain. | Inference time dropped from 10 mins to under 60 seconds. |
+| 04: The "Brittle" Prompt | Using hardcoded tags like <start_header_id> meant we couldn't easily switch to newer models like Gemma. | Chat Templating: Switched to model-agnostic templates to allow for easy model swapping.| Portability across different LLMs.|
+| 05: The "Black Box" | The AI couldn't find the author names (Brent Ogden/Kimley-Horn) because they were on the cover. | Strategic Context: We learned that "Admin" questions need different retrieval strategies (like looking at Page 1). |Higher professional accuracy. |
+| 06: The Reasoning Gap | The AI's logic engine wasn't strong enough to weigh the "OR" triggers of the prompt | Chain of Thought Prompting | Correct answers to reasoning type questions. |
+
+### Example queries to test current state of the engine.
+#### Query 1
+
+What enforcement tools are available when enforcing the hazardous materials regulations?
+
+#### Answer
+
+
+[THINKING PROCESS]
+
+PHASE 1: CONTEXTUAL AUDIT
+
+The user question pertains to the enforcement tools available when enforcing the Hazardous Materials Regulations. This falls under the scope of Chapter 10 – Enforcement and Compliance Program in the FRA-Hazardous Materials Compliance Manual.
+
+PHASE 2: EVIDENCE MAPPING
+
+From the provided manuals, we can extract the following relevant information:
+
+* Section 10.3 Enforcement Tools (Source 9, Page 27)
+* Section 10.3.1 Defect Notices (Source 9, Page 27)
+* Section 10.3.2 Violation with Civil Monetary Penalties (Source 9, Page 27)
+* Section 10.3.3 Enhanced Penalties (Source 9, Page 28)
+* Section 10.3.4 Railworthiness Directives (Source 9, Page 28)
+* Section 10.3.5 Compliance Orders (Source 9, Page 28)
+* Section 10.3.6 Emergency Orders (Source 9, Page 28)
+
+PHASE 3: SYNTHESIS
+
+Based on the extracted information, the available enforcement tools when enforcing the Hazardous Materials Regulations are:
+
+1. Defect Notices
+2. Violation with Civil Monetary Penalties
+3. Enhanced Penalties
+4. Railworthiness Directives
+5. Compliance Orders
+6. Emergency Orders
+
+These tools can be used by FRA inspectors to address noncompliance with the Hazardous Materials Regulations, ranging from less stringent measures like Defect Notices to more severe actions like Emergency Orders.
+
+PHASE 4: VERIFICATION
+
+All the extracted information is backed by specific citations from the provided manuals.
+
+ANSWER
+
+The available enforcement tools when enforcing the Hazardous Materials Regulations are:
+
+1. Defect Notices
+2. Violation with Civil Monetary Penalties
+3. Enhanced Penalties
+4. Railworthiness Directives
+5. Compliance Orders
+6. Emergency Orders
+
+
+#### Query 2
+
+A rural highway-rail grade crossing has these conditions:
+
+- posted highway speed: 60 mph
+- AADT: 18,500
+- freight trains per day: 28
+- maximum authorized train speed: 70 mph
+- expected accident frequency with gates: 0.3 per year
+- vehicle delay: 35 vehicle-hours per day
+- acceptable alternate access exists within 0.8 mile
+- closing the crossing would increase the median trip by 2.2 miles
+
+Based on the Handbook’s Chapter 3 guidance, which of the following is best supported?
+
+A. The crossing should primarily be considered for closure only
+B. The crossing should primarily be considered for grade separation
+C. Neither closure nor grade separation is supported
+D. Both closure and grade separation are supported by the listed criteria
+
+#### Answer
+
+[THINKING PROCESS]
+
+PHASE 1: CONTEXTUAL AUDIT
+
+- The query is related to the decision-making process for highway-rail grade crossings.
+- The provided context is from the FRA-HRGC-Handbook-2019.
+
+PHASE 2: EVIDENCE MAPPING
+
+- Source 1: Grade separation is recommended for crossings with AADT > 30,000 or when posted highway speed > 55 mph.
+- Source 2: Grade separation is justified if the benefit-to-cost ratio is < 1.0 or if there are no viable alternatives.
+- Source 3: Grade separation is considered for crossings with AADT < 1,000, acceptable alternate access, and median trip length not increased by > 2.5 miles.
+- Source 4: Grade separation is recommended for crossings with train speeds > 40 mph, AADT > 2,000, and multiple lanes of traffic.
+- Source 5: Grade separation is considered for crossings with high accident frequencies, vehicle delays, and limited alternate access.
+- Source 6: Closure is the first alternative to consider, followed by grade separation.
+- Source 7: Closure provides the highest level of crossing safety.
+- Source 8: Closure is considered for crossings with high train speeds (> 125 mph) and limited sight distances.
+- Source 9: Vehicles must stop within 50 feet of the crossing before proceeding.
+- Source 10: Barrier systems are required for high-speed trains (> 110 mph).
+- Source 11: Closure is considered for crossings with insufficient sight distances and limited alternate access.
+- Source 12: Sight distances, approach sight distances, and clearing sight distances are critical for determining the need for grade separation.
+- Source 13: The NCDOT considers various factors when deciding whether to close or improve a crossing.
+- Source 14: Grade separation is considered for crossings with high accident frequencies and limited alternate access.
+- Source 15: The NCDOT considers various factors when deciding whether to close or improve a crossing.
+
+PHASE 3: SYNTHESIS
+
+- Based on the provided criteria, the crossing should be considered for grade separation due to the high AADT, posted highway speed, and maximum authorized train speed.
+- The presence of freight trains per day and expected accident frequency with gates also support grade separation.
+- However, the acceptable alternate access and median trip length increase do not strongly support grade separation.
+- The NCDOT's guidelines and the FRA's regulations support the consideration of grade separation for the given conditions.
+
+PHASE 4: VERIFICATION
+
+- All points in the synthesis are supported by specific citations from the provided manuals.
+
+ANSWER
+
+
+B
+
+[TODO: ]{style="color: red;"} Look at Few Shot Prompting (by providing example answer), Self-Correction System (a second pass where the AI reviews its own answer) and Multi-Agent Systems
+
+At this point, the retrieval is working (getting appropriate chunks from the vector database) as well as the engine is generating good results. Still it could be improved. The latency of the model with query 2 was around 2 minutes. To get the correct answer, I had to send a massive system prompt with 15 context chunks. This could be brought down.
+
+# Phase 3.1 : Fine Tuning
+
+There are several avenues where we could fine tune this system. They include tuning the chunk size, the overlap window, engineering the prompt, or the number of chunks retrieved. We could also tune the embedding model (the retriever), the re-ranker, or the generator LLM.
+
+- Training the embeddign model.
+  This involves improving recall @ k, precision of first stage retrieval, robustnuss to paraphased question, and domain specific search quality
+- Training the re-ranker
+  This looks at relevance, rather than just looking at the distance in the vector space.
+- Training the generator LLM
+  Here we train the model things like how to answer using the retrieved context, citing source chunks, refusing when evidence is insufficient, following a desired answer format, synthesizing across multiple chunks.
+
+I'm starting with training the generator first. To do this, we need to create 'training data'. This would involve a list of queries, the thinking process associated with each query, and their answers. Ideally, it would be created by a panel of experts, but that is a costly endeavor. For this project, I'm making API calls to gemini 2.5 to do this for me. To do this I created a RailDataGenerator class available at [https://github.com/jac0bmath3w/rail-safety-ai/blob/main/src/generator.py](https://github.com/jac0bmath3w/rail-safety-ai/blob/main/src/generator.py).
+
+```python
+class RailDataGenerator:
+    def __init__(self, vault_instance, api_url, api_key):
+        self.vault = vault_instance
+        self.api_url = api_url #"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent"
+        self.api_key = api_key
+
+    def _call_teacher(self, system_prompt, user_query):
+        payload = {
+            "contents": [{"parts": [{"text": user_query}]}],
+            "systemInstruction": {"parts": [{"text": system_prompt}]}
+        }
+        
+        # Increased backoff steps to handle stricter 2026 rate limits
+        for delay in [2, 4, 8, 16, 32]:
+            try:
+                # Added a 30s timeout to prevent the script from hanging forever
+                response = requests.post(
+                    f"{self.api_url}?key={self.api_key}", 
+                    json=payload,
+                    timeout=30 
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    return result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', "")
+                elif response.status_code == 429:
+                    print(f"Rate limit hit. Retrying in {delay}s...")
+                else:
+                    print(f"Teacher API Error {response.status_code}: {response.text}")
+            except requests.exceptions.Timeout:
+                print("Request timed out. Retrying...")
+            except Exception as e:
+                print(f"Request Exception: {e}")
+            
+            time.sleep(delay)
+        return None
+
+    def generate_training_sample(self, chunk_text, file_name, page_num):
+        """
+        1. Grab a random chunk from the vault.
+        2. Ask Teacher to generate a complex question + reasoning process.
+        """
+
+
+        system_prompt = (
+            "You are a Senior FRA Rail Safety Expert. Your task is to generate training data "
+            "for a student model. Based on the provided manual excerpt, create a challenging "
+            "technical question and a perfect response following the 4-Phase Thinking Process.\n\n"
+            "PHASE 1: CONTEXTUAL AUDIT\nPHASE 2: EVIDENCE MAPPING\nPHASE 3: SYNTHESIS\nPHASE 4: VERIFICATION\n\n"
+            "Output MUST be in valid JSON format: "
+            "{'question': '...', 'thinking': '...', 'answer': '...'}"
+        )
+
+        user_query = f"MANUAL EXCERPT ({file_name}, Page {page_num}):\n{chunk_text}"
+        
+        raw_output = self._call_teacher(system_prompt, user_query)
+        if not raw_output:
+            return None
+
+        # Clean JSON if model included markdown blocks
+        clean_json = raw_output.replace("```json", "").replace("```", "").strip()
+        try:
+            return json.loads(clean_json)
+        except:
+            return None
+
+    def create_dataset(self, num_samples=100, output_path="data/training/rail_dataset.jsonl"):
+        samples = []
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        
+        print(f"Starting generation of {num_samples} sample(s)...")
+        # Get random chunks from collection
+        all_data = self.vault.collection.get()
+        if not all_data or not all_data['documents']:
+            return None
+        total_chunks = len(all_data['documents'])
+        # idx = random.randint(0, len(all_data['documents']) - 1)
+        actual_sample_count = min(num_samples, total_chunks)
+        indices = random.sample(range(total_chunks), actual_sample_count)
+        if num_samples >= total_chunks:
+            print(f"only {total_chunks} sample(s) available, so creating {actual_sample_count} unique sample(s)")
+
+        for idx in indices::
+            chunk_text = all_data['documents'][idx]
+            file_name = all_data['metadatas'][idx].get('source', 'Unknown')
+            page_num = all_data['metadatas'][idx].get('page', '?')
+            sample = self.generate_training_sample(chunk_text, file_name, page_number)
+            if sample:
+                samples.append(sample)
+                # Append to file immediately so you don't lose data if it crashes
+                with open(output_path, 'a') as f:
+                    f.write(json.dumps(sample) + "\n")
+                print(f"Generated {i+1}/{num_samples}")
+            
+            # MANDATORY COOL-DOWN: 
+            # 3 seconds between requests helps stay under the 20 RPM limit
+            time.sleep(3) 
+            
+        return output_path
+```
+
+Any object of this class is initialized with an object to the RailVectorVault. The create_dataset() attribute of this class creates a JSON Lines file. It retrieves random (without replacement) chunks from the vector db, along with its metadata, and passes an engineered system prompt to an API call to gemini (or any other service). Few other ways to generate the training examples might include
+
+- Self-Instruct, where you take 5-10 human written examples and ask the model to generate similar examples of its own. This can be tricky if the model keeps repeating the same logic over and over.
+- Log-Mining, where you look at the history of how people used the RAG pipeline developed in phase 2, and use the good answers as training data. Here the system must already be in production
+- Data-Augmentation, where you take high quality Q&A pairs and use an LLM to rewrite it in several different ways by changing tone, adding noise, etc.
+
+If using proprietary data, it is imperative to either mask any PII or any information that shouldn't leave a closed ecosystem or use an offline model to generate these samples. Also, if the training data is 100% AI generated, it cannot be copyrighted. So, it is a good idea to mix in a % of Human in the Loop data while generating this training data.
+
+This is an example of a generated example
+
+```json
+{"question": "A maintenance technician inspects an active grade crossing warning system and notes that one of the gate arm lights is illuminated but appears significantly dimmer than the other lights on the same gate arm. During daylight hours, this particular light is difficult to discern from the prescribed approach distance of 200 feet, although it is clearly visible at night. The light unit itself and its wiring are observed to be securely fastened to the gate arm.\n\nBased on FRA regulations under Section 234-29 (implied 234.219), which specific defect classification(s) apply to this situation, and what is the overarching intent of this section that is being violated by this condition?", "thinking": "PHASE 1: CONTEXTUAL AUDIT\n1. **Source Document**: FRA-Signal_Train_Control-2012.pdf, Page 124, Section 234-29 (which corresponds to 234.219 for defect codes).\n2. **Core Subject**: Maintenance, visibility, and securement of gate arm lights and wires at active warning systems.\n3. **Key Requirements/Provisions**: Each gate arm light must be properly visible to approaching highway users (and pedestrians), lights and wires must be securely fastened, and maintenance must adhere to design specifications.\n4. **Specific Defect Classifications**: A1 (burned out/missing light), A2 (defective/not visible/missing light unit), A3 (light unit not secured), A4 (wires not secured), A5 (not maintained per design specifications).\n5. **Intent Statement**: \"The intent of this section is that lights and light wires shall be maintained in accordance with design specifications.\" This is critical.\n6. **Question Goal**: Create a challenging scenario requiring differentiation between similar defect codes and linking to the section's overarching intent.\n\nPHASE 2: EVIDENCE MAPPING\n1. **Analyze Scenario Elements**: \n * \"illuminated but appears significantly dimmer\": Rules out A1 ('burned out or missing' literally).\n * \"difficult to discern from the prescribed approach distance of 200 feet during daylight hours\": Directly violates the requirement for lights to be \"properly visible to approaching highway users.\" This strongly points to A2 ('not visible') and A5 ('not maintained per design specifications').\n * \"clearly visible at night\": Confirms the light is functional but performance is compromised under specific conditions (daylight), reinforcing a maintenance/design specification issue.\n * \"light unit itself and its wiring are observed to be securely fastened\": Rules out A3 ('Light unit not securely fastened') and A4 ('Light wires not securely fastened').\n\n2. **Map Scenario to Defect Codes**: \n * **234.219.A1 (Gate arm light burned out or missing)**: *Not applicable* because the light is illuminated.\n * **234.219.A2 (Gate arm light unit defective, not visible, or missing)**: *Applicable*. The light is \"not visible\" from the required distance during daylight, and its dimness suggests the unit is \"defective\" in its performance.\n * **234.219.A3 (Light unit not securely fastened)**: *Not applicable* as it's stated to be securely fastened.\n * **234.219.A4 (Light wires not securely fastened)**: *Not applicable* as wiring is stated to be securely fastened.\n * **234.219.A5 (Gate arm light unit not maintained per design specifications)**: *Applicable*. The diminished brightness and failure to be visible under daylight conditions indicate a failure to meet design specifications for performance and maintenance. This is further supported by the section's stated intent.\n\n3. **Identify Overarching Intent**: The excerpt explicitly states: \"The intent of this section is that lights and light wires shall be maintained in accordance with design specifications.\" The scenario directly demonstrates a failure to meet this, as the light's performance (visibility) has degraded from its specified standard.\n\nPHASE 3: SYNTHESIS\n* **Applicable Defects**: 234.219.A2 (due to being not visible/defective) and 234.219.A5 (due to not meeting design specs for visibility/brightness). \n* **Non-Applicable Defects**: 234.219.A1, A3, A4 (with clear justifications).\n* **Overarching Intent Violation**: Failure to maintain lights in accordance with design specifications, which directly impacts their intended visibility for safety.\n\nPHASE 4: VERIFICATION\n* **Completeness**: All parts of the question (specific classifications, overarching intent) are addressed.\n* **Accuracy**: The classifications and reasoning directly align with the provided text. The distinction between A1 and A2/A5 is carefully made.\n* **Clarity**: The answer is structured logically, explaining why each code applies or doesn't apply.\n* **Challenging Aspect**: The question forces the student to go beyond simple identification (e.g., 'burned out') to interpret 'not visible' and 'not maintained per design specifications' in a nuanced scenario where the light is technically 'on'. It also requires understanding the explicit 'intent' statement.", "answer": "The specific defect classifications applicable to this situation are:\n\n1. **234.219.A2: Gate arm light unit defective, not visible, or missing.**\n * The scenario clearly states that the light, despite being illuminated, is \"difficult to discern from the prescribed approach distance of 200 feet during daylight hours.\" This directly meets the \"not visible\" criterion as required for approaching highway users. Furthermore, the description of it being \"significantly dimmer\" strongly indicates that the light unit itself is \"defective\" in its performance, as its output has degraded below acceptable operating levels.\n\n2. **234.219.A5: Gate arm light unit not maintained per design specifications.**\n * The observed diminished brightness and subsequent lack of visibility under daylight conditions demonstrate a failure to maintain the gate arm light unit to its intended design specifications for luminance and conspicuity. The proper functioning and visibility of the light are fundamental design requirements, and their degradation constitutes a failure in maintenance according to those specifications.\n\nThe following defect classifications are *not* applicable:\n\n* **234.219.A1 (Gate arm light burned out or missing)**: This is not applicable because the light is explicitly stated to be \"illuminated,\" meaning it is neither burned out nor physically missing.\n* **234.219.A3 (Light unit not securely fastened to gate arm)**: This is not applicable as the scenario states the \"light unit itself... [is] observed to be securely fastened.\"\n* **234.219.A4 (Light wires not securely fastened to gate arm)**: This is not applicable as the scenario states the \"wiring [is] observed to be securely fastened.\"\n\nThe **overarching intent** of this section that is being violated is precisely stated in the manual excerpt: **\"The intent of this section is that lights and light wires shall be maintained in accordance with design specifications.\"** The observed condition\u2014a significantly dimmer light that is not adequately visible in daylight\u2014directly contravenes this intent by demonstrating a failure to maintain the gate arm light unit's performance to its designed safety and operational standards for ensuring proper warning to approaching highway users."}
+```
+
+The training is done in [https://github.com/jac0bmath3w/rail-safety-ai/blob/main/notebooks/03_fine_tuning.ipynb](https://github.com/jac0bmath3w/rail-safety-ai/blob/main/notebooks/03_fine_tuning.ipynb). The basic steps involve
+
+1. loading a pretrained model (Llama-3.2-3B)
+2. attach small trainable adapter layers
+3. train only those adapters (weight matrices of these adapters)
+4. save the newly trained adapters.
+
+I use unsloths FastLanguageModel class for loading and preparing LLM for efficient fine tuning. Unsloth is spcifically meant to reduce memory and make Quantized Low Ranking Adapters (QLoRA) more practical on smaller hardwares. In the from_pretrained() function,the most important parameter would be 'load_in_4bit' = True. This compresses the weights of the model agressively, and thus takes less memory on the GPU (with a tradeoff of slightly less numerical precision). This function returns the model (the neural network) and the tokenizer (turns text into tokens).
+
+In the next step we do get_peft_model (PEFT = Parameter Efficient Fine Tuning). This is the step where I turn the base model into a QLoRA fine tuned model. The Parameter Efficient part of PEFT means we do not retrain the large model. Only train the extra small set of weights (Trainable parameters = 24,313,856 of 3,237,063,680 (0.75% trained)). The arguments for this function include
+
+- r \
+  This is the LoRA rank. Less the number means less the flexibility of the model. 16 is a balanced choice between lighter models and models that would require much higher memory.
+- target_modules \
+  This lists out the part of the transformer where the LoRA adapters are inserted. Here I insert adapters in the attention block and the feed forward block. 
+- lora_alpha \
+  Scaling factor for the LoRA update. 16 is commonly used.
+- lora_dropout \
+  A regularization method. Unsloth recommends 0 for efficiency and speed.
+- bias \
+  Train the bias or not. Here it is set as False to only train the weights. This is a standard LoRA setting.
+- [use_gradient_checkpointing]{style="color: red;"} \
+  Gradient checkpointing saves GPU memory by not storing every intermediate activation during a forward pass.
+
+
+In the next step, the JSONL file is loaded. This file is structured with 3 columns, 'question', 'thinking', and 'answer'. I wrote a function that takes each line and turns it into a conversation string. This is done as the base model is a instruction/chat model. Instead of 3 separate fields, I have one long text field containing the full conversation (stored in the variable messages). 
+
+```python
+def formatting_prompts_func(examples):
+    instructions = examples["question"]
+    thoughts = examples["thinking"]
+    answers = examples["answer"]
+    texts = []
+
+    for instruction, thought, answer in zip(instructions, thoughts, answers):
+        # We wrap the thinking and answer together as the 'Assistant' response
+        full_response = f"[THINKING PROCESS]\n{thought}\n\n[ANSWER]\n{answer}"
+
+        messages = [
+            {"role": "system", "content": "You are a Senior FRA Safety Consultant. Use a 4-Phase Thinking Process."},
+            {"role": "user", "content": instruction},
+            {"role": "assistant", "content": full_response},
+        ]
+
+        text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)
+        texts.append(text)
+    return { "text" : texts, }
+```
+
+The function apply_chat_template() takes a structured chat message and convert it into the exact string format expected by the model. tokenize = False returns the response as a string (and not tokens), and add_generation_prompt=False means that no additional text is appended (this is already present in messages). I don't tokenize and pass the text to the SFTTrainer (specified in the next step). Unsloth uses its specialized fast kernals which handles padding more efficiently than Pytorch. 
+
+In the next step, I use the SFTTrainer, and SFTConfig classes from trl (Tranformer Reinforcement Learning) which are high level training helpers. (SFT = Supervised Fine-Tuning). In this step we show the model prompt, and desired response (training data), and teach it to imitate them. The SFTTrainer does
+
+1. prepare the dataset
+2. tokenizing text
+3. creating batches
+4. runnning the forward pass
+5. calculate loss
+6. backpropagation
+7. update trainiable parameters
+
+SFTConfig stores the configuration settings of the trainer. One important argument is the data_collator. This component takes a list of dataset examples and turns them into one batch. However, the SFTTrainer tokenized the data but also created the text field. This needs to be removed. The DropTextCollator acts as a gatekeeper and throws away the human readable text.
+
+Once the trainer is initialized, trainer.train() is called to complete the training. The below is what was outputted during the training process. 
+
+Unsloth - 2x faster free finetuning | Num GPUs used = 1 \
+Num examples = 101 | Num Epochs = 5 | Total steps = 60 \
+Batch size per device = 1 | Gradient accumulation steps = 8 \
+Data Parallel GPUs = 1 | Total batch size (1 x 8 x 1) = 8 \
+Trainable parameters = 24,313,856 of 3,237,063,680 (0.75% trained) \
+
+Here is an explanation of the text here:
+
+- Num examples = 101\
+The number of training examples sent
+- Num Epochs\
+The number of full passes thru the entire dataset. With 60 steps, and batch size of 8, it is approximately 5 passes $\frac{60 \times 8}{101}$
+- Total steps \
+This is the number of times the model updated its weights
+- Total batch size  = 8 \
+$$\text{Batch Per Device (1)} \times \text{Accumulation (8)} \times \text{GPUs (1)} = 8$$
+- Trainable parameters\
+Only the adapter matrices are trained which involves ~24M parameters (as opposed to the 3B)
+
+
+Few other optimizaiton tweaks that were done include:
+
+1. small batch size (per_device_train_batch_size = 1)
+2. gradient accumulation (gradient_accumulation_steps = 8)
+3. 8 bit optimizer (optim = "adamw_8bit")
+4. disabled packing (packign=False) to prevent VRAM spikes.
+
+## Quick Evaluation
+
+I tried a new prompt which was not present in the training data to see if it worked well.\
+
+#### Evaluation Query 
+
+A rail yard manager is overseeing the movement of a tank car containing 
+liquefied petroleum gas (LPG). The car has a small leak at the top valve. 
+The manager wants to move the car to a remote siding for repair without 
+a special permit, arguing it's safer to move it than leave it near the main office. 
+Based on the Hazardous Materials Compliance Manual, is this allowed?
+
+#### Answer
+
+THINKING PROCESS\
+PHASE 1: CONTEXTUAL AUDIT
+1. Source Document: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, file page 28, Chapter 4, § 4.6.1-1.
+2. Core Subject: Movement of hazardous materials in rail yards.
+3. Key Manual Points: rail yards are subject to the HMR; rail yards are considered a rail-yard operation; movement of hazardous materials is subject to the permit system; the permit system applies even if the movement is within the yard.
+4. Question Goal: Test precise application of the manual to a mixed-fact scenario.
+
+PHASE 2: EVIDENCE MAPPING
+1. The car contains LPG, a listed hazardous material.
+2. The leak is on the car, not the yard.
+3. The proposed movement is within the yard.
+4. The page explicitly says the permit system applies to all rail-yard operations involving hazardous materials.
+
+PHASE 3: SYNTHESIS
+- Conclusion: the movement requires a special permit, regardless of the yard location.
+- Why alternatives are wrong: they treat the yard as a non-permit operation.
+
+PHASE 4: VERIFICATION
+The response relies only on the cited manual page(s) and uses the file page number as metadata.
+
+ANSWER\
+No. The manual states that rail yards are subject to the permit system, even if the movement is within the yard. It also states that the permit system applies to all rail-yard operations involving hazardous materials. Therefore, the manager must obtain a special permit before moving the car, even if it's within the yard.
+
+
+Note that,
+
+- I didn't prompt as I did earlier
+- The answer adheres to the format in which I trained the model
+- However, it hallucinates and cited page 28, Chapter 4.6.1-1 (it doesn't exist).
+
+Fine-tuning a 3B model teaches it Reasoning, not Knowledge Retrieval. Even after tuning, the model will hallucinate citations if context isn't provided. This proves that Fine-Tuning is not a replacement for RAG, but a way to make RAG more intelligent. In the next phase, I added chunks to the context to see if it helped solve the hallucination problem.
+
+# Phase 3.2 : Improving the retriever
+
+I passed this question "A rail yard manager wants to move a leaking LPG tank car to a remote siding for repair without a permit. Is this allowed?". With this question, I tested using n_results = 5, and compared the results with the source filter on and off. (For this particular question, the answer is in the Hazardous Materials Compliance Manual)
+
+### With source filter:
+
+Chunk 1: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 35 (Preview: Materials Guidance (HMG)-127 available for review on FRA’s website.
+11.2.2 COFC/TOFC Approval
+A...)\
+Chunk 2: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 35 (Preview: HAZARDOUS MATERIALS COMPLIANCE MANUAL
+30
+CHAPTER 11 – NOTIFICATIONS AND APPROVALS
+11.1 Notifica...)\
+Chunk 3: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 10 (Preview: transportation. Section 172.820, Additional planning requirements for transportation by rail,
+requi...)\
+Chunk 4: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 36 (Preview: HAZARDOUS MATERIALS COMPLIANCE MANUAL
+31
+11.2.3 Cylinders in COFC/TOFC Service
+Cylinders may...)\
+Chunk 5: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 33 (Preview: penalty schedule amount. FRA may also pursue aggravated maximum penalties when the
+violation is kno...)
+
+THINKING PROCESS
+
+PHASE 1: CONTEXTUAL AUDIT
+1. Source document: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, page 35, Chapter 11.2.2 One-Time Movement Approvals.
+2. Core subject: One-time movement approval for non-complying bulk packages.
+3. Key manual points: FRA may allow movement of non-complying bulk packages for a special purpose (e.g., repair) under specified conditions ensuring the safety of the rail movement; the approval does not relieve a party from any liability applicable to such movements.
+4. Question goal: Test precise application of the manual to a mixed-fact scenario.
+
+PHASE 2: EVIDENCE MAPPING
+1. The scenario involves a leaking tank car.
+2. The page specifically addresses non-complying bulk packages.
+3. The cited approval process is for special purposes like repair.
+
+PHASE 3: SYNTHESIS
+- Conclusion: the movement is allowed under the one-time movement approval process for repair purposes.
+- Why alternatives are wrong: they assume the repair is not a special purpose.
+
+PHASE 4: VERIFICATION
+
+The response relies only on the cited manual page(s) and uses the fact pattern to test precise application of the manual to the scenario.
+
+ANSWER
+
+No. The page says that FRA may allow movement of non-complying bulk packages for a special purpose (e.g., repair) under specified conditions ensuring the safety of the rail movement. The cited approval process is for repair purposes, not for transportation. The page also says that the approval does not relieve a party from any liability applicable to such movements.
+
+
+
+### Without source filter:
+
+Chunk 1: Source: FRA-Signal_Train_Control-2012.pdf, Page: 27 (Preview: arrangements for a tentative inspection.
+While an unaccompanied inspection is permitted, such ins...)\
+Chunk 2: Source: FRA-Signal_Train_Control-2012.pdf, Page: 279 (Preview: The provision of exception (2) does not apply to maintenance-of-way work equipment. Such
+maintenan...)\
+Chunk 3: Source: FRA-Track_Structures_CM_2026_Vol_III_Ch1_Railroad_Workplace_Safety_General.pdf, Page: 8 (Preview: switches and bridges that are moveable via a control machine (by a train dispatcher or
+control oper...)\
+Chunk 4: Source: FRA-Signal_Train_Control-2012.pdf, Page: 278 (Preview: except signaled sidings, exceeds 20 mph, each hand-operated switch must comply with this
+section. ...)\
+Chunk 5: Source: FRA-Signal_Train_Control-2012.pdf, Page: 48 (Preview: the requirement.
+§ 236.16 When an inspector finds a main track electric lock releasing circuit t...)\
+
+THINKING PROCESS
+
+PHASE 1: CONTEXTUAL AUDIT
+1. Source Document: FRA-Signal_Train_Control-2012.pdf, page 27.
+2. Core Subject: Limited unaccompanied inspection of signals, switches, and appliances.
+3. Key Manual Points: inspectors are limited to visual inspections; no access to tests, relays, circuit plans, etc.
+4. Question Goal: Test precise application of the manual to a mixed-fact scenario.
+
+PHASE 2: EVIDENCE MAPPING
+1. The scenario involves a non-permitted move.
+2. The page explicitly limits inspection activity to visual inspections.
+3. The page also says such inspection should be arranged at a later date if a railroad officer declines to accompany or fails to provide someone else.
+
+PHASE 3: SYNTHESIS
+- Conclusion: the move is not allowed because it involves a non-permitted action.
+- Why alternatives are wrong: they ignore the page's explicit limitation on inspection activity and the page's instruction to arrange a later inspection if a permit is not available.
+
+PHASE 4: VERIFICATION
+
+The response relies only on the cited manual page(s) and uses the page's language to resolve the mixed-fact scenario.
+
+ANSWER
+
+No. The page says that on an unaccompanied inspection, the inspector's activities are limited to making visual inspections of signals, switches, and appliances. The page also says that such inspection should be arranged at a later date if a railroad officer declines to accompany or fails to provide someone else to accompany the inspector. The cited page does not permit the unaccompanied movement of a non-permitted item like a leaking LPG tank car.
+
+
+
+I see that without a source filter, the chunks retrieved are not even from the Hazardous Materials Compliance Manual. This tells me that we need to improve the retriever.  To fix this, I updated the RailVectorVault class and added the following two methods.
+
+- hybrid_query()
+- rerank_query()
+
+
+### The Metrics
+- Hit@1 : This is the most critical metric. It tells you how often the very first result was the correct chunk. At 0.467, the Reranker is getting the exact right page nearly 47% of the time.
+- Hit@3 / Hit@5 : These tell you how often the correct answer was "in the top 3" or "in the top 5." The Reranker has a 72.4% Hit@5. This means that if you feed 5 chunks to the LLM, it has the "truth" in front of it 72% of the time.
+- MRR (Mean Reciprocal Rank): This is the average of $1 / \text{Rank}$. If the answer is at #1, you get 1.0.If it's at #2, you get 0.5. The Reranker MRR of 0.567 means that, on average, the correct answer is sitting between Rank 1 and Rank 2.
+
+
+<!--|Hybrid (simple union of results from vector and BM25) |0.262|	0.422|	0.529|	0.374637|-->
+<!-- |Rerank with higher initial pool | 0.468	|0.646	|0.709	|0.562050 -->
+| 	|hit@1|	hit@3|hit@5  |mrr       |
+|-------|-----|------|-------|----------|	
+|Vector |0.216|	0.317|	0.378|	0.284|<!--0.284376-->
+|Hybrid  |0.250	|0.409|	0.508|	0.362| <!--0.361931-->
+|Rerank	|0.467|	0.663|	0.724|	0.568| <!--0.567983-->
+|Rerank with BGE | 0.416|	0.665|	0.734|	0.544| <!--0.544500-->
+|Rerank with BGE and rerank instructions | 0.520|	0.720|	0.760|	0.619| <!--0.619367-->
+
+
+
+
+By moving from simple Vector search to a Hybrid-Rerank architecture, we increased our Hit@1 accuracy by 116% (from 21% to 46%). While the retrieval takes longer, it ensures the LLM is reasoning over the correct safety regulations.
+
+<!-- The slight drop in Hybrid performance (e.g., $0.262$ to $0.250$ in Hit@1) is a known side effect of Reciprocal Rank Fusion. In the first evaluation, the Hybrid method used a "Best of Either" approach. If the correct chunk was #1 in Vector search but #200 in Keyword search, the system kept it at #1. RRF is a "Consensus" algorithm. It heavily penalizes documents that appear in only one list. If the correct chunk has a high semantic score but weak keyword overlap RRF will "sink" that result because the two methods don't agree. -->
+
+<!-- Why Rerank with new Hybrid was still better? By increasing the initial pool to 25 candidates, we improved the Recall (the likelihood that the right answer is somewhere in the top set). Even if RRF moved the correct answer from #1 to #4, the Reranker (which is far more intelligent than the basic search) was able to "see" that #4 was the best fit and move it back to #1. -->
+
+The metrics for Rerank with BGE model went down. However, when I added a rerank instruction ("Query" and "Passage") the Hit@1 jumped from 0.416 to 0.520. That is a 25% relative improvement just by changing a few characters of text.  A Hit@5 of 0.760 means that for 3 out of every 4 safety questions, the LLM will have the correct regulation in its immediate context. An MRR of 0.62 confirms that the correct answer is almost always the very first or second thing the model suggests.
+
+
+
+# Phase 4: Reasoning-Augmented RAG
+
+In this step, I added the retrieved chunks for each query and added it to the context. This is available at [https://github.com/jac0bmath3w/rail-safety-ai/blob/main/notebooks/04_ra_rag.ipynb](https://github.com/jac0bmath3w/rail-safety-ai/blob/main/notebooks/04_ra_rag.ipynb). The function below takes the question (prompt), the vault (or the vector store), along with other arguments (n_results to select how many chunks we want the query to retrieve, source_filter to filter which source we want the chunks from, and show_context to help in debugging by showing the retrieved contexts). 
+
+```python
+def run_integrated_audit(question, vault, n_results = 10, source_filter = None, show_context = False):
+
+    search_params = {"n_results": n_results}
+    if source_filter:
+        search_params["where"] = {"source": source_filter}
+    query_vector = vault.embedder.generate_embeddings([question])
+    query_list = query_vector.tolist() if hasattr(query_vector, 'tolist') else query_vector
+    results = vault.collection.query(
+        query_embeddings=query_list,
+        **search_params
+    )
+
+    if show_context:
+        print(f"--- LIBRARIAN REPORT ({len(results['documents'][0])} chunks found) ---")
+    context_parts = []
+    if results['documents']:
+        for i, (doc, meta) in enumerate(zip(results['documents'][0], results['metadatas'][0])):
+            if show_context:
+                print(f"Chunk {i+1}: Source: {meta['source']}, Page: {meta['page']} (Preview: {doc[:100]}...)")
+            context_parts.append(f"[SOURCE: {meta['source']}, PAGE: {meta['page']}]\n{doc}")
+    print("-" * 40)
+
+    # # Extract text and metadata for the prompt
+    # context_parts = []
+    # for doc, meta in zip(results['documents'][0], results['metadatas'][0]):
+    #     context_parts.append(f"[SOURCE: {meta['source']}, PAGE: {meta['page']}]\n{doc}")
+
+    context = "\n---\n".join(context_parts)
+
+
+    messages = [
+        {"role": "system", "content": "You are a Senior FRA Safety Consultant. Use your 4-Phase Thinking Process. Answer ONLY based on the provided context."},
+        {"role": "user", "content": f"CONTEXT FROM MANUALS:\n{context}\n\nQUESTION:\n{question}"},
+    ]
+
+
+    inputs = tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_tensors="pt").to("cuda")
+
+    with torch.no_grad():
+        outputs = model.generate(
+            input_ids=inputs,
+            max_new_tokens=1024,
+            use_cache=True,
+            temperature=0,
+            do_sample=False
+        )
+
+    response = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+    return response
+
+```
+
+[TODO: ]{style="color: red;"} Complete this
+
+# Summary of Lessons Learned
+
+1. Without RAG, the LLM would depend on the entire context it was trained on, and only know until the training cutoff date. RAG allows us to give the LLM context that it needs to answer questions. Without RAG, an LLM can hallucinate and generate text that looks like what it is supposed to look like. 
+2. Tweaking the retriever gives better benefit as if we can't get the right context to the engine, it will not be able to provide answers
+3. Hybrid search and metadata filtering can be very important for professional applications. Keywords acts as a hard filter, 
+4. We can train the engine to reason the way we want it to based on training examples. But fine tuning is for behavior, not facts. 
+5. As well as the size of the model, the type of info we feed to the model and the way we feed it in can have an impact.
+
+
+# TODO
+
+1. Try different chunk size, overlap. Try MarkdownHeaderTextSplitter, SemanticChunker, SpacyTextSplitter, NLTKTextSplitter, TokenTextSplitter.
+2. [DONE] Try bge-reranker-v2-m3 as a reranker model.
+3. Fine tune the retriever using training examples.
+3. Use vectorless RAG.
+4. Multimodal RAG (what if we have PDF and Images?)

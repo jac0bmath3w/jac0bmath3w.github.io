@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/d31ce03a6c424949a066ab2f87e04ef0/artifacts
+end_time: 1755997359764
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: d31ce03a6c424949a066ab2f87e04ef0
+run_name: merciful-fly-775
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997359533
+status: 3
+tags: []
+user_id: jacob

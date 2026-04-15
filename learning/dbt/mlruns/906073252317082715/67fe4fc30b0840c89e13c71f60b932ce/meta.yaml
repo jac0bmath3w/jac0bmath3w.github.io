@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/67fe4fc30b0840c89e13c71f60b932ce/artifacts
+end_time: 1755997356159
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: 67fe4fc30b0840c89e13c71f60b932ce
+run_name: bald-wren-90
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997355880
+status: 3
+tags: []
+user_id: jacob

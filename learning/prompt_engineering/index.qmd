@@ -1,0 +1,1135 @@
+---
+title: "Learning Prompt Engineering"
+author: "Jacob Mathew"
+date: Sun Aug 31 15:46:14 CDT 2025
+categories: [prompt_engineering, AI, LLM]
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-tools: true
+---
+
+
+# Introduction
+
+In this blog I am documenting my learning journey of prompt engineering. I use ChatGPT (GPT-5) for this task.
+
+I initially prompted the chat to create a syllabus for me. I mentioned that I am a developer and comfortable with technical workflows as I prompted the chat to give me the syllabus. This syllabus is listed at the end of this blog (as a summary).
+
+As I am learning, I am using
+
+- one chat thread as my classroom
+- a second chat as a sandbox to test out prompts
+- a repo as a storage of good prompts. (https://github.com/jac0bmath3w/prompt-engineering.git)
+
+
+<!--
+# Syllabus Version 1: 
+
+## Phase 1: Foundations
+
+Lesson 1: What makes a prompt “engineered” (role, context, constraints).
+
+Lesson 2: Experimenting — casual vs engineered prompts.
+
+Lesson 3: Structuring prompts (templates, formatting, step-by-step instructions).
+
+## Phase 2: Techniques
+
+Lesson 4: Few-shot prompting (examples).
+
+Lesson 5: Chain of thought (step-by-step reasoning).
+
+Lesson 6: Advanced structures (system + user prompts, multi-turn workflows).
+
+## Phase 3: Workflows
+
+Lesson 7: Building a prompt workflow (inputs, templates, outputs).
+
+Lesson 8: Real-world mini project (choose a use case like blog drafting or summarization assistant).
+
+## Phase 4: Beyond Prompting
+
+Lesson 9: Evaluation (testing prompts systematically).
+
+Lesson 10: Integration (embedding prompts into apps, APIs, and automation).
+
+Lesson 11: Best practices + your blog publishing plan.
+
+-->
+
+
+# Phase 1 Lesson 1: Prompt Engineering vs Casual Use.
+
+In casual prompting, I would just be typing what I want without any structure. For example:
+- Summarize "Finding Nemo" movie for me.
+- Explain the difference between AUC-ROC and AUC-PR.
+
+On the other hand, engineered prompt adds
+- role
+- context
+- constraints
+- desired output format
+- focus etc.
+
+An example of this would be:
+- You are a film critic. Summarize Finding Nemo in 3 sentences, focusing on the main plot. Highlight the emotional themes of family and perseverance. End with a one-line moral lesson.
+
+This prompt includes role (film critic), constraints (3 sentences), focus (main plot, emotional themes), output structure (ending with one-line lesson).
+
+## Experiment 1.1
+### Casual Prompt
+```
+Prompt: Summarize "Finding Nemo" movie for me
+Result:
+Here’s a quick, spoiler-light summary of Finding Nemo:
+
+Marlin, an anxious clownfish, loses his son Nemo when the curious kid is captured by a diver and placed in a dentist’s fish tank in Sydney. Determined to get him back, Marlin crosses the ocean, reluctantly teaming up with Dory, a cheerful blue tang with short-term memory loss. Along the way they survive sharks, jellyfish, and a surfer-dude sea turtle named Crush, learning courage and trust. Meanwhile, Nemo plots escape with the tank gang. Father and son’s parallel journeys push both to grow—Marlin learns to let go and believe in Nemo, and Nemo gains confidence and independence.
+
+Themes: parental love, overprotection vs. resilience, friendship, and facing fears—with lots of humor and heart from Pixar’s vibrant undersea world.
+```
+### Engineered Prompt
+```
+Prompt: You are a film critic. Summarize *Finding Nemo* in 3 sentences, focusing on the main plot. Highlight the emotional themes of family and perseverance. End with a one-line moral lesson.
+Result:
+Finding Nemo follows Marlin, a fearful clownfish father, as he crosses the ocean to rescue his captured son, Nemo, who’s stuck in a Sydney dentist’s fish tank. Along the way, Marlin partners with the forgetful yet steadfast Dory, surviving sharks, jellyfish, and the open sea while Nemo, encouraged by the tank gang, discovers his own courage and ingenuity. Their parallel struggles converge in a reunion that softens Marlin’s overprotectiveness and celebrates Nemo’s growing independence, underscoring how love steels perseverance.
+
+Moral: Trust empowers growth—letting go is sometimes the bravest way to hold on.
+```
+
+Here, something I noticed: Prompt engineering doesn't necessarily make a huge difference on simple, well-trained tasks like the example above. My teacher (ChatGPT) says prompt engineering really shines when you need consistency, control or specialized behavior. Here is another example to highlight this point.
+
+## Experiment 1.2 
+### Casual Prompt
+```
+Prompt: 
+Extract the important details from this customer complaint:
+
+"Hi, my name is Sarah Johnson. I ordered a blender last week but it arrived broken. Please send a replacement quickly, I need it before Saturday."
+
+Result:
+Here are the key details pulled from the complaint:
+
+Customer name: Sarah Johnson
+
+Product: Blender
+
+Issue: Arrived broken (damaged on arrival)
+
+Requested action: Send a replacement
+
+Urgency: “Quickly”; needs it before Saturday (exact date depends on when this was received; if today is Sep 24, 2025, Saturday is Sep 27, 2025)
+
+Order timing: “Last week” (no exact date)
+
+Missing info to resolve fast: order number, shipping address/confirmation, preferred contact method.
+```
+### Engineered Prompt
+```
+Prompt:
+You are a data extraction system. From the following text, extract the customer_name, product, issue, and urgency. Return the result in valid JSON with keys: customer_name, product, issue, urgency.
+
+Text: "Hi, my name is Sarah Johnson. I ordered a blender last week but it arrived broken. Please send a replacement quickly, I need it before Saturday."
+
+Result:
+{
+"customer_name": "Sarah Johnson",
+"product": "blender",
+"issue": "arrived broken",
+"urgency": "replacement requested quickly; needed before Saturday"
+}
+```
+
+While in a quick glance, it might appear that the casual prompt gave richer details and thus might be better the engineered prompt gives two critical advantages:
+
+- Reliability
+  - JSON is machine parseable
+  - This result can be fed directly into a pipeline, or API
+  - the output will always have the same keys.
+  
+- Control
+  - You can expand the fields as needed (say add order number)
+  - specify strict formats
+  - force errors when data is missing.
+
+Neither is better than the other, it depends on what purpose you use it for.
+
+## Experiment 1.3
+### Casual Prompt (Rich Extraction Casual Style)
+```
+Prompt:
+
+Extract all useful details from this customer complaint, including inferred context (like missing info or urgency reasoning). Write in natural language for a human support agent.
+
+Input:
+"Hi, my name is Sarah Johnson. I ordered a blender last week but it arrived broken. Please send a replacement quickly, I need it before Saturday."
+
+Result:
+Here’s a concise, agent-ready brief:
+
+Summary:
+Sarah Johnson reports that the blender she ordered last week arrived broken. She’s asking for a replacement to be sent quickly and specifically needs it before Saturday.
+
+Key details provided:
+
+Customer name: Sarah Johnson
+
+Product: Blender
+
+Problem: Item arrived damaged (DOA)
+
+Requested action: Replacement (not a refund)
+
+Deadline/urgency: Needs delivery before Saturday → with today being Sep 24, 2025 (Wed), the deadline is Sep 27, 2025 (Sat).
+
+Order timing: “Last week” (exact date not given)
+
+Inferred context & reasoning:
+
+This is likely a standard DOA replacement; speed of fulfillment is critical due to the stated deadline.
+
+Shipping method may need to be expedited to arrive by Sep 27 depending on warehouse location and cutoff times.
+
+Missing info to resolve quickly:
+
+Order number and email/phone on the order
+
+Shipping address (confirm if same as original)
+
+Preferred replacement option (same model) and consent to reship
+
+Photo of damage (if policy requires)
+
+Any constraints for delivery (e.g., no-signature, leave at door)
+
+Recommended next steps for the agent:
+
+Locate the order using name + email/phone; request the order number if needed.
+
+Offer an immediate replacement with expedited shipping to meet the Sep 27 deadline.
+
+If policy requires evidence, ask for a quick photo of the damage but don’t let it delay dispatch (allow post-shipment submission if policy permits).
+
+Provide an ETA and tracking once processed; set expectations on cutoff times.
+
+One-paragraph reply draft:
+“Hi Sarah, I’m so sorry your blender arrived damaged—that’s not the experience we want for you. I can send a replacement right away and make sure it arrives before Saturday (Sep 27). Could you please share your order number and confirm the shipping address? If you have a quick photo of the damage, that helps us improve our packaging, but we won’t let that delay your replacement. Once I have those details, I’ll process an expedited reship and send your tracking info immediately.”
+```
+
+### Structured Extraction (Engineered Style)
+```
+Prompt:
+Now, from the same text, extract only the structured data fields: customer_name, product, issue, urgency. Return in valid JSON only.
+Result:
+
+{
+"customer_name": "Sarah Johnson",
+"product": "blender",
+"issue": "arrived broken",
+"urgency": "replacement requested quickly; needed before Saturday"
+}
+```
+
+Here we see the rich extraction has the following features (or lack of):
+
+- Agent ready brief with context and missing info, and suggested reply draft
+- Human friendly
+- Not consistent
+
+And the structured extraction is
+
+- machine usable
+- consistent
+- but loses any nuances. 
+
+
+# Phase 1 – Lesson 2: Prompt Templates & Structures
+
+The goal of this lesson is to learn how to design reusable prompt templates instead of one-off prompts.  A prompt template is like a function definition. It is a prompt with placeholders that you can fill in later. Example:
+Instead of writing "Summarize the movie 'Finding Nemo' in 3 sentences", I can use a template of the format "Summarize the movie {movie_name} in {n_sent} sentence". Now I can use this template for any movies and get any value for n_sent in my output.
+
+A good template usually includes
+
+1. Role/Instructrucion
+2. Task/Goal
+3. Constraints
+4. Placeholder
+
+## Experiment 2.1.1:
+### Casual one-off prompt
+```
+Prompt: Summarize this meeting transcript
+Alice: We need to finalize the Q4 marketing budget.
+Bob: Agreed. Let’s set it at $50,000 and allocate 60% to digital ads.
+Carol: Deadline for campaign launch is November 1.
+Dave: Action items — Bob drafts budget proposal, Carol coordinates with design.
+
+Result:
+
+Q4 Marketing Meeting – Summary
+
+Decision: Set the Q4 marketing budget at $50,000 with 60% allocated to digital ads.
+
+Deadline: Campaign launch on November 1.
+
+Action Items:
+
+Bob: Draft the budget proposal.
+
+Carol: Coordinate with the design team.
+```
+### Engineered template
+```
+Prompt:
+You are an executive assistant. Summarize the following meeting transcript in {n_bullet_points} bullet points. Focus on action items, decisions made, and deadlines. Format as Markdown.
+Transcript: {meeting_transcript}
+
+Where
+
+- n_bullet_points = 5
+- meeting_transcrpt =  "Alice: We need to finalize the Q4 marketing budget.
+Bob: Agreed. Let’s set it at $50,000 and allocate 60% to digital ads.
+Carol: Deadline for campaign launch is November 1.
+Dave: Action items — Bob drafts budget proposal, Carol coordinates with design."
+
+Result:
+
+- Decision: Set the Q4 marketing budget at $50,000.
+- Allocation: 60% of the budget goes to digital ads.
+- Deadline: Campaign launch on November 1.
+- Action Item (Bob): Draft the budget proposal.
+- Action Item (Carol): Coordinate with the design team for campaign assets.
+```
+
+The casual one off prompt gave a clear summary but the output format wasn't guarenteed. This is less reliable when you need to automate or parse the results.
+
+The engineered template was structured, gave exact number of points requested, and each point started with an action item .
+
+This is how you'd use this template programmatically in Python.
+
+```python
+template = """
+You are an executive assistant. Summarize the following meeting transcript in {n_bullet_points} bullet points. 
+Focus on action items, decisions made, and deadlines. Format as Markdown.
+
+Transcript: {meeting_transcript}
+"""
+
+filled_prompt = template.format(
+    n_bullet_points=5,
+    meeting_transcript="""
+    Alice: We need to finalize the Q4 marketing budget.
+    Bob: Agreed. Let’s set it at $50,000 and allocate 60% to digital ads.
+    Carol: Deadline for campaign launch is November 1.
+    Dave: Action items — Bob drafts budget proposal, Carol coordinates with design.
+    """
+)
+
+print(filled_prompt)
+
+```
+Let's try another transcript on this template to see the consistency. 
+## Experiment 2.1.2
+```
+Prompt:
+Same as Experiment 2.1.1 with n_bullet_points = 5 and 
+
+meeting_transcript =  "Alice: We need to finalize the agenda for the annual company retreat.
+Bob: Let’s hold it on December 10–12 in San Diego.
+Carol: We should include team-building workshops and a keynote from the CEO.
+Dave: Action items — Bob books the venue, Carol drafts the agenda, Alice confirms with the CEO."
+
+Result:
+
+- Decision: Schedule the annual company retreat for December 10–12 in San Diego.
+- Agenda focus: Include team-building workshops and a CEO keynote.
+- Action item (Bob): Book the venue.
+- Action item (Carol): Draft the retreat agenda.
+- Action item (Alice): Confirm CEO availability for the keynote.
+```
+
+# Phase 1 – Lesson 3: Controlling Outputs (Format, Style, Tone, Length)
+
+In this section, I look at how to turn "good" outputs to exactly what we want. For example, we want the output in .JSON, or in bulletpoints, etc. This matters because for certain use cases the output has to be
+
+- Parseable
+- Consistent
+- Usable
+
+## Experiment 3.1
+### Casual Prompt
+```
+Prompt:
+Analyze this customer review: “The laptop is fast, but the battery dies in 2 hours. Pretty disappointed.”
+
+Result:
+
+Quick analysis
+
+Overall sentiment: Mixed → trending negative (disappointment outweighs the single positive).
+
+Pros (explicit): Fast performance.
+
+Cons (explicit): Battery life ~2 hours (far below typical expectations).
+
+Severity/impact: High — battery life is a core usability factor; likely to drive returns or low ratings.
+
+Implied expectations: User expected several hours of untethered use; 2 hours feels unacceptable for their workload.
+
+Risk signals: “Pretty disappointed” suggests buyer’s remorse and potential churn.
+
+What to do next (support + product)
+
+Support triage:
+
+Ask for model/OS, power profile, background processes, screen brightness, and battery health report.
+
+Offer steps: switch to balanced/battery-saver, update BIOS/drivers, recalibrate battery, check for runaway processes.
+
+If spec says >2 hrs, offer replacement or battery service; if within spec, consider goodwill remedy.
+
+Product feedback:
+
+Investigate real-world battery runtime; review power management defaults.
+
+Consider shipping with more conservative performance profile or clearer battery-life disclosures.
+
+Suggested reply to the customer
+
+“Thanks for the honest feedback—and I’m sorry the battery isn’t meeting your needs. The good news is your laptop’s performance looks great, but 2 hours of runtime isn’t acceptable for most workflows. I can help: could you share your model number and current power settings? We’ll run a quick check (updates, power profile, battery health) and, if needed, arrange a replacement or battery service so you get the battery life you expected.”
+
+```
+
+### Engineered Prompt
+```
+Prompt:
+You are a sentiment analysis system. From the following text, extract:
+
+customer_name (if mentioned, otherwise null)
+
+feedback_category (product aspect mentioned)
+
+sentiment (positive, negative, or neutral)
+
+Return the result in valid JSON only.
+
+Review: {review_text}
+
+Where review_text = "The laptop is fast, but the battery dies in 2 hours. Pretty disappointed."
+
+Result:
+{
+"customer_name": null,
+"feedback_category": "battery life",
+"sentiment": "negative"
+}
+
+```
+
+Now lets try a different tone (sarcastic review), and get a structured .JSON output from it. 
+
+We see that
+
+- You can force models into specific formats (JSON, Markdown, tables).
+- This is critical when outputs are going into systems, not humans.
+
+Let's twist it up and send a sarcastic review. 
+
+## Experiment 3.2
+```
+Prompt:
+You are a sentiment analysis system. From the following sarcastic review, extract:
+
+customer_name (if mentioned, otherwise null)
+
+feedback_category (product aspect mentioned)
+
+sentiment (positive, negative, or neutral)
+
+Return the result in valid JSON only.
+
+Review: {review_text}
+
+Where review_text = "Oh fantastic, the laptop runs faster than lightning — too bad the battery lasts about as long as a sneeze. Perfect design choice, really."
+
+Result:
+{
+"customer_name": null,
+"feedback_category": "battery life",
+"sentiment": "negative"
+}
+
+```
+
+
+# Phase 2 - Lesson 4: Few-Shot Prompting.
+
+In this section, we learn to guide the model's behavior using examples inside of the prompt. Instead of just tellingthe model what to do, you show it by examples. The model should learn the pattern from the examples, and apply it to new cases.
+
+## Experiment 4.1
+
+```
+Prompt: 
+You are a sentiment classifier. Classify the sentiment of a review as Positive, Negative, or Neutral.  
+
+Examples:  
+Review: "The phone is amazing, battery lasts forever!"  
+Sentiment: Positive  
+
+Review: "The camera quality is terrible for the price."  
+Sentiment: Negative  
+
+Review: "The laptop works fine, nothing special."  
+Sentiment: Neutral  
+
+Now classify this review:  
+Review: "The laptop is fast, but the battery dies in 2 hours. Pretty disappointed."  
+Sentiment:
+
+Result:
+Negative	
+```
+
+
+# Phase 2 - Lesson 5: Chain-Of-Thought-Prompting
+
+In this section we learn how to get the model to reason step-by-step before giving an answer. This improves accuracy for logic and complex decision-making tasks. This improves transparancy as we can see how the model reached its conclusion, as well as improve our ability to debug as we can see if at any step the reasoning is wrong (and thus refine the prompt).
+
+## Experiment 5.1
+### Zero-Shot (i.e., no chain of thought)
+```
+Prompt: If a train travels 60 miles per hour for 2.5 hours, how far does it travel?
+
+Result:
+150 miles.
+Distance = speed × time = 60 mph × 2.5 h = 150 miles.
+```
+### Chain of Thought
+```
+Prompt: If a train travels 60 miles per hour for 2.5 hours, how far does it travel?
+Let’s solve this step by step.
+
+Result:
+
+1. Identify the formula
+Distance = Speed × Time
+
+2. Plug in the values
+Speed = 60 miles/hour
+Time = 2.5 hours
+
+3. Multiply carefully
+60 × 2.5 = 60 × (5/2) = (60 ÷ 2) × 5 = 30 × 5 = 150
+
+4. Attach units
+150 miles
+
+Answer: 150 miles.
+```
+
+From the results, we see that the model broke down the problem into 4 steps when using a chain-of-thought prompting. You make the model show its work. Let's try a more complex example here.
+
+## Experiment 5.2
+### Zero-Shot
+```
+Prompt:
+Scenario: Business Decision
+
+A company is deciding between two marketing strategies for a new product launch:
+
+Social Media Ads
+
+Cost: $5,000
+
+Expected Reach: 50,000 people
+
+Conversion Rate: 2%
+
+Profit per Sale: $10
+
+Email Campaign
+
+Cost: $3,000
+
+Expected Reach: 20,000 people
+
+Conversion Rate: 5%
+
+Profit per Sale: $12
+
+Question: Which strategy gives higher net profit, and by how much?
+
+Result:
+
+Email Campaign wins by $4,000.
+
+Social Media Ads:
+Expected sales = 50,000 × 2% = 1,000 → Gross profit = 1,000 × $10 = $10,000 → Net = $10,000 − $5,000 = $5,000
+
+Email Campaign:
+Expected sales = 20,000 × 5% = 1,000 → Gross profit = 1,000 × $12 = $12,000 → Net = $12,000 − $3,000 = $9,000
+
+Difference: $9,000 − $5,000 = $4,000 in favor of Email.
+
+```
+### Chain-of-Thought
+```
+Prompt:
+
+Scenario: Business Decision
+
+A company is deciding between two marketing strategies for a new product launch:
+
+Social Media Ads
+
+Cost: $5,000
+
+Expected Reach: 50,000 people
+
+Conversion Rate: 2%
+
+Profit per Sale: $10
+
+Email Campaign
+
+Cost: $3,000
+
+Expected Reach: 20,000 people
+
+Conversion Rate: 5%
+
+Profit per Sale: $12
+
+Which marketing strategy (social media ads or email campaign) gives higher net profit, and by how much? Let’s solve this step by step.
+
+Result:
+
+Step 1 — Compute expected sales
+
+Social media: 50,000 × 2% = 50,000 × 0.02 = 1,000 sales
+
+Email: 20,000 × 5% = 20,000 × 0.05 = 1,000 sales
+
+Step 2 — Compute gross profit
+
+Social media: 1,000 × $10 = $10,000
+
+Email: 1,000 × $12 = $12,000
+
+Step 3 — Subtract campaign cost (net profit)
+
+Social media: $10,000 − $5,000 = $5,000
+
+Email: $12,000 − $3,000 = $9,000
+
+Step 4 — Compare
+
+Difference: $9,000 − $5,000 = $4,000
+
+Answer: The email campaign yields the higher net profit by $4,000.
+```
+
+Both the prompts gave the correct response. And the CoT version shows clean, auditable response.
+
+# Phase 2 - Lesson 6: Multi-Turn Workflows
+
+The goal of this lesson is to design a small, realistic assistant that works across steps: gather → reason → produce structured output → finalize. In experiment 6.1 I am given a bug report (input_text). I have to prompt the model to produce a bug-triage assistant.
+
+## Experiment 6.1
+```
+input_text = "App v2.3 on Windows 11. When exporting to CSV from the Reports page, the app freezes and CPU spikes to 100%. Large datasets (~200k rows). Happens consistently after clicking Export. No error dialog, just hangs. Need a fix before month-end reporting."
+
+Prompt (1):
+You are a senior support engineer. From the text below, extract preliminary fields and ask up to 3 clarifying questions.
+Return Markdown with two sections:
+Extracted (prelim): product/version, OS, feature, symptom, frequency, dataset size, business impact.
+Questions (max 3): only the most decision-critical.
+
+Text: {input_text}
+
+Result:
+
+Extracted (prelim)
+
+Product/Version: App v2.3
+
+OS: Windows 11
+
+Feature: Reports page → Export to CSV
+
+Symptom: App freezes and CPU spikes to 100%
+
+Frequency: Happens consistently after clicking Export
+
+Dataset Size: Large datasets (~200k rows)
+
+Business Impact: Blocks month-end reporting; urgent need for fix
+
+Questions (max 3)
+
+Can you confirm if the issue occurs only with large datasets (~200k rows), or also with smaller ones?
+
+Have you tried exporting on a different machine/OS to rule out environment-specific issues?
+
+Do you need an immediate workaround (e.g., partial export, alternate format) to meet the month-end deadline while a fix is developed?
+
+Prompt (2):
+Answers to Clarifying Questions 
+
+Scope/size: Exports succeed for small datasets (<50k rows). At ~100k rows it slows noticeably; at 200k+ it consistently freezes.
+
+Environments tried: Reproduced on two Windows 11 machines. A colleague on macOS 14 also sees a hang (CPU spike is lower but the app never completes). Same App v2.3.
+
+Workaround need: Yes—urgent. Narrowing the date range to ~50k rows does export; a chunked/partial export would help us meet the month-end deadline.
+
+Give step by step reasoning. Give output in .json format
+
+Result:
+{ "extracted_prelim": {
+                       "product_version": "App v2.3", "os": ["Windows 11", "macOS 14"],
+                       "feature": "Reports > Export to CSV",
+                       "symptom": "Export hangs/freezes during CSV generation; on Windows CPU spikes to ~100%, on macOS CPU spike lower but never completes; no error dialog",
+                       "frequency": "Consistent when dataset >= 200k rows; noticeable slowdown around 100k; succeeds for < 50k",
+                       "dataset_size": { "success_under_rows": 50000, "slow_around_rows": 100000, "freeze_at_or_above_rows": 200000 },
+                       "business_impact": "Blocks month-end reporting; urgent workaround/fix needed",
+                       "reproducibility": true,
+                       "environments_tried": [ "Two Windows 11 machines", "macOS 14 (colleague) — same app v2.3" ],
+                       "workaround_needed": true, "current_workaround": "Narrowing date range to ~<=50k rows exports successfully; chunked/partial export requested"
+		       },
+  "analysis_summary": "Issue presents as a large-dataset performance bottleneck in CSV export that leads to UI hang; cross-OS reproducibility suggests an algorithmic/implementation constraint rather than a single-environment defect.",
+  "immediate_workaround_plan": [ "Perform chunked exports by date or filters to keep each export <= 50k rows; combine CSVs after export.", "If possible, disable non-essential columns/filters to reduce row count per export." ],
+  "next_steps_for_support_engineering": [ "Enable verbose export logging and capture a hang snapshot (Windows: collect process dump during 100% CPU; macOS: sample the process) on a ~200k-row dataset.",
+                                          "Validate whether export is single-threaded or buffering entire dataset in memory; test with intermediate size (e.g., 150k) to confirm threshold behavior.",
+					  "Escalate to engineering with repro details and request evaluation of a streaming/batched CSV writer and UI progress/cancel handling." ],
+  "severity": "High",
+  "sla_note": "Customer needs a reliable workaround before month-end reporting." }
+
+Prompt (3):
+
+You are a support engineer preparing artifacts. 
+Use the JSON triage result below and package it into:
+
+A) A JIRA-ready JSON object with fields:
+- summary
+- description
+- severity
+- environment
+- steps_to_reproduce
+- expected_result
+- actual_result
+- workaround
+
+B) A release note sentence (user-facing, plain language).
+
+Return a single JSON object with keys "jira" and "release_note".
+
+Result:
+
+{
+  "jira": {
+    "summary": "App v2.3 freezes during CSV export of large datasets (>=200k rows)",
+    "description": "When attempting to export reports to CSV in App v2.3, the application freezes and CPU usage spikes (100% on Windows, moderate on macOS) with no error dialog. The issue reproduces consistently with large datasets (>=200k rows), slows significantly around 100k rows, but succeeds below ~50k rows. Verified on Windows 11 and macOS 14 environments. This blocks month-end reporting and requires an urgent fix or workaround.",
+    "severity": "High",
+    "environment": "App v2.3 on Windows 11 (two machines) and macOS 14",
+    "steps_to_reproduce": [
+      "Open App v2.3 on Windows 11 or macOS 14.",
+      "Navigate to Reports page.",
+      "Attempt to export a dataset with ~200k rows to CSV.",
+      "Observe app behavior."
+    ],
+    "expected_result": "CSV export completes successfully, regardless of dataset size, with progress feedback and without freezing.",
+    "actual_result": "Application hangs after clicking Export, CPU spikes (100% on Windows, lower but still unresponsive on macOS), and no error dialog is shown. Export never completes.",
+    "workaround": "Narrow the date range or filter results to reduce dataset size to <=50k rows; export smaller chunks separately and merge manually."
+  },
+  "release_note": "Fixed an issue where exporting large report datasets (>=200k rows) to CSV could cause the app to freeze; exports now complete reliably without hangs."
+}
+
+```
+
+Had I given prompt (2) as follows, I'd get CoT results which are step by step reasoning, as well as the output in .json format. 
+
+1. “Think step-by-step; return numbered reasoning only.”
+2. “Now produce JSON only, using that reasoning.”
+
+After prompt (3), we get a structured result with the analysis, reasoning, summary as well as a release note.  The release note said “fixed” because the model assumes release notes are retroactive. To avoid that, make the instruction precise (e.g., “write a known issue note” vs “write a release note”).
+
+
+Few observations after Lesson 6:
+
+1. Single prompts are limited as it may mix details, reasoning and formatting together. Multi-turn prompting can solve this problem
+2. Multi-turn prompts can divide a task into different components. In the experiment 6.1, it broke down the problem into intake, triage, and outputs.
+3. We can use such a system for
+   - engineering support (automate bug resolutions)
+   - customer support (complaints can flow into structured logs, escalation tickets, and response templates)
+   - business process (where messy human input need to be structured into clean actionable, and parsable outputs).
+
+
+
+# Phase 3 - Lesson 7: Designing Prompt Workflows
+
+The goal of this lesson is to learn to build a complete prompt-driven system design (not just isolated prompts), with clear inputs, steps, fallback logic, and output schema. A prompt workflow is an orchestration of prompts+logic+post processing so that each component does a well defined task.
+
+Input → Prompt A → (Post-process) → Prompt B → (Post-process) → Final Output.
+
+The following are components that are typically included in a prompt workflow
+
+1. Input capture
+   Accept user text. e.g., bug report or customer message
+2. Prompt template(s)
+   Structured instructions with placeholders 
+3. Decision logic
+   Choose which prompt to fire and ask clarifying questions
+4. Post processing
+   Validate, clean and combine prompt outputs
+5. Final packaging
+   Format for downstream use cases
+6. Error handling
+   Handle failed completions.
+
+Prompt workflow is different from multi-turn prompting in the following senses
+
+1. designed for automation
+2. each turn (input -> output) is predefined and modular
+3. it is a pipeline and not a conversation with a model.
+4. output can flow into other systems.
+
+
+This is an example workflow that we can automate programmatically.
+
+1. Input
+   - Raw transcript text
+2. Prompt
+
+   A) Extraction Prompt
+	You are an executive assistant. 
+	From the following transcript, extract structured meeting data.
+
+	Return valid JSON with keys:
+	  - date
+	  - attendees
+	  - decisions (list)
+	  - action_items (list of objects with keys: owner, task, deadline)
+
+   Transcript:
+   {meeting_transcript}
+   
+   B) Quality Check
+        - if any field is missing, flag it as null
+        - trigger clarification prompt (e.g., no attendees mentioned, please provide list of attendees)
+
+
+   C) Summary Prompt
+   
+        You are a professional summarizer. 
+	Summarize the following meeting JSON into 3–5 sentences, 
+	highlighting decisions and action items.
+
+	JSON:
+	{extracted_json}
+	
+   D) Packaging
+   
+        Produce result in this format
+	{
+	  "extracted": {
+	  
+	    "date": "2025-09-25",
+	    
+	    "attendees": ["Alice", "Bob", "Carol", "Dave"],
+	    
+	    "decisions": ["Budget set to $50,000 with 60% for digital ads"],
+	    
+	    "action_items": [
+	    
+	      {"owner": "Bob", "task": "Draft budget proposal", "deadline": "2025-09-30"},
+	      
+	      {"owner": "Carol", "task": "Coordinate with design team", "deadline": null}
+	      
+	    ]
+	  },
+	  
+	  "summary": "On Sept 25, Alice, Bob, Carol, and Dave finalized the Q4 budget..."
+	  
+	}
+
+
+# Phase 3 - Lesson 8: API and Programmatic Use
+
+In this section, I used gemini API to run a workflow that takes a transcript and summarizes it for the user. Below are the list of files used in the workflow. Each of the files are explained in detail. 
+
+```
+├── scripts
+│   ├── run_meeting.py
+├── src
+│   ├── __pycache__
+│   │   ├── llm_client.cpython-311.pyc
+│   │   ├── models.cpython-311.pyc
+│   │   ├── prompts.cpython-311.pyc
+│   │   └── workflow_meeting.cpython-311.pyc
+│   ├── llm_client.py
+│   ├── models.py
+│   ├── prompts.py
+│   ├── workflow_meeting.py
+```
+
+First we will go thru some of the required classes and prompts and later we will see how they are used. 
+
+## src/models.py
+
+```python
+from typing import List, Optional
+from pydantic import BaseModel, Field, ValidationError
+
+class ActionItem(BaseModel):
+    owner: Optional[str] = None
+    task: str
+    deadline: Optional[str] = Field(default=None, description="YYYY-MM-DD or null")
+
+class ExtractedMeeting(BaseModel):
+    date: Optional[str] = Field(default=None, description="YYYY-MM-DD or null")
+    attendees: List[str]
+    decisions: List[str]
+    action_items: List[ActionItem]
+
+class PackagedOutput(BaseModel):
+    extracted: ExtractedMeeting
+    summary: str
+
+```
+
+- Pydantic (a data validation library; docs.pydantic.dev) lets us define structured schemas and validate model outputs.
+- Class ActionItem
+  A single task with an owner, a description, and an optional deadline
+- Class ExtractedMeeting
+  - The extracted structure we expect as the output of the LLM
+  - If the model returns malformed JSON (e.g., wrong types), Pydantic will raise a ValidationError
+- Class PackagedOutput
+  - Final object that the workflow returns. It should be machine readable JSON + human summary.
+
+## src/prompts.py
+
+```python
+EXTRACTION_PROMPT = """You are an executive assistant.
+From the transcript, extract structured meeting data.
+
+Return VALID JSON ONLY with keys exactly:
+- date (YYYY-MM-DD or null)
+- attendees (array of strings)
+- decisions (array of strings)
+- action_items (array of objects with keys: owner, task, deadline [YYYY-MM-DD or null])
+
+Rules:
+- Do not invent facts. If unknown, use null or [].
+- No text outside the JSON.
+
+Transcript:
+{meeting_transcript}
+"""
+
+CLARIFICATION_PROMPT = """You are a helpful assistant. We extracted meeting data but these fields are missing:
+{missing_fields}
+
+Return a VALID JSON array of clarification questions where each item has:
+- key: a machine-readable key (e.g., "date" or "deadline_for_<owner_slug>")
+- question: a concise user-facing question
+
+Rules:
+- For missing meeting date, include one item with key "date".
+- For missing deadlines, include one item per owner with key "deadline_for_<owner_slug>" where owner_slug is the lowercase owner name with spaces replaced by underscores (e.g., "deadline_for_alice_smith").
+- Only include keys for fields that are missing.
+- No text outside the JSON.
+"""
+
+SUMMARY_PROMPT = """You are a professional summarizer.
+Using ONLY this JSON, write a 3–5 sentence summary highlighting decisions and action items.
+Keep it factual; do not invent.
+
+JSON:
+{extracted_json}
+"""
+
+```
+
+- EXTRACTION_PROMPT
+  - Instructs the model to return VALID JSON only with the keys date, attendees, decisions, and action_items
+  - {meeting_transcript} gets added during runtime.
+
+- CLARIFICATION_PROMPT
+  - If we detect missing pieces, we will ask the model to write upto 3 questions.
+
+- SUMMARY_PROMPT
+  - converts validated JSON into a human readable summary. 
+
+
+## src/workflow_meeting.py
+
+### run_workflow()
+The first function that we use in this src file is run_workflow. It does the following
+
+It orchestrates the whole pipeline:
+
+1. Choose a model (based on PROVIDER).
+2. Extract structured JSON from the transcript.
+3. Validate JSON against the Pydantic schema.
+4. Clarify (optionally): generate machine-readable questions for missing fields; optionally merge user_answers.
+5. Summarize the validated JSON into prose.
+6. Package both pieces into a PackagedOutput.
+7. Optionally return the clarification questions to the caller.
+
+
+```python
+def run_workflow(transcript: str, user_answers: dict | None = None, model: str | None = None, return_questions: bool = False) -> PackagedOutput:
+    provider = os.getenv("PROVIDER", "openrouter").lower()
+    if model is None:
+        model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash") if provider == "gemini" else get_default_model()
+
+    # Step A: Extraction
+    raw = extract_meeting_json(transcript, model)
+
+    # Validate against schema
+    try:
+        extracted = ExtractedMeeting.model_validate(raw)
+    except ValidationError as e:
+        raise ValueError(f"Extraction schema validation failed: {e}") from e
+
+    # Step B: Check & (optional) clarify
+    # missing = find_missing_fields(extracted.model_dump())
+    missing = build_missing_keys(extracted.model_dump())
+    questions = ask_clarifications(extracted.model_dump(), model) if missing else [] #missing
+    if user_answers:
+        patched = apply_clarifications(extracted.model_dump(), user_answers)
+        extracted = ExtractedMeeting.model_validate(patched)
+
+    # Step C: Summary
+    summary = make_summary(extracted.model_dump(), model)
+
+    # Step D: Package
+    packaged = PackagedOutput(extracted=extracted, summary=summary)
+    return (packaged, questions) if return_questions else packaged
+
+```
+
+### extract_meeting_json
+
+```python
+def extract_meeting_json(transcript: str, model: str) -> dict:
+    prompt = EXTRACTION_PROMPT.format(meeting_transcript=transcript)
+    for attempt in range(2):
+        text = chat(model, prompt, temperature=0.2)
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            start = text.find("{")
+            end = text.rfind("}")
+            if start != -1 and end != -1 and end > start:
+                chunk = text[start:end+1]
+                try:
+                    return json.loads(chunk)
+                except Exception:
+                    pass
+            # tighten and retry
+            prompt = prompt + "\n\nIMPORTANT: Return VALID JSON ONLY. No prose, no code fences."
+    raise ValueError("Failed to parse extraction JSON after retries.")
+
+```
+
+
+
+
+# Developer-Oriented Prompt Engineering Syllabus
+
+
+## Phase 1: Foundations (Prompt Basics)
+
+Prompt Engineering vs. Casual Use
+
+Roles, context, constraints.
+
+Hands-on: casual vs engineered prompts (experimenting in chat).
+
+Prompt Templates & Structures
+
+Placeholders, parameterization.
+
+Hands-on: design a reusable summarization template.
+
+Controlling Output
+
+Formatting, style, tone, length.
+
+Hands-on: generate structured JSON responses for downstream use.
+
+## Phase 2: Advanced Prompting Techniques
+
+Few-Shot Prompting
+
+Using examples to guide the model.
+
+Hands-on: sentiment classifier with few-shot examples.
+
+Chain-of-Thought Prompting
+
+For reasoning tasks.
+
+Hands-on: step-by-step math/logic prompts.
+
+Multi-Turn Workflows
+
+Breaking tasks into steps across prompts.
+
+Hands-on: design a mini Q&A assistant with follow-up refinement.
+
+## Phase 3: Workflows & Deployment
+
+Designing Prompt Workflows
+
+Input capture → prompt template → response → post-processing.
+
+Hands-on: build a workflow that turns meeting notes into action items.
+
+APIs & Programmatic Use
+
+OpenAI API basics, LangChain, LlamaIndex, or direct scripting.
+
+Hands-on: call an API with a prompt template in Python.
+
+Prompt Libraries & Modularity
+
+Organizing reusable prompts.
+
+Hands-on: build a small “prompt toolkit” for text analysis tasks.
+
+## Phase 4: Evaluations & Integrations
+
+Prompt Evaluation
+
+Measuring consistency, accuracy, robustness.
+
+Hands-on: run A/B tests on two prompt versions.
+
+Integration into Systems
+
+Connecting to pipelines, apps, or workflows.
+
+Hands-on: integrate a prompt workflow into a data science pipeline (e.g., automated report generation).
+
+Best Practices & Maintenance
+
+Avoiding pitfalls, documenting prompts, versioning.
+
+Hands-on: write a “prompt spec” for one of your workflows.
+
+## Phase 5: Capstone
+
+Mini Project (Capstone)
+
+Choose one:
+
+A text analysis pipeline (summarization, classification, insight extraction).
+
+A developer tool (docstring generator, code reviewer, query explainer).
+
+A workflow assistant (turn raw data into polished insights).
+
+Deliverable: A working prototype + blog post documenting it.

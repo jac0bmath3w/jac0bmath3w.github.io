@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/1a20e746c62c4c3c8eca4422c3306691/artifacts
+end_time: 1755996941057
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: 1a20e746c62c4c3c8eca4422c3306691
+run_name: casual-mouse-617
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755996940963
+status: 3
+tags: []
+user_id: jacob

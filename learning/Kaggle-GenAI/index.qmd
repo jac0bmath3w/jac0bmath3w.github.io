@@ -1,0 +1,48 @@
+---
+title: "Kaggle 5-day Agents Intensive Course"
+author: "Jacob Mathew"
+date: Sun Nov  9 20:41:11 CST 2025
+categories: [GenAI, agents,  data_science]
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-tools: true
+---
+
+I'm documenting what I learned in the Kaggle 5-Day AI Agents intensive course. 
+
+# Day 1: Introduction to Agents
+
+## Livestream Notes
+
+"Next revolution of AI would be by agents"-Kanchana Patolla
+
+Anant Nawalgaria: Whitepaper Overview.
+
+1. Core Agent Architecture
+(models, Tools, Orchestration)
+2. The "Think, Act, Observe"
+(Problem-Solving Loop)
+3. Taxonomy of Agentic Systems
+4. Multi-Agent Systems & Design
+5. Agent Interoperability
+6. Security: Agent Indentity &
+
+Industry Experts
+1. Mke Clark, Director, Agents Platform, Google
+2. Michael Gerstenhaber, VP (Product Management, Vertex Platform), Google 
+3. Antonio Gulli, Distinguished Engineer, Google
+4. Alan Blount, Product Manager (former Software Engineer), Google
+
+
+AI agents take things one step further than just giving prompt to an LLM
+
+Prompt -> Agent -> Thought -> Action -> Observation -> Final Answer
+
+
+
+# Day 2: Agent Tools
+
+
+

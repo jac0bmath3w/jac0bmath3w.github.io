@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/ff1b71fd37a94253a83ac494d145a7ce/artifacts
+end_time: 1755997361036
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: ff1b71fd37a94253a83ac494d145a7ce
+run_name: unique-calf-121
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997360795
+status: 3
+tags: []
+user_id: jacob

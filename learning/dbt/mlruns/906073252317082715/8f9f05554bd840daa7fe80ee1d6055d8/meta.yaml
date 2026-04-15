@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/8f9f05554bd840daa7fe80ee1d6055d8/artifacts
+end_time: 1755998536428
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: 8f9f05554bd840daa7fe80ee1d6055d8
+run_name: indecisive-pig-270
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755998536326
+status: 3
+tags: []
+user_id: jacob

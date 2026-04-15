@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/e16332ed8b42400f90d7798ea63bbdf6/artifacts
+end_time: 1755996940623
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: e16332ed8b42400f90d7798ea63bbdf6
+run_name: angry-zebra-196
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755996940530
+status: 3
+tags: []
+user_id: jacob

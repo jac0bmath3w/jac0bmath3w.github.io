@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/e2837490f4ee482e81147ae0c9ba56fd/artifacts
+end_time: 1755998544510
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: e2837490f4ee482e81147ae0c9ba56fd
+run_name: abrasive-tern-228
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755998544423
+status: 3
+tags: []
+user_id: jacob

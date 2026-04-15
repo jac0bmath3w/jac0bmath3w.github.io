@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/9cd85198ab9e4b9fa059b65eb9c0ff83/artifacts
+end_time: 1755997524394
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: 9cd85198ab9e4b9fa059b65eb9c0ff83
+run_name: whimsical-loon-745
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997524290
+status: 3
+tags: []
+user_id: jacob

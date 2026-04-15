@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/4dcbacfdd723483da8a066bbb90d444d/artifacts
+end_time: 1755997517441
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: 4dcbacfdd723483da8a066bbb90d444d
+run_name: aged-bass-798
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997517227
+status: 3
+tags: []
+user_id: jacob

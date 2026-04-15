@@ -7,6 +7,7 @@ website:
   repo-url: "https://github.com/jac0bmath3w/jac0bmath3w.github.io"
   navbar:
     left:
+<<<<<<< Updated upstream
         - text: Home
           href: index.qmd
         - text: Probability
@@ -23,20 +24,40 @@ website:
           menu:
             - text: DBT
               href: learning/dbt/index.qmd	      
+=======
+      - text: Home
+        href: index.qmd
+      - text: Probability
+        menu:
+          - text: Dice Game
+            href: posts/dice-game/index.qmd
+          - text: Coin Toss Pattern
+            href: posts/coin-toss-patterns/index.qmd
+      - text: Projects
+        menu:
+          - text: Wheel Failure Prediction
+            href: projects/wheel-failure-pred/index.qmd
+          - text: "---"
+          - text: "Artificial Intelligence"
+          - text: Agentic AI (Resume Enhancer Agent)
+            href: projects/resume-enhancer-agent/index.qmd
+          - text: LLM for Rail Use Case
+            href: projects/rail-llm/index.qmd
+      - text: Learning
+        menu:
+          - text: DBT
+            href: learning/dbt/index.qmd
+          - text: MLFlow
+            href: learning/mlflow/index.qmd
+          - text: Prompt Engineering
+            href: learning/prompt_engineering/index.qmd
+      - text: About
+        href: about/index.qmd
+>>>>>>> Stashed changes
 
-        - text: About
-          href: about/index.qmd
-      # - about.qmd
-      # - icon: github
-      #   href: https://github.com/
-      # - icon: twitter
-      #   href: https://twitter.com
 format:
   html:
     theme:
       - cosmo
       - brand
     css: styles.css
-
-
-

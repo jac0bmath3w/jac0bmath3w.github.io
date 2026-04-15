@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/bc940c1f611f4790899b51c63a2438f8/artifacts
+end_time: 1755999502658
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: bc940c1f611f4790899b51c63a2438f8
+run_name: learned-shrike-682
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755999502573
+status: 3
+tags: []
+user_id: jacob

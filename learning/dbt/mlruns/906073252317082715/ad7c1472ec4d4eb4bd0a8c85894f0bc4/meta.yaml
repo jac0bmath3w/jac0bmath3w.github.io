@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/ad7c1472ec4d4eb4bd0a8c85894f0bc4/artifacts
+end_time: 1755997314825
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: ad7c1472ec4d4eb4bd0a8c85894f0bc4
+run_name: ambitious-stag-765
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997314754
+status: 3
+tags: []
+user_id: jacob

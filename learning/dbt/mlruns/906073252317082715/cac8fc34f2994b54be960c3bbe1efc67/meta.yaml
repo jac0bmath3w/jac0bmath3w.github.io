@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/cac8fc34f2994b54be960c3bbe1efc67/artifacts
+end_time: 1755996941335
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: cac8fc34f2994b54be960c3bbe1efc67
+run_name: puzzled-swan-263
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755996941252
+status: 3
+tags: []
+user_id: jacob

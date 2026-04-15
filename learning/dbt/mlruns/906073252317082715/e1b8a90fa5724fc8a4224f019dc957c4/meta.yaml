@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/e1b8a90fa5724fc8a4224f019dc957c4/artifacts
+end_time: 1755997523394
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: e1b8a90fa5724fc8a4224f019dc957c4
+run_name: sneaky-doe-51
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997523285
+status: 3
+tags: []
+user_id: jacob

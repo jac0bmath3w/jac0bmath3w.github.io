@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/d18bc418ff31437eaf5b3abcd5286f34/artifacts
+end_time: 1755999217328
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: d18bc418ff31437eaf5b3abcd5286f34
+run_name: nebulous-bug-316
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755999217011
+status: 3
+tags: []
+user_id: jacob

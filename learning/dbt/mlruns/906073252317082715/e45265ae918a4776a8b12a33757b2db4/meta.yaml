@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/e45265ae918a4776a8b12a33757b2db4/artifacts
+end_time: 1755999499960
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: e45265ae918a4776a8b12a33757b2db4
+run_name: smiling-foal-633
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755999499888
+status: 3
+tags: []
+user_id: jacob

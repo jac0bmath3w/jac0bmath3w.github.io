@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/0af2dc8e4cd1495ab654312d52be9275/artifacts
+end_time: 1755997310355
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: 0af2dc8e4cd1495ab654312d52be9275
+run_name: aged-shark-917
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997310212
+status: 3
+tags: []
+user_id: jacob

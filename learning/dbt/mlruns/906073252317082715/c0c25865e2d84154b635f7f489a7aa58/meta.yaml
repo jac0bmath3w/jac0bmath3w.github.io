@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/c0c25865e2d84154b635f7f489a7aa58/artifacts
+end_time: 1755997520463
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: c0c25865e2d84154b635f7f489a7aa58
+run_name: powerful-cod-347
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997520203
+status: 3
+tags: []
+user_id: jacob

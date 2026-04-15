@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/a5d56b82835d43f7bd4a91f8f7e325ee/artifacts
+end_time: 1755996941746
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: a5d56b82835d43f7bd4a91f8f7e325ee
+run_name: nebulous-mare-431
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755996941704
+status: 3
+tags: []
+user_id: jacob

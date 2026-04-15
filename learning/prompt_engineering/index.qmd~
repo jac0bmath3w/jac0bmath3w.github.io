@@ -1,0 +1,141 @@
+---
+title: "Learning Prompt Engineering"
+author: "Jacob Mathew"
+date: Sun Aug 31 15:46:14 CDT 2025
+categories: [prompt_engineering, AI, LLM]
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-tools: true
+---
+
+# Syllabus Version 1: 
+
+## Phase 1: Foundations
+
+Lesson 1: What makes a prompt “engineered” (role, context, constraints).
+
+Lesson 2: Experimenting — casual vs engineered prompts.
+
+Lesson 3: Structuring prompts (templates, formatting, step-by-step instructions).
+
+## Phase 2: Techniques
+
+Lesson 4: Few-shot prompting (examples).
+
+Lesson 5: Chain of thought (step-by-step reasoning).
+
+Lesson 6: Advanced structures (system + user prompts, multi-turn workflows).
+
+## Phase 3: Workflows
+
+Lesson 7: Building a prompt workflow (inputs, templates, outputs).
+
+Lesson 8: Real-world mini project (choose a use case like blog drafting or summarization assistant).
+
+## Phase 4: Beyond Prompting
+
+Lesson 9: Evaluation (testing prompts systematically).
+
+Lesson 10: Integration (embedding prompts into apps, APIs, and automation).
+
+Lesson 11: Best practices + your blog publishing plan.
+
+
+# Version 2: Developer-Oriented Prompt Engineering Syllabus
+
+
+## Phase 1: Foundations (Prompt Basics)
+
+Prompt Engineering vs. Casual Use
+
+Roles, context, constraints.
+
+Hands-on: casual vs engineered prompts (experimenting in chat).
+
+Prompt Templates & Structures
+
+Placeholders, parameterization.
+
+Hands-on: design a reusable summarization template.
+
+Controlling Output
+
+Formatting, style, tone, length.
+
+Hands-on: generate structured JSON responses for downstream use.
+
+## Phase 2: Advanced Prompting Techniques
+
+Few-Shot Prompting
+
+Using examples to guide the model.
+
+Hands-on: sentiment classifier with few-shot examples.
+
+Chain-of-Thought Prompting
+
+For reasoning tasks.
+
+Hands-on: step-by-step math/logic prompts.
+
+Multi-Turn Workflows
+
+Breaking tasks into steps across prompts.
+
+Hands-on: design a mini Q&A assistant with follow-up refinement.
+
+## Phase 3: Workflows & Deployment
+
+Designing Prompt Workflows
+
+Input capture → prompt template → response → post-processing.
+
+Hands-on: build a workflow that turns meeting notes into action items.
+
+APIs & Programmatic Use
+
+OpenAI API basics, LangChain, LlamaIndex, or direct scripting.
+
+Hands-on: call an API with a prompt template in Python.
+
+Prompt Libraries & Modularity
+
+Organizing reusable prompts.
+
+Hands-on: build a small “prompt toolkit” for text analysis tasks.
+
+## Phase 4: Evaluations & Integrations
+
+Prompt Evaluation
+
+Measuring consistency, accuracy, robustness.
+
+Hands-on: run A/B tests on two prompt versions.
+
+Integration into Systems
+
+Connecting to pipelines, apps, or workflows.
+
+Hands-on: integrate a prompt workflow into a data science pipeline (e.g., automated report generation).
+
+Best Practices & Maintenance
+
+Avoiding pitfalls, documenting prompts, versioning.
+
+Hands-on: write a “prompt spec” for one of your workflows.
+
+## Phase 5: Capstone
+
+Mini Project (Capstone)
+
+Choose one:
+
+A text analysis pipeline (summarization, classification, insight extraction).
+
+A developer tool (docstring generator, code reviewer, query explainer).
+
+A workflow assistant (turn raw data into polished insights).
+
+Deliverable: A working prototype + blog post documenting it.

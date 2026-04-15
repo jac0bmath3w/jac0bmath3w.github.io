@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/72ec4f733de0415fa2d9a37312b3ef22/artifacts
+end_time: 1755997313958
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: 72ec4f733de0415fa2d9a37312b3ef22
+run_name: unruly-calf-352
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997313873
+status: 3
+tags: []
+user_id: jacob

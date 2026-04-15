@@ -1,0 +1,110 @@
+---
+title: "Using Agentic AI to build a Resume Enhancer Agent"
+author: "Jacob Mathew"
+date: Sat Mar 28 15:12:28 CDT 2026
+categories: [Agentic AI, LLM, multi-agent-system, python]
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-tools: true
+---
+
+The code associated with this blog is available at https://github.com/jac0bmath3w/resume-enhancer-agent
+
+## The Problem: The Resume Black Hole
+
+We’ve all been there. You find the perfect job posting, but your resume doesn't quite match the specific keywords and phrasing the company uses. To get past the Applicant Tracking Systems (ATS), you need to tailor your resume for every single application.
+
+But manually rewriting your experience for fifty different job descriptions is tedious and error-prone. Most people either send a generic resume and get rejected, or they paste their resume into a standard LLM (like ChatGPT) and ask it to "make this fit the job."
+
+The result of standard LLMs? Hallucinated skills, lost formatting, and a generic, robotic tone. A single prompt simply cannot handle the cognitive load of reading, strategizing, writing, and formatting simultaneously.
+
+## The Solution: A Multi-Agent Architecture
+
+To solve this, I built a machine to beat the machine. Instead of a single prompt, I built a Multi-Agent System using Python and Google's Gemini API.
+
+By using an agentic architecture, we treat the process like a real-world agency. We hire a "Recruiter" to read the job, a "Strategist" to plan the resume, a "Writer" to draft the content, and an "Editor" to fact-check. This specialization ensures that the final output isn't just text—it’s a calculated, structured argument for why you are the best fit, rendered perfectly in LaTeX.
+
+Here is a deep dive into how I built it and the agents that make it work.
+
+## The Agents: Meet the Team
+
+The system is broken down into highly specialized agents, each constrained by strict Pydantic data models to prevent them from going off the rails.
+
+1. The JD Summarizer (The Recruiter)
+
+Job descriptions are notoriously noisy—filled with company boilerplate and legal jargon. The very first agent takes the raw scraped text of a job URL and distills it into a strict JSON object (JDSummary). It extracts the core responsibilities, required skills, and key ATS keywords.
+
+Human-in-the-loop feature: After this agent runs, the system pauses. It asks the user if they have any "hidden skills" (e.g., coaching, public speaking) that aren't on their master resume but fit this specific role. This injects crucial human nuance into the pipeline.
+
+2. The Alignment Agent (The Gatekeeper)
+
+Before we waste API tokens and time rewriting a resume, the Alignment Agent acts as a gatekeeper. It compares the JDSummary to the candidate's parsed master resume. It calculates a "Fit Score" and flags if the candidate is fundamentally misaligned (e.g., an accountant applying for a senior DevOps role). If misaligned, the user can provide a rebuttal to force the process forward.
+
+3. The Initial Planner (The Strategist)
+
+This is where the magic happens. Before a single word is written, the Planner creates a JSON blueprint. To fit a strict one-page constraint, it selects IDs of specific experiences and projects from the master resume to include, and identifies which skills to highlight and which to drop. By passing IDs instead of text, we prevent the AI from hallucinating new job titles.
+
+4. Plan Validator & Refiner (The Planning Loop)
+
+The first plan isn't always perfect.
+
+The Validator Agent acts as a strict hiring manager. It reviews the Planner's blueprint and critiques it (e.g., "You forgot to include a project that demonstrates the required AWS skills").
+
+The Refiner Agent takes this critique and updates the JSON blueprint. They loop until the Validator explicitly outputs "APPROVED".
+
+5. The Resume Critic (The Reviewer)
+
+With a locked-in plan, the Critic Agent bridges the gap between strategy and writing. It looks at the selected bullet points and provides granular instructions: "Keep the metrics, rewrite to change passive voice to active, and drop the irrelevant bullet about maintaining legacy systems."
+
+6. The Resume Author (The Writer)
+
+The Author Agent takes the raw resume data, the approved plan, the Critic's instructions, and a target LaTeX template. Its only job is to generate pixel-perfect LaTeX code that incorporates the right keywords and tone.
+
+7. The Resume Editor (The Fact-Checker)
+
+LLMs love to make things up to please the user. The Editor Agent is our safety net. It takes the Author's generated LaTeX draft and compares it strictly against the original master resume. If the Author invented a degree or a metric, the Editor flags it as a Hallucination, rejects the draft, and forces the Author to rewrite it.
+
+## Infrastructure: Tools and Observability
+
+To make these agents work together seamlessly, I built a robust infrastructure around them.
+
+### Data Tools
+
+JD Loader: A custom web scraper that mimics a real browser to bypass anti-bot protections on career sites and extract the raw job description.
+
+Resume Parser: A tool that breaks down a massive master LaTeX/Markdown CV into structured Python objects (Experience, Education, Projects).
+
+Git Exporter: Treats your career like code. Once a tailored resume is approved, this tool automatically commits the generated .tex file to a local Git repository.
+
+### Telemetry & Evaluation
+
+How do we know if the system is actually working efficiently?
+
+Telemetry Decorators: I built a @track_agent Python decorator that logs exactly how long each agent takes and how many times they loop.
+
+Interactive Evaluation: At the end of every run, the CLI prompts the user to rate the output (1-5) on JD Match, Clarity, and Professionalism, saving this feedback for future improvements.
+
+Systemic Eval: A standalone script that runs test cases (JD + Resume pairs) in the background to calculate metrics like "Keyword Coverage Percentage" without human intervention.
+
+### The Workflow in Action
+
+When I run python scripts/run_end_to_end.py --url <job_link>, here is what happens:
+
+Ingestion: The system scrapes the job and parses my master CV.
+
+Context: The terminal asks me if I want to add any hidden skills.
+
+Alignment: It tells me my match score.
+
+Planning & Drafting: The agents spin up. The terminal logs the planner strategizing, the critic leaving notes, the author writing LaTeX, and the editor fact-checking.
+
+Output: In under 60 seconds, a beautifully formatted, ATS-optimized, hallucination-free .tex file is saved to my output folder, named perfectly (e.g., google_software_engineer_abc123.tex).
+
+## Conclusion
+
+By chaining specialized agents, using strict Pydantic data models, and adding human-in-the-loop checkpoints, we can build powerful AI workflows that actually solve complex, multi-step problems.
+
+This isn't just a resume writer; it's an autonomous career infrastructure.
+

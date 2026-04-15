@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/f7a6a33ffaa44e0591e23071d1f06159/artifacts
+end_time: 1755999507725
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: f7a6a33ffaa44e0591e23071d1f06159
+run_name: flawless-loon-810
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755999507444
+status: 3
+tags: []
+user_id: jacob

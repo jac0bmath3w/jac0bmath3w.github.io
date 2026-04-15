@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/c8d5abe9c06c419383ddbad91cd94614/artifacts
+end_time: 1755998539314
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: c8d5abe9c06c419383ddbad91cd94614
+run_name: glamorous-seal-642
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755998539196
+status: 3
+tags: []
+user_id: jacob

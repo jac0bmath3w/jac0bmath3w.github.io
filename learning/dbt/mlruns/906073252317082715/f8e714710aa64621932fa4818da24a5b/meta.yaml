@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/f8e714710aa64621932fa4818da24a5b/artifacts
+end_time: 1755996940433
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: f8e714710aa64621932fa4818da24a5b
+run_name: placid-bug-511
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755996940372
+status: 3
+tags: []
+user_id: jacob

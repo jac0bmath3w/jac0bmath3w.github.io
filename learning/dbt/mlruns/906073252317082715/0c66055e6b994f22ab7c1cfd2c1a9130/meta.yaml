@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/0c66055e6b994f22ab7c1cfd2c1a9130/artifacts
+end_time: 1755997528286
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: 0c66055e6b994f22ab7c1cfd2c1a9130
+run_name: unique-dog-648
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997528181
+status: 3
+tags: []
+user_id: jacob

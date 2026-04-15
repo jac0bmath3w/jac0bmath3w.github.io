@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/16df05eb3688401f8f1453b7f671c5f7/artifacts
+end_time: 1755999503841
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: 16df05eb3688401f8f1453b7f671c5f7
+run_name: welcoming-robin-44
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755999503750
+status: 3
+tags: []
+user_id: jacob

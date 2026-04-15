@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/ebf6bdb4983b4a66acf7e5393db93b76/artifacts
+end_time: 1755999229049
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: ebf6bdb4983b4a66acf7e5393db93b76
+run_name: bemused-deer-225
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755999228783
+status: 3
+tags: []
+user_id: jacob

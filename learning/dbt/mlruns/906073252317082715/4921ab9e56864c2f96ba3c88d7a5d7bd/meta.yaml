@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/4921ab9e56864c2f96ba3c88d7a5d7bd/artifacts
+end_time: 1755998535572
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: 4921ab9e56864c2f96ba3c88d7a5d7bd
+run_name: orderly-sow-996
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755998535473
+status: 3
+tags: []
+user_id: jacob

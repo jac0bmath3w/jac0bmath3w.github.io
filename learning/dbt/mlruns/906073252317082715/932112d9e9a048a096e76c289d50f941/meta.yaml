@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/932112d9e9a048a096e76c289d50f941/artifacts
+end_time: 1755999510497
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: 932112d9e9a048a096e76c289d50f941
+run_name: dazzling-snake-402
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755999510326
+status: 3
+tags: []
+user_id: jacob

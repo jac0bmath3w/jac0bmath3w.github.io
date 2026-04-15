@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/c5b9dfbaf4044db5b88c8e57a04531e6/artifacts
+end_time: 1755997529496
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: c5b9dfbaf4044db5b88c8e57a04531e6
+run_name: industrious-croc-284
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997529309
+status: 3
+tags: []
+user_id: jacob

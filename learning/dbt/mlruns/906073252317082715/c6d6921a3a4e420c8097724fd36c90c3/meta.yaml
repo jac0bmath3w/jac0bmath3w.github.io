@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/c6d6921a3a4e420c8097724fd36c90c3/artifacts
+end_time: 1755997369261
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: c6d6921a3a4e420c8097724fd36c90c3
+run_name: abrasive-pug-1
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997369106
+status: 3
+tags: []
+user_id: jacob

@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/f7e3e90c92fd4c778a513c974d2c8e22/artifacts
+end_time: 1755997515247
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: f7e3e90c92fd4c778a513c974d2c8e22
+run_name: capable-koi-599
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997515155
+status: 3
+tags: []
+user_id: jacob

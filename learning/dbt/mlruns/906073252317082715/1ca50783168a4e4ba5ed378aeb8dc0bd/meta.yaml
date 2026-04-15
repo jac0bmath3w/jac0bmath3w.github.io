@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/1ca50783168a4e4ba5ed378aeb8dc0bd/artifacts
+end_time: 1755998545697
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: 1ca50783168a4e4ba5ed378aeb8dc0bd
+run_name: unique-panda-210
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755998545641
+status: 3
+tags: []
+user_id: jacob

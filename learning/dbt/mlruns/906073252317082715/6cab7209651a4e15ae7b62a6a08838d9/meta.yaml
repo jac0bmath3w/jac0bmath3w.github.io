@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/6cab7209651a4e15ae7b62a6a08838d9/artifacts
+end_time: 1755996941886
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: 6cab7209651a4e15ae7b62a6a08838d9
+run_name: welcoming-swan-8
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755996941835
+status: 3
+tags: []
+user_id: jacob

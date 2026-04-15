@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/a2d9263eea114cb7bb720a7e1e05af1e/artifacts
+end_time: 1755998534730
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: a2d9263eea114cb7bb720a7e1e05af1e
+run_name: handsome-trout-958
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755998534659
+status: 3
+tags: []
+user_id: jacob

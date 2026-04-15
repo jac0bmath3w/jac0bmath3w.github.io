@@ -1,0 +1,11 @@
+---
+title: "Learning MLFlow"
+author: "Jacob Mathew"
+date: Sat Aug 23 17:54:29 CDT 2025
+categories: [MLFlow, dbt, data, data_engineering, data_science]
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-tools: true
+---

@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/31c41dfcce3c4b2c914e01f2a4149f61/artifacts
+end_time: 1755999215806
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: 31c41dfcce3c4b2c914e01f2a4149f61
+run_name: nervous-ape-181
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755999215744
+status: 3
+tags: []
+user_id: jacob

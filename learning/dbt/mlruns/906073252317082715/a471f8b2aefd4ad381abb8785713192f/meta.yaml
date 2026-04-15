@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/a471f8b2aefd4ad381abb8785713192f/artifacts
+end_time: 1755997312363
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: a471f8b2aefd4ad381abb8785713192f
+run_name: overjoyed-gnat-576
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755997312269
+status: 3
+tags: []
+user_id: jacob

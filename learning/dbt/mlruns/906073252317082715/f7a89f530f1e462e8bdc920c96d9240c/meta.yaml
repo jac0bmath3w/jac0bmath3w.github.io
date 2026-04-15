@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/jacob/Library/CloudStorage/Dropbox/jacob-blog/learning/dbt/mlruns/906073252317082715/f7a89f530f1e462e8bdc920c96d9240c/artifacts
+end_time: 1755999230859
+entry_point_name: ''
+experiment_id: '906073252317082715'
+lifecycle_stage: active
+run_id: f7a89f530f1e462e8bdc920c96d9240c
+run_name: auspicious-roo-890
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755999230759
+status: 3
+tags: []
+user_id: jacob
