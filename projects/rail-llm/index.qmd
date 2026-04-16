@@ -1013,23 +1013,27 @@ Based on the Hazardous Materials Compliance Manual, is this allowed?
 #### Answer
 
 THINKING PROCESS\
-PHASE 1: CONTEXTUAL AUDIT
+PHASE 1: CONTEXTUAL AUDIT\
+
 1. Source Document: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, file page 28, Chapter 4, § 4.6.1-1.
 2. Core Subject: Movement of hazardous materials in rail yards.
 3. Key Manual Points: rail yards are subject to the HMR; rail yards are considered a rail-yard operation; movement of hazardous materials is subject to the permit system; the permit system applies even if the movement is within the yard.
 4. Question Goal: Test precise application of the manual to a mixed-fact scenario.
 
-PHASE 2: EVIDENCE MAPPING
+PHASE 2: EVIDENCE MAPPING\
+
 1. The car contains LPG, a listed hazardous material.
 2. The leak is on the car, not the yard.
 3. The proposed movement is within the yard.
 4. The page explicitly says the permit system applies to all rail-yard operations involving hazardous materials.
 
-PHASE 3: SYNTHESIS
+PHASE 3: SYNTHESIS\
+
 - Conclusion: the movement requires a special permit, regardless of the yard location.
 - Why alternatives are wrong: they treat the yard as a non-permit operation.
 
-PHASE 4: VERIFICATION
+PHASE 4: VERIFICATION\
+
 The response relies only on the cited manual page(s) and uses the file page number as metadata.
 
 ANSWER\
@@ -1068,22 +1072,25 @@ violation is kno...)
 
 THINKING PROCESS
 
-PHASE 1: CONTEXTUAL AUDIT
+PHASE 1: CONTEXTUAL AUDIT\
+
 1. Source document: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, page 35, Chapter 11.2.2 One-Time Movement Approvals.
 2. Core subject: One-time movement approval for non-complying bulk packages.
 3. Key manual points: FRA may allow movement of non-complying bulk packages for a special purpose (e.g., repair) under specified conditions ensuring the safety of the rail movement; the approval does not relieve a party from any liability applicable to such movements.
 4. Question goal: Test precise application of the manual to a mixed-fact scenario.
 
-PHASE 2: EVIDENCE MAPPING
+PHASE 2: EVIDENCE MAPPING\
+
 1. The scenario involves a leaking tank car.
 2. The page specifically addresses non-complying bulk packages.
 3. The cited approval process is for special purposes like repair.
 
-PHASE 3: SYNTHESIS
+PHASE 3: SYNTHESIS\
+
 - Conclusion: the movement is allowed under the one-time movement approval process for repair purposes.
 - Why alternatives are wrong: they assume the repair is not a special purpose.
 
-PHASE 4: VERIFICATION
+PHASE 4: VERIFICATION\
 
 The response relies only on the cited manual page(s) and uses the fact pattern to test precise application of the manual to the scenario.
 
@@ -1108,22 +1115,25 @@ Chunk 5: Source: FRA-Signal_Train_Control-2012.pdf, Page: 48 (Preview: the requi
 
 THINKING PROCESS
 
-PHASE 1: CONTEXTUAL AUDIT
+PHASE 1: CONTEXTUAL AUDIT\
+
 1. Source Document: FRA-Signal_Train_Control-2012.pdf, page 27.
 2. Core Subject: Limited unaccompanied inspection of signals, switches, and appliances.
 3. Key Manual Points: inspectors are limited to visual inspections; no access to tests, relays, circuit plans, etc.
 4. Question Goal: Test precise application of the manual to a mixed-fact scenario.
 
-PHASE 2: EVIDENCE MAPPING
+PHASE 2: EVIDENCE MAPPING\
+
 1. The scenario involves a non-permitted move.
 2. The page explicitly limits inspection activity to visual inspections.
 3. The page also says such inspection should be arranged at a later date if a railroad officer declines to accompany or fails to provide someone else.
 
-PHASE 3: SYNTHESIS
+PHASE 3: SYNTHESIS\
+
 - Conclusion: the move is not allowed because it involves a non-permitted action.
 - Why alternatives are wrong: they ignore the page's explicit limitation on inspection activity and the page's instruction to arrange a later inspection if a permit is not available.
 
-PHASE 4: VERIFICATION
+PHASE 4: VERIFICATION\
 
 The response relies only on the cited manual page(s) and uses the page's language to resolve the mixed-fact scenario.
 
@@ -1154,6 +1164,7 @@ I see that without a source filter, the chunks retrieved are not even from the H
 |Rerank	|0.467|	0.663|	0.724|	0.568| <!--0.567983-->
 |Rerank with BGE | 0.416|	0.665|	0.734|	0.544| <!--0.544500-->
 |Rerank with BGE and rerank instructions | 0.520|	0.720|	0.760|	0.619| <!--0.619367-->
+|Rerank with BGE and rerank instructions (increase n_initial to 50) |0.429 |	0.703|	0.781|	0.569| <!--0.568500-->
 
 
 
@@ -1166,6 +1177,9 @@ By moving from simple Vector search to a Hybrid-Rerank architecture, we increase
 
 The metrics for Rerank with BGE model went down. However, when I added a rerank instruction ("Query" and "Passage") the Hit@1 jumped from 0.416 to 0.520. That is a 25% relative improvement just by changing a few characters of text.  A Hit@5 of 0.760 means that for 3 out of every 4 safety questions, the LLM will have the correct regulation in its immediate context. An MRR of 0.62 confirms that the correct answer is almost always the very first or second thing the model suggests.
 
+I tried rerank with an increased n_initial as well which reduced the MRR. Hit@5 went UP ($0.760 \rightarrow 0.781$). This proves that increasing n_initial worked as intended for Recall. However, I increase the number of initial retrieved samples to 50 or 100, we are inviting "Hard Negatives" into the room.  Based on this we can make a decision on the n_initial parameters as follows.
+- If the goal is LLM Accuracy: Stick with the pool size that yields the highest Hit@5, because the fine-tuned Llama model is smart enough to ignore the 4 "distractor" chunks if the "Gold" chunk is present.
+- If the goal is Retrieval Efficiency: Stick with the n_initial that yields the highest MRR (which seems to be $n=25$ in this case).
 
 
 # Phase 4: Reasoning-Augmented RAG
@@ -1225,7 +1239,278 @@ def run_integrated_audit(question, vault, n_results = 10, source_filter = None, 
 
 ```
 
-[TODO: ]{style="color: red;"} Complete this
+<!-- [TODO: ]{style="color: red;"} Complete this -->
+
+Rerunning with reranker retriever.
+
+test_question = "A rail yard manager wants to move a leaking LPG tank car to a remote siding for repair without a permit. Is this allowed?"
+
+### Feeding only 5 retrieved elements to the chunk.
+
+#### With Source Filter
+
+--- LIBRARIAN REPORT: Question 1 (5 chunks via RERANK) ---
+
+- Chunk 1: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 35 (ID: id_571) Preview: HAZARDOUS MATERIALS COMPLIANCE MANUAL 30 CHAPTER 11 – NOTIFICATIONS AND APPR...
+- Chunk 2: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 35 (ID: id_573) Preview: Materials Guidance (HMG)-127 available for review on FRA’s website. 11.2.2 C...
+- Chunk 3: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 18 (ID: id_525) Preview: investigation and decision-making efforts on issues related to tank car safety. ...
+- Chunk 4: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 33 (ID: id_564) Preview: penalty schedule amount. FRA may also pursue aggravated maximum penalties when t...
+- Chunk 5: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 35 (ID: id_572) Preview: applicable to such movements. Additionally, an OTMA approval issued by FRA is on...Both `max_new_tokens` (=1024) and `max_length`(=131072) seem to have been set. `max_new_tokens` will take precedence. Please refer to the documentation for more information. (https://huggingface.co/docs/transformers/main/en/main_classes/text_generation)
+
+PHASE 1: CONTEXTUAL AUDIT
+
+1. Source Document: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, page 35, § 11.2.2 COFC/TOFC Approval.
+2. Core Subject: Movement of non-complying bulk packages by rail within the United States.
+3. Key Manual Points: COFC/TOFC movement is allowed only under conditions specified in 49 C.F.R. § 174.63 or approved by the Associate Administrator for Safety, FRA.
+4. Question Goal: Test precise application of the manual to a mixed-fact scenario.
+
+
+PHASE 2: EVIDENCE MAPPING
+
+1. The scenario lacks a permit.
+2. The page says permits are required for such movements.
+3. The cited section also says the approval is only applicable to movements within the United States.
+
+
+PHASE 3: SYNTHESIS
+
+- Conclusion: the movement is not allowed without a permit.
+- Why alternatives are wrong: they ignore the cited permit requirement.
+
+PHASE 4: VERIFICATION
+
+The response relies only on the cited manual page(s) and uses the manual's language exactly.
+
+
+
+ANSWER
+
+No. The page says that movement of a bulk packaging (e.g., portable tank, IM portable tank, IBC, Large Packaging, cargo tank, or multi-unit tank car tank) containing a hazardous material in container-on-flatcar (COFC) or trailer-on-flatcar (TOFC) service is allowed only under conditions specified in 49 C.F.R. § 174.63 or approved by the Associate Administrator for Safety, FRA. The cited section also says the approval is only applicable to movements of a nonconforming bulk package/packaging by rail within the United States. The cited page does not allow the movement without a permit.
+
+
+
+#### Without Source Filter.
+
+
+--- LIBRARIAN REPORT: Question 1 (5 chunks via RERANK) ---
+
+- Chunk 1: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 35 (ID: id_571) Preview: HAZARDOUS MATERIALS COMPLIANCE MANUAL 30 CHAPTER 11 – NOTIFICATIONS AND APPR...
+- Chunk 2: Source: FRA-Signal_Train_Control-2012.pdf, Page: 276 (ID: id_2304) Preview: 236-108 points is occupied. The exception to the traffic locking requireme...
+- Chunk 3: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 35 (ID: id_573) Preview: Materials Guidance (HMG)-127 available for review on FRA’s website. 11.2.2 C...
+- Chunk 4: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 33 (ID: id_564) Preview: penalty schedule amount. FRA may also pursue aggravated maximum penalties when t...
+- Chunk 5: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 26 (ID: id_545) Preview: HAZARDOUS MATERIALS COMPLIANCE MANUAL 21 7.2.6 Tank Car Owner Inspection Ta...
+
+THINKING PROCESS
+
+PHASE 1: CONTEXTUAL AUDIT
+
+1. Source Document: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Chapter 11, page 35, § 11.2 One-Time Movement Approvals.
+2. Core Subject: One-time movement approval for non-complying bulk packages for special purposes.
+3. Key Manual Points: FRA may grant one-time movement approval for special purposes under specified conditions; the approval does not relieve liability for the movement; the approval is only for non-complying bulk packages.
+4. Question Goal: Test precise application of the manual to a mixed-fact scenario.
+
+
+
+PHASE 2: EVIDENCE MAPPING
+
+1. The scenario involves a leaking tank car.
+2. The repair is in a remote siding.
+3. The page says the approval is for non-complying bulk packages for special purposes.
+4. The page also says the approval does not relieve liability.
+
+PHASE 3: SYNTHESIS
+
+- Conclusion: the one-time movement approval is not a blanket permission to move any leaking tank car.
+- Why alternatives are wrong: they treat the repair as a general justification for movement, ignoring the page's specific limitation.
+
+PHASE 4: VERIFICATION
+
+The response relies only on the cited manual page(s) and uses the manual's language exactly.
+
+ANSWER
+
+No. The page says one-time movement approval is available for non-complying bulk packages for special purposes under specified conditions, not for any leaking tank car. The approval does not relieve the carrier from liability for the movement. The page specifically limits the approval to non-complying bulk packages.
+
+
+
+Even though both versions correctly answered "No," the first version was "smarter" (citing § 174.63) while the second version was more "general." 
+
+1. The "174.63" Disappearing \ 
+In the Filtered run, the Librarian gave the Analyst five high-quality Hazmat chunks. Chunk 5 (ID 572) was included in the context.  Because the Analyst had that specific data point, it could provide a "High-Resolution" answer. In the Unfiltered run, look at Chunk 2 (ID 2304): Source: FRA-Signal_Train_Control-2012.pdf, Page: 276. This Signal Manual chunk is not relevant for the question asked. Because it took up a slot in the context window, it displaced Chunk 5 (ID 572).  Without ID 572, the Analyst lost the specific knowledge of § 174.63. It had to rely on the remaining chunks (like Chapter 11.2) to find a reason to say "No."
+
+2. The Success of Phase 3 (Reasoning)
+The impressive thing here is that both answers are still correct.  Even when the retriever made a mistake and brought a Signal book to the desk, the LLM was trained well enough to:
+- Ignore the irrelevant Signal data.
+- Synthesize a "No" based on the general OTMA rules it did have.
+- Maintain the 4-Phase Thinking Process perfectly.
+
+
+The fact that the Signal manual (ID 2304) is still showing up in your Top 2 of the Unfiltered Rerank is the proof of why you need the source_filter or a stronger Hybrid weight.
+
+
+On looking at the two interesting chunks, the reason why 2304 was picked (with no source filter) becomes clearer. 
+
+This is id_572
+
+```
+applicable to such movements. Additionally, an OTMA approval issued by FRA is only 
+applicable to movements of a nonconforming bulk package/packaging by rail within the United 
+States.
+38 
+ 
+The OMTA process also provides an informational database that can identify systemic problems 
+with a particular series of tank car or valve, as well as documents the root cause and contributing 
+factors of defective conditions.   
+ 
+The information obtained as a result of the movement approval process may identify facilities 
+that have procedural problems and require assistance in ensuring that their practices, in regard to 
+package preparation for transportation, are adequate to ensure regulatory compliance and safety.  
+ 
+Further guidance on the OTMA process is explained in the current version of Hazardous 
+Materials Guidance (HMG)-127 available for review on FRA’s website. 
+11.2.2    COFC/TOFC Approval
+{'char_count': 905, 'source': 'FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf', 'page': 35, 'type': 'technical_manual'}
+```
+
+This is id_2304
+
+```
+236-108 
+ 
+points is occupied. 
+ 
+The exception to the traffic locking requirements (§ 236.405) applies only in instances when a 
+train is left on the main track while its engine and/or cars move into an adjacent siding or yard 
+for switching purposes and must, in returning to its train, reverse its direction for a short 
+distance.  It is permissible in such instances to permit such movements to be made with a signal 
+aspect indicating “Proceed at Restricted Speed” into the occupied block. 
+ 
+ 
+CLASSIFICATION OF DEFECTS
+ 
+ 
+236.405.A1 On track signaled for movements in bot h directions, occupancy of track between 
+opposing signals at adjacent controlled points does not prevent changing the 
+direction of traffic from that which obtained at the time the track became 
+occupied.  (Note:  An exception added January 24, 1966, permits display of an 
+aspect not less restrictive than that indicating “proceed at restricted speed” by a
+{'type': 'technical_manual', 'source': 'FRA-Signal_Train_Control-2012.pdf', 'char_count': 938, 'page': 276}
+```
+
+1. [Word Overlap]{.underline]\
+The test question was: "A rail yard manager wants to move a leaking LPG tank car to a remote siding for repair without a permit." Now, look at the vocabulary density in the Signal chunk (id_2304): \
+- "move into an adjacent siding or yard" (Direct hit on "move", "siding", and "yard").
+- "for switching purposes" (Semantically close to the intent of moving a car).
+- "permissible in such instances to permit such movements" (Direct hit on "permissible/allowed" and "permit" and "movements").
+
+To a vector model, id_2304 looks like a perfect match because it describes the exact physical action the manager wants to take: moving a car into a siding. 
+
+2. [Semantic Gap]{.underline}\
+Now, look at the Hazmat chunk (id_572) that we wanted the model to prioritize:\
+- It uses terms like "nonconforming bulk package/packaging" instead of "leaking tank car."
+- It uses "OTMA approval" instead of "permit."
+- It doesn't mention the word "siding" or "yard" at all.
+
+Because id_572 is written in "Regulatory Speak" and your question was written in "Operational Speak," the distance-based search (Vector) and the keyword search (BM25) both found id_2304 more compelling than id_572.
+
+3. [Why the Reranker Struggled]{.underline}\
+The Signal chunk was a "Hard Negative." It contains almost all the keywords of the question but belongs to a completely different regulatory universe. 
+- Vector Search saw: "Move," "Siding," "Yard," "Permit."\
+- BM25 saw: "Move," "Siding," "Yard," "Permit."\
+- The Result: Both "Librarians" put the Signal chunk at the top of the pile because it had a higher "keyword density" for the operational parts of the test question.
+
+### Feeding 10 retrieved elements to the chunk.
+
+This caused a context window overflow. I updated the max_seq_length of the model to 4096 to be able to pass 10 chunks as contexts into the LLM.
+
+#### With source filter n_result = 10
+
+--- LIBRARIAN REPORT: Question 1 (10 chunks via RERANK) ---
+
+- Chunk 1: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 35 (ID: id_571) Preview: HAZARDOUS MATERIALS COMPLIANCE MANUAL 30 CHAPTER 11 – NOTIFICATIONS AND APPR...
+- Chunk 2: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 35 (ID: id_573) Preview: Materials Guidance (HMG)-127 available for review on FRA’s website.11.2.2 C...
+- Chunk 3: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 18 (ID: id_525) Preview: investigation and decision-making efforts on issues related to tank car safety. ...
+- Chunk 4: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 33 (ID: id_564) Preview: penalty schedule amount. FRA may also pursue aggravated maximum penalties when t...
+- Chunk 5: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 35 (ID: id_572) Preview: applicable to such movements. Additionally, an OTMA approval issued by FRA is on...
+- Chunk 6: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 36 (ID: id_575) Preview: HAZARDOUS MATERIALS COMPLIANCE MANUAL 31 11.2.3 Cylinders in COFC/TOFC Se...
+- Chunk 7: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 26 (ID: id_545) Preview: HAZARDOUS MATERIALS COMPLIANCE MANUAL 21 7.2.6 Tank Car Owner Inspection Ta...
+- Chunk 8: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 18 (ID: id_523) Preview: HAZARDOUS MATERIALS COMPLIANCE MANUAL 13 3.4 Responsibilities of Tank Car Te...
+- Chunk 9: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 11 (ID: id_504) Preview: • Part 174 – Carriage by Rail • Part 178 – Specifications for Packagings • Par...
+- Chunk 10: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 18 (ID: id_524) Preview: organizations for tank car safety initiatives. • Provides subject matter expert...
+
+
+THINKING PROCESS
+PHASE 1: CONTEXTUAL AUDIT\
+1. Source Document: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, page 35, Chapter 11.1 Notifications.
+2. Core Subject: Notification requirements for certain tank car movements.
+3. Key Manual Points: the shipper must notify FRA of non-received tank cars within 20 days; the notification may be made by email or phone; the movement is only allowed if the car is repaired or replaced within 20 days.
+4. Question Goal: Test precise application of the manual to a mixed-fact scenario.
+
+PHASE 2: EVIDENCE MAPPING\
+1. The scenario involves a tank car that is leaking.
+2. The scenario involves movement without a permit.
+3. The manual specifically addresses notification for non-received tank cars.
+
+PHASE 3: SYNTHESIS\
+- Conclusion: the movement is not allowed without a permit.
+- Why alternatives are wrong: they ignore the notification requirement.
+
+PHASE 4: VERIFICATION\
+The response relies only on the cited manual page(s) and uses the page number as metadata.
+
+
+ANSWER
+
+No. The manual says that the shipper must notify FRA of non-received tank cars within 20 days from the date of shipment. The page also says that the movement is only allowed if the car is repaired or replaced within 20 days. The cited page does not allow the movement to proceed without a permit.
+
+#### Without source_filter n_result = 10
+
+
+
+--- LIBRARIAN REPORT: Question 1 (10 chunks via RERANK) ---
+
+- Chunk 1: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 35 (ID: id_571) Preview: HAZARDOUS MATERIALS COMPLIANCE MANUAL 30 CHAPTER 11 – NOTIFICATIONS AND APPR...
+- Chunk 2: Source: FRA-Signal_Train_Control-2012.pdf, Page: 276 (ID: id_2304) Preview: 236-108 points is occupied. The exception to the traffic locking requireme...
+- Chunk 3: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 35 (ID: id_573) Preview: Materials Guidance (HMG)-127 available for review on FRA’s website. 11.2.2 C...
+- Chunk 4: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 33 (ID: id_564) Preview: penalty schedule amount. FRA may also pursue aggravated maximum penalties when t...
+- Chunk 5: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 26 (ID: id_545) Preview: HAZARDOUS MATERIALS COMPLIANCE MANUAL 21 7.2.6 Tank Car Owner Inspection Ta...
+- Chunk 6: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 18 (ID: id_523) Preview: HAZARDOUS MATERIALS COMPLIANCE MANUAL 13 3.4 Responsibilities of Tank Car Te...
+- Chunk 7: Source: FRA-Signal_Train_Control-2012.pdf, Page: 279 (ID: id_2319) Preview: The provision of exception (2) does not apply to maintenance-of-way work equipme...
+- Chunk 8: Source: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Page: 25 (ID: id_543) Preview: (e.g., classification, training, OTMA implementation, package securement). Shipp...
+- Chunk 9: Source: FRA-HRGC-Handbook-2019.pdf, Page: 171 (ID: id_1088) Preview: Solutions to Blocked Crossings Appendix C to the Noteworthy Practices Guide add...
+- Chunk 10: Source: FRA-Signal_Train_Control-2012.pdf, Page: 278 (ID: id_2313) Preview: except signaled sidings, exceeds 20 mph, each hand-operated switch must comply w...
+
+THINKING PROCESS
+
+PHASE 1: CONTEXTUAL AUDIT\
+1. Source Document: FRA-Hazardous_Materials_Compliance_Manual_01.07.25.pdf, Chapter 7.2.6 Tank Car Owner Inspection.
+2. Core Subject: Tank car owner inspection and repair of leaking tank cars.
+3. Key Manual Points: the tank car owner is responsible for ensuring the tank car is in compliance with the functions listed; the inspection includes classification, training, OTMA implementation, package securement, and safety and security; the inspection is comprised of four general regulatory elements.
+4. Question Goal: Test precise application of the manual to a mixed-fact scenario.
+
+PHASE 2: EVIDENCE MAPPING\
+1. The scenario involves a leaking tank car.
+2. The page lists four inspection elements.
+3. The repair is on a remote siding, not at the facility.
+
+PHASE 3: SYNTHESIS\
+- Conclusion: the repair must be done under the inspection program, not outside of it.
+- Why alternatives are wrong: the page lists inspection as a regulatory function, not repair.
+
+PHASE 4: VERIFICATION\
+The response relies only on the cited manual page(s) and uses the cited manual points as the basis for the conclusion.
+
+ANSWER
+
+No. The page says the tank car owner is responsible for ensuring the tank car is in compliance with the functions listed, including classification, training, OTMA implementation, package securement, and safety and security. The inspection is comprised of four general regulatory elements. The page does not allow repair outside the inspection program. The cited page says the inspection is comprised of four general regulatory elements: Special Permits, registration, training, document retention, package selection, as well as safety and security. Repair of a leaking tank car is one of the functions the page says the owner must perform.
+
+In this case, more data made the model "dumber." In the 5-chunk run, the "Signal-to-Noise Ratio" was high. The model had fewer options, so it had to look more closely at the text (e.g. OTMA (One-Time Movement Approval) text.)
+In the 10-chunk run, the Information Density dropped.
+
+## Path Forward
+1. Revert to n_results = 5: This was your "Sweet Spot." It provided enough evidence for Hit@5 accuracy without overwhelming the model's attention.
+2. Trust the Reranker: Since your Reranker Hit@1 is 0.52, you should trust that the top 5 results are significantly better than the next 5. Adding results 6 through 10 is clearly introducing "distractor" logic.
+3. Use metadata filter when possible.
 
 # Summary of Lessons Learned
 
@@ -1234,6 +1519,8 @@ def run_integrated_audit(question, vault, n_results = 10, source_filter = None, 
 3. Hybrid search and metadata filtering can be very important for professional applications. Keywords acts as a hard filter, 
 4. We can train the engine to reason the way we want it to based on training examples. But fine tuning is for behavior, not facts. 
 5. As well as the size of the model, the type of info we feed to the model and the way we feed it in can have an impact.
+6. More context doesn't necessarily mean better answer.
+
 
 
 # TODO
@@ -1243,3 +1530,4 @@ def run_integrated_audit(question, vault, n_results = 10, source_filter = None, 
 3. Fine tune the retriever using training examples.
 3. Use vectorless RAG.
 4. Multimodal RAG (what if we have PDF and Images?)
+5. Ability to filter thru different elements of metadata. 
