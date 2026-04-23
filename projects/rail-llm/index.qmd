@@ -213,12 +213,48 @@ format:
         </style>
 ---
 
+# Summary
+## Project Overview
+
+### Core Objective
+To build a Retrieval-Augmented Generation (RAG) system that bridges the gap between raw federal regulations (FRA manuals) and practical, field-level maintenance queries.
+
+### Primary Goal:
+Transition from "black-box" AI responses to verifiable, grounded, and explainable safety auditing.
+
+### Technical Architecture
+- **The "Brain" (LLM):**\
+Utilizes a fine-tuned **Llama-3.2-3B-Instruct model**, optimized with 4-bit quantization (BitsAndBytes) and Unsloth to run efficiently on consumer-grade hardware like a T4 GPU.
+- **The "Librarian" (Vector Store):**\
+Powered by **ChromaDB** using **BAAI/bge-base-en-v1.5** embeddings for semantic indexing of over 2,600 document chunks.
+- **Multi-Stage Retrieval:**\
+Employs a sophisticated funnel starting with **Hybrid Search** (lexical BM25 + semantic vector) followed by a **Cross-Encoder Reranker**.
+
+### Retrieval Performance Milestones
+- **Accuracy Boost:** Moving from simple Vector search to a Hybrid-Rerank architecture increased **Hit@1 accuracy by 116%** (from 0.216 to 0.467).
+- **The "Instruct" Breakthrough:** Adding "Query" and "Passage" prefixes to the BGE-reranker boosted **Hit@1 to 0.520 and MRR to 0.619**.
+- **Reliability:** Achieved a **Hit@5 of 0.760**, ensuring the correct regulation is in the model's context 3 out of 4 times.
+
+### Key Engineering Insights
+- **The Paradox of Context:** Discovered that increasing the initial candidate pool ($n_{initial}$) beyond 25 introduced "Hard Negatives" (e.g., Signal manual rules "poisoning" Hazmat queries), which actually degraded MRR.
+- **Metadata Filtering:** Validated that source filtering is mandatory in specialized domains to prevent semantic overlap between different regulatory universes.
+- **Behavioral Fine-Tuning:** Used QLoRA to train the model on a 4-Phase Thinking Process (Audit, Map, Synthesize, Verify) to enforce structural reasoning rather than just factual recall.Evaluation Strategy
+- **Synthetic Data Generation:** Used a "Teacher" model (Gemini) to generate a technical golden set of questions and reasoning chains from raw manual excerpts.
+- **LLM-as-a-Judge:** Implemented a secondary high-level auditor to grade the system on Faithfulness, Regulatory Accuracy, and Citation Quality .
+
 # Project Roadmap
 
 8-Week LLM Project Roadmap (Provided by Gemini Pro)
 
 ### Goal
 Build a "Rail" RAG system that bridges the gap between raw federal regulations and field-level maintenance queries.
+
+### Personal Goals
+- Build proficiency in the core architecture of LLMs (e.g., transformers and attention mechanisms) 
+- Develop experience with prompt engineering techniques, including chain-of-thought prompting, Retrieval-Augmented Generation (RAG), fine-tuning of language models, and evaluation methodologies. 
+- Gain experience with Vector Databases and embeddings. 
+- Experiment with Model Fine-tuning. 
+- Experiment with GPU optimization. 
 
 <!--
 
@@ -1522,6 +1558,15 @@ In the 10-chunk run, the Information Density dropped.
 1. Revert to n_results = 5: This was your "Sweet Spot." It provided enough evidence for Hit@5 accuracy without overwhelming the model's attention.
 2. Trust the Reranker: Since your Reranker Hit@1 is 0.52, you should trust that the top 5 results are significantly better than the next 5. Adding results 6 through 10 is clearly introducing "distractor" logic.
 3. Use metadata filter when possible.
+
+# Evaluation
+
+The RA-RAG system is subjected to evaluation using a bigger model. LLM as a judge.  I used the following rubrics.\
+1. FAITHFULNESS (1-5): Is the answer derived ONLY from the context provided in the thinking process? (1 = Hallucinated/Used external knowledge, 5 = Perfectly Grounded)
+2. REGULATORY ACCURACY (1-5): Compare the AI Answer to the Ground Truth Reference. Does the logic match? (1 = Dangerous/Incorrect, 5 = Expert accuracy)
+3. CITATION QUALITY (1-5): Did the model cite specific Pages/Sections correctly within the final answer as per the Thinking Process?
+
+[TODO: ]{style="color: red;"} Complete this.
 
 # Summary of Lessons Learned
 
